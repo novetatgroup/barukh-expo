@@ -4,6 +4,7 @@ const RegisterForm = () => {
   return (
     <View>
       <Text>Register Form</Text>
+      <Text>Register Form</Text>
     </View>
   );
 };
