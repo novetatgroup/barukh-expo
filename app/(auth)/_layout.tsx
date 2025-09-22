@@ -8,6 +8,7 @@ export default function AuthLayout() {
       <Stack.Screen name="login" options={{ headerShown: false }} />
       <Stack.Screen name="register" options={{ headerShown: false }} />
       <Stack.Screen name="verifyOtpScreen" options={{headerShown: false}} />
+      <Stack.Screen name="roleSelection" options={{headerShown: false}} />
       
 
     </Stack>

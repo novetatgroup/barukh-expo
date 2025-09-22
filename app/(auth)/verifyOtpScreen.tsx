@@ -50,7 +50,7 @@ const VerifyOtpScreen = () => {
         });
         
         setTimeout(() =>{
-           router.push("/");
+           router.push("/roleSelection");
         }, 2500)
         
         return;

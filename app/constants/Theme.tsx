@@ -6,6 +6,7 @@ export const Theme = {
     white: '#FFFFFF',
     black: '#000000',
     error:'#FF0000',
+    yellow:'#CDFF00',
     text: {
       light: '#FFFFFF',
       dark: '#000000',
