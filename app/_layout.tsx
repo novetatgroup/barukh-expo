@@ -7,6 +7,7 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <Slot />
+      
       <Toast config={toastConfig} />
     </AuthProvider>
   );

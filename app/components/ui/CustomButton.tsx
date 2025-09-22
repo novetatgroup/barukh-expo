@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, TouchableOpacityProps, View } from 'react-native';
-import Theme from '../../constants/Theme'; // Import your theme
+import Theme from '../../constants/Theme'; 
 
 interface CustomButtonProps extends TouchableOpacityProps {
   title: string;
@@ -15,7 +15,7 @@ const CustomButton: React.FC<CustomButtonProps> = ({
   style, 
   textStyle,
   showGoogleIcon = false,
-  onPress, // Explicitly destructure onPress for debugging
+  onPress, 
   disabled,
   ...props 
 }) => {

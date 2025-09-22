@@ -12,6 +12,7 @@ const FooterLink: React.FC<FooterLinkProps> = ({
   linkText, 
   onLinkPress 
 }) => {
+    
   return (
     <Text style={styles.footerText}>
       {text}{' '}

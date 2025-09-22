@@ -1,8 +1,7 @@
-// File: components/ui/ToastConfig.tsx
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { BaseToast, ErrorToast } from 'react-native-toast-message';
-import Theme from '../../constants/Theme'; // Adjust path to your theme
+import Theme from '../../constants/Theme';
 
 export const toastConfig = {
   success: (props: any) => (

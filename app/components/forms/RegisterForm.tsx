@@ -20,6 +20,7 @@ const { width: screenWidth } = Dimensions.get('window');
 
 const ValidationSchema = Yup.object().shape({
   name: Yup.string()
+  
     .min(2, 'Name is too short!')
     .max(50, 'Name is too long!')
     .required('Name is required'),
