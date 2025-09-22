@@ -3,6 +3,7 @@ import { Dimensions,Image, StyleSheet, Text, View, TextInput, TouchableOpacity, 
 import CustomButton from "../ui/CustomButton";
 import Theme from "../../constants/Theme";
 
+
 type VerifyOtpFormProps = {
   onSubmit: (data: { otp: string }) => void;
 };

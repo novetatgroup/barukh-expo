@@ -64,6 +64,7 @@ const VerifyOtpScreen = () => {
         text1: "Verification Failed",
         text2: errorMessage,
         position: "top",
+        
       });
     } catch (error) {
       console.error("API error:", error);

@@ -3,7 +3,6 @@ import { StyleSheet, View } from "react-native";
 import RegisterForm from "../components/forms/RegisterForm";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Toast from "react-native-toast-message";
-import { toastConfig } from "../components/ui/ToastConfig";
 import { router } from "expo-router";
 import { OtpResponse } from "../Interfaces/auth";
 

@@ -5,6 +5,7 @@ export interface OtpResponse {
   message?: string;
 }
 
+
 export interface VerifyOtpResponse {
   accessToken: string;
   refreshToken: string;

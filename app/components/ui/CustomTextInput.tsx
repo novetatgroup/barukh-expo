@@ -18,6 +18,7 @@ const CustomTextInput: React.FC<CustomTextInputProps> = ({
         variant === 'rounded' && styles.rounded,
         style
       ]}
+      
       placeholderTextColor={placeholderTextColor}
       {...props}
     />

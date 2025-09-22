@@ -8,7 +8,8 @@ interface DividerProps {
 
 const Divider: React.FC<DividerProps> = ({ 
   text = 'Or', 
-  color = '#E5E5E5' 
+  color = '#E5E5E5'
+   
 }) => {
   return (
     <View style={styles.container}>
