@@ -19,6 +19,7 @@ const VerifyOtpScreen = () => {
           type: "error", 
           text1: "Please try again.", 
           position:"top",
+          visibilityTime:2500,
          }); 
         
          return; 
@@ -46,12 +47,12 @@ const VerifyOtpScreen = () => {
           type: "success",
           text1: "OTP verified successfully!",
           position: "top",
-          visibilityTime:4000,
+          visibilityTime:2000,
         });
         
         setTimeout(() =>{
            router.push("/roleSelection");
-        }, 2500)
+        }, 1500)
         
         return;
       }
@@ -64,6 +65,7 @@ const VerifyOtpScreen = () => {
         text1: "Verification Failed",
         text2: errorMessage,
         position: "top",
+        visibilityTime:3000,
         
       });
     } catch (error) {
@@ -73,6 +75,7 @@ const VerifyOtpScreen = () => {
         text1: "Network error",
         text2: "Please try again later.",
         position: "top",
+        visibilityTime:3000,
       });
     }
   };

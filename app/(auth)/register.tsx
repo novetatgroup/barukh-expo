@@ -57,7 +57,7 @@ const RegisterScreen = () => {
           Toast.show({
             type: 'success',
             text1: 'OTP Sent!',
-            text2: `Verofication code has been sent to the email`,
+            text2: `Verification code has been sent to the email`,
             position: 'top',
             visibilityTime: 4000,
           });

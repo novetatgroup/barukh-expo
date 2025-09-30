@@ -20,7 +20,6 @@ const CustomButton: React.FC<CustomButtonProps> = ({
   ...props 
 }) => {
   
-  // Debug logging
   console.log('CustomButton rendered:', { 
     title, 
     variant, 
