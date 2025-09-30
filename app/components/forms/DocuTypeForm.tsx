@@ -3,60 +3,76 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-interface RoleSelectionFormProps {
-  onRoleSelect: (role: "TRAVELLER" | "SENDER") => void;
+type DocumentTypeSelectionFormProps = {
+  onDocumentTypeSelect: (document_type: "PASSPORT" | "ID" | "DRIVING LICENCE") => void;
 }
 
-const RoleSelectionForm: React.FC<RoleSelectionFormProps> = ({ onRoleSelect }) => {
+const DocumentTypeSelectionForm: React.FC<DocumentTypeSelectionFormProps> = ({ onDocumentTypeSelect }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.welcomeText}>Welcome!</Text>
-      <Text style={styles.subText}>How would you like to use Barukh?</Text>
+      <Text style={styles.verifyText}>Verify</Text>
+      <Text style={styles.accountText}>Account</Text>
+      <Text style={styles.subText}>Choose Your Document Type</Text>
       
       <View style={styles.optionsContainer}>
        
         <TouchableOpacity
-          style={[styles.optionCard, styles.sendOption]}
-          onPress={() => onRoleSelect("SENDER")}
+          style={[styles.optionCard, styles.option]}
+          onPress={() => onDocumentTypeSelect("PASSPORT")}
         >
           <View style={styles.iconContainer}>
             <Ionicons 
-              name="cube" 
-              size={45} 
+              name="document-text" 
+              size={30} 
               color={Theme.colors.white} 
             />
           </View>
           <View style={styles.optionContent}>
-            <Text style={styles.sendOptionTitle}>Barukh Send</Text>
-            <Text style={styles.sendOptionSubtitle}>Package Received by Traveller</Text>
+            <Text style={styles.optionTitle}>Passport</Text>
           </View>
           <Text style={styles.arrow}>›</Text>
         </TouchableOpacity>
 
 
         <TouchableOpacity
-          style={[styles.optionCard, styles.goOption]}
-          onPress={() => onRoleSelect("TRAVELLER")}
+          style={[styles.optionCard, styles.option]}
+          onPress={() => onDocumentTypeSelect("DRIVING LICENCE")}
         >
           <View style={styles.iconContainer}>
             <Ionicons 
-              name="people" 
-              size={45} 
-              color={Theme.colors.primary} 
+              name="card" 
+              size={30} 
+              color={Theme.colors.white} 
             />
           </View>
           <View style={styles.optionContent}>
-            <Text style={styles.goOptionTitle}>Barukh Go</Text>
-            <Text style={styles.goOptionSubtitle}>Transport items or people on your trip</Text>
+            <Text style={styles.optionTitle}>Driving Licence</Text>
           </View>
           <Text style={styles.arrow}>›</Text>
         </TouchableOpacity>
+      
+
+      <TouchableOpacity
+          style={[styles.optionCard, styles.option]}
+          onPress={() => onDocumentTypeSelect("ID")}
+        >
+          <View style={styles.iconContainer}>
+            <Ionicons 
+              name="id-card" 
+              size={30} 
+              color={Theme.colors.white} 
+            />
+          </View>
+          <View style={styles.optionContent}>
+            <Text style={styles.optionTitle}>National ID</Text>
+            
+          </View>
+           <Text style={styles.arrow}>›</Text>
+         
+        </TouchableOpacity>
       </View>
 
-      <Text style={styles.footerText}>
-        *You can switch roles at any time in the profile settings
-      </Text>
-    </View>
+      </View>
   );
 };
 
@@ -65,10 +81,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Theme.colors.white,
     paddingHorizontal: Theme.screenPadding.horizontal,
-    paddingTop: Theme.spacing.xxxxxxxl + Theme.spacing.xl,
+    paddingTop: Theme.spacing.xxxxl + Theme.spacing.xl,
     paddingBottom: Theme.spacing.xxl,
   },
-  welcomeText: {
+  verifyText: {
+    ...Theme.typography.h1,
+    fontSize: 32,
+    fontWeight: "500",
+    textAlign: "center",
+    
+  },
+  accountText: {
     ...Theme.typography.h1,
     fontSize: 32,
     fontWeight: "700",
@@ -101,32 +124,23 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  sendOption: {
+  option: {
     backgroundColor: Theme.colors.primary,
-  },
-  goOption: {
-    backgroundColor: Theme.colors.white,
   },
   iconContainer: {
     marginRight: Theme.spacing.md,
   },
   icon: {
     width: Theme.spacing.xxl,
-    height: Theme.spacing.xxl,
+    height: Theme.spacing.xxxl,
     borderRadius: Theme.spacing.lg,
     justifyContent: "center",
     alignItems: "center",
   },
   logo: {
-      width: 45,
-      height: 45,
+      width: 30,
+      height: 30,
     },
-  sendIcon: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-  },
-  goIcon: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-  },
   iconText: {
     fontSize: 24,
   },
@@ -134,46 +148,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   optionTitle: {
-    ...Theme.typography.h2,
+    ...Theme.typography.body,
     fontWeight: "600",
     color: Theme.colors.text.light,
     marginBottom: Theme.spacing.xs,
   },
-  sendOptionTitle:{
-    ...Theme.typography.h2,
-    fontWeight: "600",
-    color: Theme.colors.yellow,
-    marginBottom: Theme.spacing.xs,
-  },
-  goOptionTitle:{
-    ...Theme.typography.h2,
-    fontWeight: "600",
-    color: Theme.colors.primary,
-    marginBottom: Theme.spacing.xs,
-  },
-  optionSubtitle: {
-    ...Theme.typography.caption,
-    color: "rgba(255, 255, 255, 0.8)",
-  },
-  sendOptionSubtitle:{
-     ...Theme.typography.caption,
-     color: Theme.colors.white,
-  },
-  goOptionSubtitle:{
-    ...Theme.typography.caption,
-    color: Theme.colors.text.gray,
-  },
   arrow: {
-    fontSize: 24,
+    fontSize: 28,
     color:Theme.colors.yellow,
     fontWeight: "300",
   },
-  footerText: {
-    fontSize: 12,
-    color: Theme.colors.text.gray,
-    textAlign: "center",
-    marginTop: "auto",
-  },
 });
 
-export default RoleSelectionForm;
+export default DocumentTypeSelectionForm;
