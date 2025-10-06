@@ -10,7 +10,7 @@ const OnboardingStyles = StyleSheet.create({
     flex: 1,
     justifyContent: "flex-end",
     alignItems: "center",
-    paddingBottom: 80,
+    paddingBottom: 40,
   },
   content: {
     alignItems: "center",
@@ -18,28 +18,27 @@ const OnboardingStyles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   logo: {
-    width: 45,
-    height: 45,
+    width: 32,
+    height: 32,
     marginBottom: 20,
   },
   title: {
     fontSize: 35,
-    fontFamily: "inter",
+    fontFamily: "Inter-Medium",
     color: "white",
-    fontWeight: "500",
     textAlign: "center",
     marginBottom: 20,
     lineHeight: 42,
   },
   subtitle: {
     fontSize: 13,
-    fontFamily: "inter",
+    fontFamily: "Inter",
     color: "#C0C0C0",
     textAlign: "center",
     lineHeight: 22,
   },
   footer: {
-    paddingBottom: 40,
+    paddingBottom: 50,
   },
   dotsContainer: {
     flexDirection: "row",
@@ -70,7 +69,7 @@ const OnboardingStyles = StyleSheet.create({
   },
   nextButtonText: {
     color: "#0A5D52",
-    fontFamily: "inter",
+    fontFamily: "Inter",
     fontSize: 16,
     fontWeight: "bold",
     textAlign: "center",
@@ -84,7 +83,7 @@ const OnboardingStyles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     textAlign: "center",
-    fontFamily: "inter",
+    fontFamily: "Inter",
   },
 });
 

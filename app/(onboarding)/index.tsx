@@ -48,10 +48,14 @@ const OnboardingScreen = () => {
 
   const handleNext = () => {
     if (currentStep < onboardingData.length - 1) {
-      flatListRef.current?.scrollToIndex({
-        index: currentStep + 1,
-        animated: true,
-      });
+      const nextIndex = currentStep + 1;
+      setTimeout(() => {
+        flatListRef.current?.scrollToOffset({
+          offset: nextIndex * width,
+          animated: true,
+        });
+        setCurrentStep(nextIndex);
+      }, 50);
     } else {
       router.replace("/(auth)");
     }
