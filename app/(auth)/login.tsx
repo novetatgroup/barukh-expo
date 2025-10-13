@@ -18,7 +18,8 @@ const LoginScreen = () => {
         text1: 'Sending OTP...',
         text2: 'Please wait',
         position: 'top',
-        visibilityTime: 3000,
+        visibilityTime: 2000,
+        autoHide: true,
       });
 
       const response = await fetch(`${apiUrl}/users/login/request-otp`, {
@@ -55,16 +56,17 @@ const LoginScreen = () => {
           Toast.show({
             type: 'success',
             text1: 'OTP Sent!',
-            text2: `Verofication code has been sent to the email`,
+            text2: `Verification code has been sent to the email`,
             position: 'top',
-            visibilityTime: 4000,
+            visibilityTime: 2500,
+            autoHide:true,
           });
           
           console.log("Success toast displayed");
         
           setTimeout(() => {
             router.push("/(auth)/verifyOtpScreen");
-          }, 2500);
+          }, 1800);
           
         }, 300);
 
@@ -78,7 +80,7 @@ const LoginScreen = () => {
             text1: 'Failed to Send OTP',
             text2: typeof data === "string" ? data : data.message || 'Please try again',
             position: 'top',
-            visibilityTime: 4000,
+            visibilityTime: 3000,
           });
         }, 300);
       }

@@ -120,7 +120,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             <FooterLink
               text="Already have an account?"
               linkText="Sign in"
-              onLinkPress={() => router.push("/(auth)/login")}
+              //TODO: return the appropriate route to login 
+              onLinkPress={() => router.push("/(KYC)/DocuTypeScreen")}
             />
           </View>
         )}

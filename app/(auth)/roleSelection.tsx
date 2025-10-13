@@ -10,7 +10,8 @@ const RoleSelectionScreen = () => {
 
   const handleRoleUpdate = async (role: "TRAVELLER" | "SENDER") => {
     try {
-      const response = await authFetch(`${apiUrl}/users/update/me`, {
+      //TODO: MOdify and place the actual route 
+      const response = await authFetch(`${apiUrl}/users/role`, {
         method: "PATCH",
         body: JSON.stringify({ role }),
       });
