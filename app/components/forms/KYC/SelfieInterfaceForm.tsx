@@ -9,20 +9,22 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Theme from "@/app/constants/Theme";
+import KYCContext from "@/app/context/KYCContext";
+import CustomButton from "../../ui/CustomButton";
 
 type SelfieCaptureFormProps = {
-  selfieImage: string | null;
   isLoading: boolean;
   onTakePhoto: () => void;
   onSubmit: () => void;
 }
 
 const SelfieCaptureForm: React.FC<SelfieCaptureFormProps> = ({
-  selfieImage,
   isLoading,
   onTakePhoto,
   onSubmit,
 }) => {
+
+  const { selfieImage } = React.useContext(KYCContext);
 
   const renderSelfieSection = (
     imageUri: string | null,
@@ -77,6 +79,17 @@ const SelfieCaptureForm: React.FC<SelfieCaptureFormProps> = ({
       <View style={styles.content}>
         {renderSelfieSection(selfieImage)}
     
+      </View>
+
+      <View>
+        <CustomButton 
+            title="Submit Selfie" 
+            variant="primary" 
+            style={styles.submitButton} 
+            onPress={onSubmit}
+            disabled={isLoading}
+          />
+
       </View>
     </View>
   );
@@ -134,6 +147,11 @@ const styles = StyleSheet.create({
     color: Theme.colors.text.dark,
     marginLeft: Theme.spacing.sm,
   },
+
+    submitButton: {
+      height: Theme.components.button.height,
+      borderRadius: Theme.borderRadius.sm + Theme.spacing.xs, 
+    },
 
   imageContainer: {
     width: "100%",

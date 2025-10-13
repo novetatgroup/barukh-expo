@@ -1,18 +1,25 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Dimensions,Image, StyleSheet, Text, View, TextInput, TouchableOpacity, Keyboard } from "react-native";
-import CustomButton from "../ui/CustomButton";
-import Theme from "../../constants/Theme";
-
+import {
+  Dimensions, 
+  Image, 
+  StyleSheet, 
+  Text, 
+  View, 
+  TextInput, 
+  TouchableOpacity, 
+} from "react-native";
+import CustomButton from "../../ui/CustomButton";
+import Theme from "@/app/constants/Theme";
 
 type VerifyOtpFormProps = {
   onSubmit: (data: { otp: string }) => void;
 };
 
-  const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get('window');
 
 const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({ onSubmit }) => {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [countdown, setCountdown] = useState(60); 
+  const [countdown, setCountdown] = useState(60);
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
 
@@ -33,11 +40,11 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({ onSubmit }) => {
 
   const handleOtpChange = (text: string, index: number) => {
     const newOtp = [...otp];
-    
+
     if (text.length > 0) {
-      newOtp[index] = text.slice(-1); 
+      newOtp[index] = text.slice(-1);
       setOtp(newOtp);
-      
+
       if (index < 5 && text.length > 0) {
         inputRefs.current[index + 1]?.focus();
       }
@@ -72,15 +79,15 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({ onSubmit }) => {
 
   return (
     <View style={styles.container}>
-      <Image 
-        source={require('../../../assets/images/logo.png')} 
-        style={styles.logo} 
+      <Image
+        source={require('../../../../assets/images/logo.png')}
+        style={styles.logo}
       />
 
-      <Image 
-                    source={require('../../../assets/images/grid.png')} 
-                    style={styles.grid} 
-                  />
+      <Image
+        source={require('../../../../assets/images/grid.png')}
+        style={styles.grid}
+      />
 
 
       <Text style={styles.title}>Verify Your Code</Text>
@@ -109,7 +116,7 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({ onSubmit }) => {
         </View>
 
         <View style={styles.resendContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={handleResendCode}
             disabled={countdown > 0}
           >
@@ -145,10 +152,10 @@ const styles = StyleSheet.create({
     marginLeft: Theme.screenPadding.horizontal,
     marginTop: Theme.spacing.xxxxxxxl,
   },
-  grid:{
+  grid: {
     width: 350,
     height: 350,
-    position: 'absolute', 
+    position: 'absolute',
     top: 0,
     left: screenWidth - 240 - 10,
   },

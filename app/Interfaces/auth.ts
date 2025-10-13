@@ -1,4 +1,4 @@
-export interface OtpResponse {
+export default interface OtpResponse {
   sessionId: string;
   attemptsLeft: number;
   expiresAt: string;
@@ -6,7 +6,7 @@ export interface OtpResponse {
 }
 
 
-export interface VerifyOtpResponse {
+export default interface VerifyOtpResponse {
   accessToken: string;
   refreshToken: string;
   message?: string;

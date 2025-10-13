@@ -1,10 +1,10 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import LoginForm from "../components/forms/LoginForm";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import Toast from "react-native-toast-message";
-import { router } from "expo-router";
-import { OtpResponse } from "../Interfaces/auth";
+import LoginForm from "../components/forms/auth/LoginForm";
+import OtpResponse from "../Interfaces/auth";
 
 const LoginScreen = () => {
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
@@ -21,8 +21,11 @@ const LoginScreen = () => {
         visibilityTime: 2000,
         autoHide: true,
       });
+      
+      console.log("API URL:", apiUrl);
+      console.log("Final endpoint:", `${apiUrl}/auth/login/request-otp`);
 
-      const response = await fetch(`${apiUrl}/users/login/request-otp`, {
+      const response = await fetch(`${apiUrl}/auth/login/request-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

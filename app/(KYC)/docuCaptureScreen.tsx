@@ -1,17 +1,18 @@
-import React, { useState } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import React, { useContext, useState } from "react";
+import { View, StyleSheet, Alert, Image } from "react-native";
 import * as ImagePicker from 'expo-image-picker';
-import DocumentCaptureForm from "../components/forms/DocuCaptureForm";
+import DocumentCaptureForm from "../components/forms/KYC/DocuCaptureForm";
 import { router, useLocalSearchParams } from "expo-router";
-import Toast from "react-native-toast-message";
+import convertImageUriToBase64 from "@/app/utils/imageConverter";
+import KYCContext from "@/app/context/KYCContext";
 
 export default function DocumentCaptureScreen() {
   const { type } = useLocalSearchParams<{ type?: string }>();
-  const [frontImage, setFrontImage] = useState<string | null>(null);
-  const [backImage, setBackImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  //TODO: add an api call 
+  const {addImage} = useContext(KYCContext);
+
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
   const requestCameraPermission = async (): Promise<boolean> => {
     try {
@@ -47,27 +48,30 @@ export default function DocumentCaptureScreen() {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ['images'],
         allowsEditing: true,
-        aspect: [16, 10], 
+        aspect: [16, 10],
         quality: 0.8,
-        base64: false, 
-        exif: false, 
+        exif: false,
       });
 
       if (!result.canceled && result.assets && result.assets[0]) {
         const imageUri = result.assets[0].uri;
-        
-        if (side === "front") {
-          setFrontImage(imageUri);
-        } else {
-          setBackImage(imageUri);
-        }
 
-        console.log(`${side} side captured:`, imageUri);
+        const base64Image = await convertImageUriToBase64({ imageUri });
+
+
+        const image_type_id = side === "front" ? 3 : 7;
+        addImage({
+          image_type_id: image_type_id,
+          image: base64Image,
+        });
+
+        //console.log(`${side} side captured:`, base64Image);
       }
+
     } catch (error) {
       console.error('Camera error:', error);
       Alert.alert(
-        'Camera Error', 
+        'Camera Error',
         'Unable to access camera. Please try again.',
         [{ text: 'OK' }]
       );
@@ -78,36 +82,12 @@ export default function DocumentCaptureScreen() {
 
 
   const handleSubmit = () => {
-    if (!frontImage || !backImage) {
-      Alert.alert(
-        "Incomplete Submission", 
-        "Please capture both the front and back sides of your ID before submitting."
-      );
-      return;
-    }
-    
-    console.log('Submitting documents:', { frontImage, backImage });
-    
-    Toast.show({
-    type: 'success',
-    text1: 'Documents submitted successfully!',
-    position: 'top',
-    autoHide: true,  
-    visibilityTime: 2000,
-    
-  });
-
-  setTimeout(() => {
-      router.push("/(KYC)/SelfieCaptureScreen");
-    }, 1500);
+    router.push("/(KYC)/selfieCaptureScreen");
   };
 
   return (
     <View style={styles.container}>
       <DocumentCaptureForm
-        documentType={type as "PASSPORT" | "ID" | "DRIVING LICENCE"} 
-        frontImage={frontImage}
-        backImage={backImage}
         isLoading={isLoading}
         onTakePhoto={handleTakePhoto}
         onSubmit={handleSubmit}

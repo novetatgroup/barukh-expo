@@ -10,6 +10,7 @@ export default function AuthLayout() {
       <Stack.Screen name="verifyOtpScreen" options={{headerShown: false}} />
       <Stack.Screen name="roleSelection" options={{headerShown: false}} />
       
+      
 
     </Stack>
   );

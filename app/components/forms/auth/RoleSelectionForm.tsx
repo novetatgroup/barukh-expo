@@ -1,6 +1,11 @@
 import Theme from "@/app/constants/Theme";
-import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useState } from "react";
+import { 
+  StyleSheet, 
+  Text, 
+  TouchableOpacity, 
+  View 
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 interface RoleSelectionFormProps {
@@ -8,6 +13,13 @@ interface RoleSelectionFormProps {
 }
 
 const RoleSelectionForm: React.FC<RoleSelectionFormProps> = ({ onRoleSelect }) => {
+  const [selectedRole, setSelectedRole] = useState<"TRAVELLER" | "SENDER" | null>(null);
+
+  const handleRoleSelect = (role: "TRAVELLER" | "SENDER") => {
+    setSelectedRole(role);
+    onRoleSelect(role);
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.welcomeText}>Welcome!</Text>
@@ -16,40 +28,76 @@ const RoleSelectionForm: React.FC<RoleSelectionFormProps> = ({ onRoleSelect }) =
       <View style={styles.optionsContainer}>
        
         <TouchableOpacity
-          style={[styles.optionCard, styles.sendOption]}
-          onPress={() => onRoleSelect("SENDER")}
+          style={[
+            styles.optionCard, 
+            selectedRole === "SENDER" ? styles.selectedOption : styles.option
+          ]}
+          onPress={() => handleRoleSelect("SENDER")}
         >
           <View style={styles.iconContainer}>
             <Ionicons 
               name="cube" 
-              size={45} 
-              color={Theme.colors.white} 
+              size={25} 
+              color={selectedRole === "SENDER" ? Theme.colors.white : Theme.colors.primary}
             />
           </View>
           <View style={styles.optionContent}>
-            <Text style={styles.sendOptionTitle}>Barukh Send</Text>
-            <Text style={styles.sendOptionSubtitle}>Package Received by Traveller</Text>
+            <Text style={[
+              styles.optionTitle,
+              selectedRole === "SENDER" && styles.selectedText
+            ]}>
+              Barukh Send
+            </Text>
+            <Text style={[
+              styles.optionSubtitle,
+              selectedRole === "SENDER" && styles.selectedSubtitle
+            ]}>
+              Package Received by Traveller
+            </Text>
           </View>
-          <Text style={styles.arrow}>›</Text>
+          <Text style={[
+            styles.arrow,
+            selectedRole === "SENDER" && styles.selectedText
+          ]}>
+            ›
+          </Text>
         </TouchableOpacity>
 
 
         <TouchableOpacity
-          style={[styles.optionCard, styles.goOption]}
-          onPress={() => onRoleSelect("TRAVELLER")}
+          style={[
+            styles.optionCard, 
+            selectedRole === "TRAVELLER" ? styles.selectedOption : styles.option
+          ]}
+          onPress={() => handleRoleSelect("TRAVELLER")}
         >
           <View style={styles.iconContainer}>
             <Ionicons 
               name="people" 
-              size={45} 
-              color={Theme.colors.primary} 
+              size={25} 
+              color={selectedRole === "TRAVELLER" ? Theme.colors.white : Theme.colors.primary}
             />
           </View>
           <View style={styles.optionContent}>
-            <Text style={styles.goOptionTitle}>Barukh Go</Text>
-            <Text style={styles.goOptionSubtitle}>Transport items or people on your trip</Text>
+            <Text style={[
+              styles.optionTitle,
+              selectedRole === "TRAVELLER" && styles.selectedText
+            ]}>
+              Barukh Go
+            </Text>
+            <Text style={[
+              styles.optionSubtitle,
+              selectedRole === "TRAVELLER" && styles.selectedSubtitle
+            ]}>
+              Transport items or people on your trip
+            </Text>
           </View>
-          <Text style={styles.arrow}>›</Text>
+          <Text style={[
+            styles.arrow,
+            selectedRole === "TRAVELLER" && styles.selectedText
+          ]}>
+            ›
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -101,11 +149,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  sendOption: {
-    backgroundColor: Theme.colors.primary,
-  },
-  goOption: {
+  option: {
     backgroundColor: Theme.colors.white,
+  },
+  selectedOption: {
+    backgroundColor: Theme.colors.primary,
   },
   iconContainer: {
     marginRight: Theme.spacing.md,
@@ -118,9 +166,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logo: {
-      width: 45,
-      height: 45,
-    },
+    width: 45,
+    height: 45,
+  },
   sendIcon: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
   },
@@ -136,36 +184,22 @@ const styles = StyleSheet.create({
   optionTitle: {
     ...Theme.typography.h2,
     fontWeight: "600",
-    color: Theme.colors.text.light,
-    marginBottom: Theme.spacing.xs,
-  },
-  sendOptionTitle:{
-    ...Theme.typography.h2,
-    fontWeight: "600",
-    color: Theme.colors.yellow,
-    marginBottom: Theme.spacing.xs,
-  },
-  goOptionTitle:{
-    ...Theme.typography.h2,
-    fontWeight: "600",
     color: Theme.colors.primary,
     marginBottom: Theme.spacing.xs,
   },
   optionSubtitle: {
     ...Theme.typography.caption,
-    color: "rgba(255, 255, 255, 0.8)",
-  },
-  sendOptionSubtitle:{
-     ...Theme.typography.caption,
-     color: Theme.colors.white,
-  },
-  goOptionSubtitle:{
-    ...Theme.typography.caption,
     color: Theme.colors.text.gray,
+  },
+  selectedText: {
+    color: Theme.colors.white,
+  },
+  selectedSubtitle: {
+    color: "rgba(255, 255, 255, 0.8)",
   },
   arrow: {
     fontSize: 24,
-    color:Theme.colors.yellow,
+    color: Theme.colors.primary,
     fontWeight: "300",
   },
   footerText: {
