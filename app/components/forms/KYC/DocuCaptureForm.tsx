@@ -1,27 +1,30 @@
-import React from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import React, { useContext } from "react";
+import { 
+  View, 
+  Text, 
+  Image, 
+  TouchableOpacity, 
+  StyleSheet, 
+  ActivityIndicator 
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import CustomButton from "../ui/CustomButton";
+import CustomButton from "../../ui/CustomButton";
 import Theme from "@/app/constants/Theme";
-
+import KYCContext from "@/app/context/KYCContext";
 
 type DocumentCaptureFormProps = {
-  documentType: "PASSPORT" | "ID" | "DRIVING LICENCE";
-  frontImage: string | null;
-  backImage: string | null;
   isLoading: boolean;
   onTakePhoto: (side: "front" | "back") => void;
   onSubmit: () => void;
 }
 
 const DocumentCaptureForm: React.FC<DocumentCaptureFormProps> = ({
-  documentType,
-  frontImage,
-  backImage,
   isLoading,
   onTakePhoto,
   onSubmit,
 }) => {
+
+  const { frontImage, backImage } = useContext(KYCContext);
 
   const renderDocumentSection = (
     label: string, 
@@ -72,7 +75,7 @@ const DocumentCaptureForm: React.FC<DocumentCaptureFormProps> = ({
       <View style={styles.header}>
         <Text style={styles.verifyText}>Verify</Text>
         <Text style={styles.accountText}>Account</Text>
-        <Text style={styles.subText}>Take a photo of your {documentType}</Text>
+        <Text style={styles.subText}>Take a photo of your Document</Text>
       </View>
 
       <View style={styles.content}>
@@ -206,22 +209,6 @@ const styles = StyleSheet.create({
     marginTop: Theme.spacing.xs,
     textAlign: "center",
   },
-
- 
-  retakeButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: Theme.spacing.sm + Theme.spacing.xs,
-    paddingVertical: Theme.spacing.sm,
-  },
-  retakeButtonText: {
-    ...Theme.typography.body,
-    color: Theme.colors.blue,
-    marginLeft: Theme.spacing.xs,
-    fontWeight: "500",
-  },
-
 
   footer: {
     padding: Theme.screenPadding.horizontal,

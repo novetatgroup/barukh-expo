@@ -1,13 +1,14 @@
 import React from 'react';
 import { TextInput, StyleSheet, TextInputProps } from 'react-native';
+import Theme from '@/app/constants/Theme';
 
 interface CustomTextInputProps extends TextInputProps {
-  variant?: 'default' | 'rounded';
+  variant?: 'default' | 'rounded' | 'compact';
 }
 
 const CustomTextInput: React.FC<CustomTextInputProps> = ({ 
   style, 
-  variant = 'default',
+  variant = 'rounded',
   placeholderTextColor = "#999",
   ...props 
 }) => {
@@ -16,9 +17,9 @@ const CustomTextInput: React.FC<CustomTextInputProps> = ({
       style={[
         styles.base,
         variant === 'rounded' && styles.rounded,
+        variant === 'compact' && styles.compact,
         style
       ]}
-      
       placeholderTextColor={placeholderTextColor}
       {...props}
     />
@@ -28,17 +29,26 @@ const CustomTextInput: React.FC<CustomTextInputProps> = ({
 const styles = StyleSheet.create({
   base: {
     borderWidth: 1,
-    borderColor: "#C0C0C0",
-    borderRadius: 25,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    borderColor: Theme.colors.text.border,
+    borderRadius: 8,       
+    paddingHorizontal: 10,
+    paddingVertical: 8,    
     fontSize: 14,
-    marginBottom: 20,
+    marginBottom: 16,
     backgroundColor: '#fff',
-    color: '#000',
+    color: Theme.colors.text.lightGray,
   },
   rounded: {
-    borderRadius: 20,
+    borderRadius: 25,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  compact: {
+    borderRadius: 7,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    fontSize: 13,
+
   },
 });
 

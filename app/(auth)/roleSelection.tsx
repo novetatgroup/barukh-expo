@@ -1,17 +1,26 @@
 import React, { useContext } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Text } from "react-native";
 import Toast from "react-native-toast-message";
 import { AuthContext } from "../context/AuthContext";
-import RoleSelectionForm from "../components/forms/RoleSelectionForm";
+import RoleSelectionForm from "../components/forms/auth/RoleSelectionForm";
+import { router } from "expo-router";
 
 const RoleSelectionScreen = () => {
-  const { authFetch } = useContext(AuthContext);
+  const { authFetch, userId } = useContext(AuthContext);
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
+  // if (userId === null) {
+  //   return (
+  //     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+  //       <Text>Loading user data...</Text>
+  //     </View>
+  //   );
+  // }
+
   const handleRoleUpdate = async (role: "TRAVELLER" | "SENDER") => {
+
     try {
-      //TODO: MOdify and place the actual route 
-      const response = await authFetch(`${apiUrl}/users/role`, {
+      const response = await authFetch(`${apiUrl}/users/update/${userId}`, {
         method: "PATCH",
         body: JSON.stringify({ role }),
       });
@@ -21,8 +30,12 @@ const RoleSelectionScreen = () => {
       if (response.ok) {
         Toast.show({
           type: "success",
-          text1: `You are now a ${role === "TRAVELLER" ? "Traveller" : "Sender"}!`,
+          text2: `You are now a ${role === "TRAVELLER" ? "Traveller" : "Sender"}!`,
         });
+        setTimeout(() => {
+          router.push("/(KYC)/KYCLanding");
+        }, 1200);
+      
       } else {
         Toast.show({
           type: "error",
@@ -37,6 +50,7 @@ const RoleSelectionScreen = () => {
         text2: "Try again later",
       });
     }
+
   };
 
   return (

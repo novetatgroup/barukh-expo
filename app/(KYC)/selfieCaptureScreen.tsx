@@ -1,13 +1,25 @@
-import React, { useState } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import React, { useState, useContext } from "react";
+import { 
+  View, 
+  StyleSheet, 
+  Alert, 
+  Image 
+} from "react-native";
 import * as ImagePicker from 'expo-image-picker';
-import SelfieCaptureForm from "../components/forms/SelfieInterfaceForm";
+import SelfieCaptureForm from "../components/forms/KYC/SelfieInterfaceForm";
+import { router } from "expo-router";
+import Toast from "react-native-toast-message";
+import AuthContext from "@/app/context/AuthContext";
+import convertImageUriToBase64 from "@/app/utils/imageConverter";
+import KYCContext from "@/app/context/KYCContext";
 
 export default function SelfieCaptureScreen() {
-  const [selfieImage, setSelfieImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  //TODO: add an api call 
+  const { authFetch } = useContext(AuthContext);
+  const { addImage, buildPayload } = useContext(KYCContext);
+
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
   const requestCameraPermission = async (): Promise<boolean> => {
     try {
@@ -51,13 +63,23 @@ export default function SelfieCaptureScreen() {
 
       if (!result.canceled && result.assets && result.assets[0]) {
         const imageUri = result.assets[0].uri;
-        setSelfieImage(imageUri);
-        console.log('Selfie captured:', imageUri);
+
+
+        const base64Image = await convertImageUriToBase64({ imageUri });
+
+        const image_type_id = 2;
+        addImage({
+          image_type_id: image_type_id,
+          image: base64Image,
+        })
+
+
+
       }
     } catch (error) {
       console.error('Camera error:', error);
       Alert.alert(
-        'Camera Error', 
+        'Camera Error',
         'Unable to access camera. Please try again.',
         [{ text: 'OK' }]
       );
@@ -66,33 +88,49 @@ export default function SelfieCaptureScreen() {
     }
   };
 
-  const handleSubmit = () => {
-    if (!selfieImage) {
-      Alert.alert(
-        "No Selfie", 
-        "Please take a selfie before submitting."
-      );
-      return;
+  const handleSubmit = async () => {
+    try {
+
+      const payload = buildPayload();
+      console.log("Submitting payload:", JSON.stringify(payload, null, 2));
+
+
+      const response = await authFetch(`${apiUrl}/smile-id/document-verification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response) throw new Error("Failed to upload documents");
+
+      Toast.show({
+        type: 'success',
+        text1: 'Documents submitted successfully!',
+        position: 'top',
+        autoHide: true,
+        visibilityTime: 2000,
+      });
+
+      setTimeout(() => {
+        router.push("/(KYC)/selfieCaptureScreen");
+      }, 1500);
+    } catch (error) {
+      console.error('Submission error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Submission failed',
+        text2: 'Please try again later.',
+        position: 'top',
+        autoHide: true,
+        visibilityTime: 2000,
+      });
+
     }
-    
-    console.log('Submitting selfie:', { selfieImage });
-    
-    Alert.alert(
-      "Success", 
-      "Selfie submitted successfully!",
-      [{ 
-        text: "OK", 
-        onPress: () => {
-          console.log("Navigate to next screen");
-        }
-      }]
-    );
   };
 
   return (
     <View style={styles.container}>
       <SelfieCaptureForm
-        selfieImage={selfieImage}
         isLoading={isLoading}
         onTakePhoto={handleTakePhoto}
         onSubmit={handleSubmit}

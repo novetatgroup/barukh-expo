@@ -7,7 +7,10 @@ export const Theme = {
     error: '#FF0000',
     yellow: '#CDFF00',
     success: '#4CAF50', 
-    blue: '#007AFF',    
+    blue: '#007AFF',
+    green:'#32BF5B',
+    lightPurple:'#7856D3',
+    lightGreen:'#D4EDDA',
     text: {
       light: '#FFFFFF',
       dark: '#000000',
@@ -67,10 +70,10 @@ export const Theme = {
       height: 50,
     },
     input: {
-      marginBottom: 16,
+      marginBottom: 12,
     },
     imageContainer: {
-      height: 180,        
+      height: 200,        
       borderWidth: 2,
       borderRadius: 16,
     }

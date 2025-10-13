@@ -1,58 +1,58 @@
-import React, { useState } from 'react';
-import { Dimensions,Image, StyleSheet, Text, View } from 'react-native';
-import {Formik} from 'formik';
-import * as Yup from 'yup';
-import CustomButton from '../ui/CustomButton';
-import CustomTextInput from '../ui/CustomTextInput';
-import Divider from '../ui/Divider';
-import FooterLink from '../ui/FooterLink';
-import Theme from '../../constants/Theme';
 import { router } from "expo-router";
+import { Formik } from 'formik';
+import React from 'react';
+import { 
+  Dimensions, 
+  Image, 
+  StyleSheet, 
+  Text, 
+  View 
+} from 'react-native';
+import * as Yup from 'yup';
+import Theme from '@/app/constants/Theme';
+import CustomButton from '../../ui/CustomButton';
+import CustomTextInput from '../../ui/CustomTextInput';
+import Divider from '../../ui/Divider';
+import FooterLink from '../../ui/FooterLink';
 
-type RegisterFormProps = {
-  onSubmit: (data: { name: string; email: string }) => void;
+type LoginFormProps = {
+  onSubmit: (data: { email: string }) => void;
   onGooglePress: () => void;
   onLoginPress: () => void;
 
 };
-
 const { width: screenWidth } = Dimensions.get('window');
 
 const ValidationSchema = Yup.object().shape({
-  name: Yup.string()
-  
-    .min(2, 'Name is too short!')
-    .max(50, 'Name is too long!')
-    .required('Name is required'),
   email: Yup.string()
     .email('Invalid email address')
     .required('Email is required'),
 })
 
 const initialValues = {
-  name :'',
   email: '',
 
 }
 
-const RegisterForm: React.FC<RegisterFormProps> = ({ 
+const LoginForm: React.FC<LoginFormProps> = ({ 
   onSubmit, 
   onGooglePress, 
+  onLoginPress 
 }) => {
 
   return (
     <View style={styles.container}>
       <Image 
-        source={require('../../../assets/images/logo.png')} 
+        source={require('../../../../assets/images/logo.png')} 
         style={styles.logo} 
       />
 
       <Image 
-              source={require('../../../assets/images/grid.png')} 
-              style={styles.grid} 
-            />
-
-      <Text style={styles.title}>Let's   Get   Started</Text>
+        source={require('../../../../assets/images/grid.png')} 
+        style={styles.grid} 
+      />
+      
+      <Text style={styles.title}>Welcome Back</Text>
       <Text style={styles.subtitle}>Login to continue your journey.</Text>
       
       <Formik
@@ -64,6 +64,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           setSubmitting(false);
         }}>
        {({
+        
           values,
           errors,
           touched,
@@ -75,17 +76,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           dirty
         }) => (
           <View style={styles.formContainer}>
-            <Text style={styles.inputLabel}>Name</Text>
-            <CustomTextInput
-              placeholder="Enter your name"
-              value={values.name}
-              onChangeText={handleChange('name')}
-              onBlur={handleBlur('name')}
-              autoCapitalize="words"
-            />
-            {errors.name && touched.name && (
-              <Text style={styles.errorText}>{errors.name}</Text>
-            )}
 
             <Text style={styles.inputLabel}>Email</Text>
             <CustomTextInput
@@ -118,11 +108,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             />
 
             <FooterLink
-              text="Already have an account?"
-              linkText="Sign in"
-              //TODO: return the appropriate route to login 
-              onLinkPress={() => router.push("/(KYC)/DocuTypeScreen")}
+              text="Don't have an account?"
+              linkText="Sign up"
+               onLinkPress={() => router.push("/(auth)/register")}
             />
+
           </View>
         )}
       </Formik>
@@ -141,8 +131,9 @@ const styles = StyleSheet.create({
     height: 45,
     marginLeft: Theme.screenPadding.horizontal,
     marginTop: Theme.spacing.xxxxxxxl,
+
   },
-   grid:{
+  grid:{
     width: 350,
     height: 350,
     position: 'absolute', 
@@ -183,9 +174,8 @@ const styles = StyleSheet.create({
   errorText: {
     color: Theme.colors.error,
     fontSize: 12,
-    marginTop: 4,
     marginBottom: 8,
   },
 });
 
-export default RegisterForm;
+export default LoginForm;
