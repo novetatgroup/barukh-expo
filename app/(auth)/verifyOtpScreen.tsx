@@ -15,19 +15,20 @@ const VerifyOtpScreen = () => {
     Toast.hide();
   }, []);
 
-  const handleVerifyOtp = async ({ otp }: { otp: string }) => {
-    try {
-      const sessionId = await AsyncStorage.getItem("sessionId");
+	const handleVerifyOtp = async ({ otp }: { otp: string }) => {
+		try {
+			const sessionId = await AsyncStorage.getItem("sessionId");
+			const otpFlow = await AsyncStorage.getItem("otpFlow");
 
-      if (!sessionId) {
-        Toast.show({
-          type: "error",
-          text1: "Please try again.",
-          position: "top",
-          visibilityTime: 2500,
-        });
-        return;
-      }
+			if (!sessionId || !otpFlow) {
+				Toast.show({
+					type: "error",
+					text1: "Please try again.",
+					position: "top",
+					visibilityTime: 2500,
+				});
+				return;
+			}
 
       const response = await fetch(`${apiUrl}/auth/verify-otp`, {
         method: "POST",
@@ -39,7 +40,7 @@ const VerifyOtpScreen = () => {
         credentials: "include",
       });
 
-      const data = await response.json();
+			const data = await response.json();
 
       if (response.ok && data.accessToken) {
         const decoded = jwtDecode<{ userId: string | number }>(data.accessToken);
@@ -51,47 +52,49 @@ const VerifyOtpScreen = () => {
           userId: decoded.userId ? Number(decoded.userId) : null,
         });
 
-        Toast.show({
-          type: "success",
-          text1: "OTP verified successfully!",
-          position: "top",
-          visibilityTime: 2000,
-        });
+				Toast.show({
+					type: "success",
+					text1: "OTP verified successfully!",
+					position: "top",
+					visibilityTime: 2000,
+				});
 
-        setTimeout(() => {
-          router.push("/roleSelection");
-        }, 1500);
+				setTimeout(() => {
+					router.push("/roleSelection");
+				}, 1500);
 
-        return;
-      }
+				return;
+			}
 
-      const errorMessage =
-        data?.message || data?.error || "Verification failed. Please try again.";
+			const errorMessage =
+				data?.message ||
+				data?.error ||
+				"Verification failed. Please try again.";
 
-      Toast.show({
-        type: "error",
-        text1: "Verification Failed",
-        text2: errorMessage,
-        position: "top",
-        visibilityTime: 3000,
-      });
-    } catch (error) {
-      console.error("API error:", error);
-      Toast.show({
-        type: "error",
-        text1: "Network error",
-        text2: "Please try again later.",
-        position: "top",
-        visibilityTime: 3000,
-      });
-    }
-  };
+			Toast.show({
+				type: "error",
+				text1: "Verification Failed",
+				text2: errorMessage,
+				position: "top",
+				visibilityTime: 3000,
+			});
+		} catch (error) {
+			console.error("API error:", error);
+			Toast.show({
+				type: "error",
+				text1: "Network error",
+				text2: "Please try again later.",
+				position: "top",
+				visibilityTime: 3000,
+			});
+		}
+	};
 
-  return (
-    <View style={styles.container}>
-      <VerifyOtpForm onSubmit={handleVerifyOtp} />
-    </View>
-  );
+	return (
+		<View style={styles.container}>
+			<VerifyOtpForm onSubmit={handleVerifyOtp} />
+		</View>
+	);
 };
 
 const styles = StyleSheet.create({

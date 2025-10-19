@@ -1,10 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import React, { use, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Linking, StyleSheet, View } from "react-native";
 import Toast from "react-native-toast-message";
 import RegisterForm from "../components/forms/auth/RegisterForm";
 import OtpResponse from "../Interfaces/auth";
+import * as WebBrowser from "expo-web-browser";
+
+WebBrowser.maybeCompleteAuthSession();
 
 interface RegisterScreenProps {
   activeTab: "login" | "register";
@@ -12,62 +15,8 @@ interface RegisterScreenProps {
 }
 
 const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-
-	useEffect(() => {
-		const handleGoogleRedirect = async (event: { url: string }) => {
-			const url = event.url;
-
-			const extractedCode = url.match(/code=([^&]+)/);
-			const code = extractedCode ? extractedCode[1] : null;
-
-			if (code) {
-				exchangeCodeForToken(code);
-			} else {
-				console.log("No code found in the URL");
-			}
-		};
-
-		const exchangeCodeForToken = async (code: string) => {
-			try {
-				Toast.show({
-					type: "info",
-					text1: "Processing Google Sign-In...",
-					text2: "Please wait",
-					position: "top",
-					visibilityTime: 3000,
-				});
-
-				const response = await fetch(
-					`${apiUrl}/users/auth/google-oauth`,
-					{
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({ code }),
-					}
-				);
-			} catch (error) {
-				console.error(
-					"Error during Google OAuth token exchange:",
-					error
-				);
-				Toast.show({
-					type: "error",
-					text1: "Google Sign-In Failed",
-					text2: "Please try again",
-					position: "top",
-					visibilityTime: 4000,
-				});
-			}
-		};
-		const subscription = Linking.addEventListener(
-			"url",
-			handleGoogleRedirect
-		);
-		return () => {
-			subscription.remove();
-		};
-	}, []);
+  // const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+	const apiUrl = "http://192.168.100.22:8001";
 
 	const handleRegister = async ({
 		name,
@@ -181,8 +130,63 @@ const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
 	};
 
 	const handleGoogleOauth = async () => {
-		const response = await fetch(`${apiUrl}/users/auth/Google-OAuth`);
-		Linking.openURL(response.url);
+		try {
+			Toast.show({
+				type: "info",
+				text1: "Redirecting to Google...",
+				position: "top",
+				visibilityTime: 3000,
+			});
+
+			const response = await fetch(`${apiUrl}/auth/consentScreen`);
+
+			if (!response.ok) {
+				throw new Error("Failed to get consent screen URL");
+			}
+			const data = await response.json();
+			const consentUrl = data.url;
+
+			if (!consentUrl) {
+				throw new Error("No URL");
+			}
+
+			const result = await WebBrowser.openAuthSessionAsync(
+				consentUrl,
+				"barukhexpo://auth"
+			);
+
+			if (result.type === "success") {
+				const url = result.url;
+				const urlObj = new URL(url);
+
+				const accessToken = urlObj.searchParams.get("accessToken");
+
+				if (accessToken) {
+					await AsyncStorage.setItem("accessToken", accessToken);
+					Toast.hide();
+					setTimeout(() => {
+						router.push("/roleSelection");
+					}, 1500);
+				}
+				console.log("Google OAuth successful");
+			} else if (result.type === "cancel") {
+				Toast.show({
+					type: "info",
+					text1: "Google Sign-In Cancelled",
+					position: "top",
+					visibilityTime: 2000,
+				});
+			}
+		} catch (error) {
+			Toast.show({
+				type: "error",
+				text1: "Google OAuth Error",
+				text2: "Unable to proceed with Google Sign-In",
+				position: "top",
+				visibilityTime: 3000,
+			});
+			console.error("Google OAuth error:", error);
+		}
 	};
 
   return (
