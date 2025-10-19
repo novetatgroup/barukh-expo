@@ -3,6 +3,8 @@ import { Text, View } from "react-native";
 import "./global.css";
 
 export default function Index() {
+console.log("API URL:", process.env.EXPO_PUBLIC_API_URL);
+
   return (
     <View className="flex-1 items-center justify-center bg-white">
       <Text className="text-5xl font-bold text-primary">Welcome!</Text>
