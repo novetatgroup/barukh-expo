@@ -6,12 +6,12 @@ import Toast from "react-native-toast-message";
 import { router } from "expo-router";
 import OtpResponse from "../Interfaces/auth";
 import * as WebBrowser from "expo-web-browser";
+import * as AuthSession from "expo-auth-session";
 
 WebBrowser.maybeCompleteAuthSession();
 
 const RegisterScreen = () => {
-	// const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-	const apiUrl = "http://192.168.100.22:8001";
+	const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
 	const handleRegister = async ({
 		name,
@@ -134,34 +134,51 @@ const RegisterScreen = () => {
 			});
 
 			const response = await fetch(`${apiUrl}/auth/consentScreen`);
+			console.log("URL to open consent screen:", response.status);
 
 			if (!response.ok) {
 				throw new Error("Failed to get consent screen URL");
 			}
 			const data = await response.json();
 			const consentUrl = data.url;
+			console.log("Consent URL:", consentUrl);
 
 			if (!consentUrl) {
 				throw new Error("No URL");
 			}
 
+			console.log("Opening WebBrowser for Google OAuth");
+			const redirecturi = AuthSession.makeRedirectUri();
+			console.log("Redirect URI:", redirecturi);
 			const result = await WebBrowser.openAuthSessionAsync(
 				consentUrl,
-				"barukhexpo://auth"
+				redirecturi
 			);
+			console.log("WebBrowser result:", result);
 
 			if (result.type === "success") {
-				const url = result.url;
-				const urlObj = new URL(url);
+				console.log("Received redirect URL:", result.url);
+				try {
+					const url = result.url;
+					const urlObj = new URL(url);
 
-				const accessToken = urlObj.searchParams.get("accessToken");
+					const accessToken = urlObj.searchParams.get("accessToken");
+					console.log("Extracted access token:", accessToken);
 
-				if (accessToken) {
-					await AsyncStorage.setItem("accessToken", accessToken);
-					Toast.hide();
-					setTimeout(() => {
-						router.push("/roleSelection");
-					}, 1500);
+					if (accessToken) {
+						await AsyncStorage.setItem("accessToken", accessToken);
+						Toast.hide();
+						setTimeout(() => {
+							router.push("/roleSelection");
+						}, 1500);
+					}
+				} catch (error) {
+					Toast.show({
+						type: "info",
+						text1: "Error occured with google redirect",
+						position: "top",
+						visibilityTime: 200,
+					});
 				}
 				console.log("Google OAuth successful");
 			} else if (result.type === "cancel") {

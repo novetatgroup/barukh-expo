@@ -9,8 +9,7 @@ import { jwtDecode } from "jwt-decode";
 
 const VerifyOtpScreen = () => {
 	const { setAuthState } = useContext(AuthContext);
-	// const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-	const apiUrl = "http://192.168.100.22:8001";
+	const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
 	const handleVerifyOtp = async ({ otp }: { otp: string }) => {
 		try {
