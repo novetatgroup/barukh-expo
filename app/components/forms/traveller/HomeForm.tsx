@@ -2,20 +2,24 @@ import Theme from "@/app/constants/Theme";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import CustomButton from "../../ui/CustomButton";
+import { router } from "expo-router";
 
 type Shipment = {
   id: string;
-  name: string;
   item: string;
+  trackingNumber: string;
+  status: string;
+  progress: string;
 };
 
 type HomeFormProps = {
   userName: string;
   onActivateTravelerMode: () => void;
   onNavigateToDetails?: () => void;
-  onNavigateToShipments: () => void;
+  onNavigateToShipments: (tab?: string) => void;
   isTravelerActive: boolean;
-  shipments: Shipment[]; 
+  shipments: Shipment[];
 };
 
 const HomeForm: React.FC<HomeFormProps> = ({
@@ -45,7 +49,13 @@ const HomeForm: React.FC<HomeFormProps> = ({
             styles.toggleButton,
             { backgroundColor: isTravelerActive ? Theme.colors.green : Theme.colors.primary },
           ]}
-          onPress={onActivateTravelerMode}
+          onPress={() => {
+            if (!isTravelerActive) {
+              router.push("/(KYC)/KYCLanding");
+            } else {
+              onActivateTravelerMode();
+            }
+          }}
         >
           <View style={styles.dotRow}>
             <View
@@ -62,7 +72,7 @@ const HomeForm: React.FC<HomeFormProps> = ({
 
         <View style={styles.shipmentHeader}>
           <Text style={styles.shipmentTitle}>My Shipments</Text>
-          <TouchableOpacity onPress={onNavigateToShipments}>
+          <TouchableOpacity onPress={() => onNavigateToShipments("Shipments")}>
             <Text style={styles.seeAll}>See All</Text>
           </TouchableOpacity>
         </View>
@@ -73,11 +83,31 @@ const HomeForm: React.FC<HomeFormProps> = ({
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <View style={styles.shipmentCard}>
-                <Ionicons name="cube-outline" size={20} color={Theme.colors.primary} />
-                <View style={{ marginLeft: 10 }}>
-                  <Text style={styles.shipmentName}>{item.name}</Text>
+                <Ionicons name="cube-outline" size={25} color={Theme.colors.yellow} />
+                <View style={{ marginLeft: 10, marginRight: 20, flex: 1 }}>
+                  <Text style={styles.trackingNumber}>{item.trackingNumber}</Text>
                   <Text style={styles.shipmentItem}>{item.item}</Text>
                 </View>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    item.progress === "Delivered"
+                      ? styles.delivered
+                      : styles.inTransit,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.statusText,
+                      item.progress === "Delivered"
+                        ? styles.deliveredText
+                        : styles.inTransitText,
+                    ]}
+                  >
+                    {item.progress === "Delivered" ? "Delivered" : "In Transit"}
+                  </Text>
+                </View>
+
               </View>
             )}
           />
@@ -86,11 +116,17 @@ const HomeForm: React.FC<HomeFormProps> = ({
         )}
       </View>
 
+      <CustomButton
+        title='Start Trip'
+        style={styles.startTripButton}
+        onPress={() => router.push('/(traveller)/packageUpload')}
+      />
+
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navItem}>
           <Ionicons name="home" size={22} color={Theme.colors.primary} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={onNavigateToShipments}>
+        <TouchableOpacity style={styles.navItem} onPress={() => onNavigateToShipments("Matched Request")}>
           <Ionicons name="briefcase-outline" size={22} color={Theme.colors.text.gray} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem}>
@@ -173,9 +209,38 @@ const styles = StyleSheet.create({
     ...Theme.typography.h2,
     color: Theme.colors.text.dark,
   },
+  statusBadge: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  inTransit: {
+    backgroundColor: Theme.colors.lightPurple,
+  },
+  delivered: {
+    backgroundColor: Theme.colors.lightGreen,
+  },
+  inTransitText: {
+    color: Theme.colors.white,
+    fontWeight: "400",
+  },
+  deliveredText: {
+    color: "#155724",
+    fontWeight: "400",
+  },
+  statusText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
   seeAll: {
     color: Theme.colors.text.dark,
     fontSize: 14,
+  },
+  trackingNumber: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: Theme.colors.black,
+    marginBottom: Theme.spacing.xs,
   },
   shipmentCard: {
     flexDirection: "row",
@@ -219,6 +284,10 @@ const styles = StyleSheet.create({
   navItem: {
     padding: Theme.spacing.sm,
   },
+  startTripButton: {
+    height: Theme.components.button.height,
+    marginBottom: Theme.spacing.xl,
+  }
 });
 
 export default HomeForm;

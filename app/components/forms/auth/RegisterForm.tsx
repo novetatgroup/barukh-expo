@@ -1,4 +1,4 @@
-import React from 'react';
+import React,{useState} from 'react';
 import { 
   Dimensions,
   Image,
@@ -46,6 +46,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   onGooglePress, 
 }) => {
 
+  const [loading, setLoading] = useState(false);
+
   return (
     <View style={styles.container}>
       <Image 
@@ -64,10 +66,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       <Formik
       initialValues={initialValues}
       validationSchema={ValidationSchema}
-      onSubmit={(values, { setSubmitting }) => {
-          console.log("Submitting from RegisterForm:", values);
-          onSubmit(values);
-          setSubmitting(false);
+      onSubmit={async (values) => {
+          try {
+            setLoading(true);
+            await onSubmit(values);
+          } catch (error) {
+            console.error("Error sending OTP:", error);
+          } finally {
+            setLoading(false);
+          }
         }}>
        {({
           values,
@@ -112,6 +119,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
               onPress={() => handleSubmit()}
               style={styles.otpButton}
               disabled={isSubmitting || !isValid || !dirty}
+              loading={loading}
             />
 
             <Divider text="Or" />
@@ -126,8 +134,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             <FooterLink
               text="Already have an account?"
               linkText="Sign in"
-              //TODO: return the appropriate route to login 
-              onLinkPress={() => router.push("/(traveller)/home")}
+              onLinkPress={() => router.push("/(auth)/login")}
             />
           </View>
         )}

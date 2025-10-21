@@ -1,14 +1,20 @@
 import Theme from "@/app/constants/Theme";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useContext } from "react";
-import { 
-  StyleSheet, 
-  Text, 
-  TouchableOpacity, 
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
   View
- } from "react-native";
-import { Picker } from "@react-native-picker/picker";
+} from "react-native";
 import KYCContext from "@/app/context/KYCContext";
+import CustomDropdown from "../../ui/Dropdown";
+
+const countries = [
+  'KENYA',
+  'UGANDA',
+  'TANZANIA',
+]
 
 type DocumentTypeSelectionFormProps = {
   onDocumentTypeSelect: (
@@ -43,25 +49,19 @@ const DocumentTypeSelectionForm: React.FC<DocumentTypeSelectionFormProps> = ({ o
 
       <View style={styles.countrySection}>
         <Text style={styles.sectionTitle}>Select Country of Issue</Text>
-        <View style={styles.countryPickerContainer}>
-          <Picker
-            selectedValue={country || ""}
-            onValueChange={handleCountryChange}
-            style={styles.dropdown}
-          >
-            <Picker.Item label="Select a country..." value="" />
-            <Picker.Item label="Kenya" value="KENYA" />
-            <Picker.Item label="Tanzania" value="TANZANIA" />
-            <Picker.Item label="Uganda" value="UGANDA" />
-          </Picker>
-        </View>
+        <CustomDropdown
+          value={country || ""}
+          options={countries}
+          placeholder="Select a country..."
+          onSelect={(value) => handleCountryChange(value)}
+        />
       </View>
 
       <View style={styles.documentSection}>
         <Text style={styles.sectionTitle}>Select Document Type</Text>
         <View style={styles.optionsContainer}>
           <TouchableOpacity
-          activeOpacity={1} 
+            activeOpacity={1}
             style={[
               styles.optionCard,
               styles.option,
@@ -89,7 +89,7 @@ const DocumentTypeSelectionForm: React.FC<DocumentTypeSelectionFormProps> = ({ o
           </TouchableOpacity>
 
           <TouchableOpacity
-          activeOpacity={1} 
+            activeOpacity={1}
             style={[
               styles.optionCard,
               styles.option,
@@ -113,7 +113,7 @@ const DocumentTypeSelectionForm: React.FC<DocumentTypeSelectionFormProps> = ({ o
           </TouchableOpacity>
 
           <TouchableOpacity
-          activeOpacity={1} 
+            activeOpacity={1}
             style={[
               styles.optionCard,
               styles.option,

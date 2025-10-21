@@ -74,7 +74,7 @@ const TravellerDetailsForm: React.FC<TravellerDetailsFormProps> = ({
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [tempDate, setTempDate] = useState(new Date());
     const [tempTime, setTempTime] = useState(new Date());
-    
+    const [loading, setLoading] = useState(false);
 
     return (
         <View style={styles.container}>
@@ -84,10 +84,16 @@ const TravellerDetailsForm: React.FC<TravellerDetailsFormProps> = ({
             <Formik
                 initialValues={initialValues}
                 validationSchema={ValidationSchema}
-                onSubmit={(values, { setSubmitting }) => {
-                    console.log("Submitting from Traveller Details Form:", values);
-                    onSubmit(values);
-                    setSubmitting(false);
+                onSubmit={async (values) => {
+                    try {
+                        setLoading(true);
+                        await onSubmit(values);
+                    } catch (error) {
+                        console.error("Error Submitting traveller details:", error);
+                    } finally {
+                        setLoading(false);
+                    }
+
                 }}>{({
                     values,
                     errors,
@@ -202,34 +208,35 @@ const TravellerDetailsForm: React.FC<TravellerDetailsFormProps> = ({
                         {touched.modeOfTravel && errors.modeOfTravel && (
                             <Text style={styles.errorText}>{errors.modeOfTravel}</Text>
                         )}
-                        
-                        <Text style={styles.inputLabel}>Space Available</Text>
-                         <View style={styles.rowContainer}>
-                        <CustomDropdown
-                            value={values.spaceType}
-                            options={spaceTypes}
-                            onSelect={(value) => setFieldValue('spaceType', value)}
-                            placeholder="Select space type"
-                            showLabel={false}
-                        
-                        />
-                        {touched.spaceType && errors.spaceType && (
-                            <Text style={styles.errorText}>{errors.spaceType}</Text>
-                        )}
 
-                        
-                        <CustomTextInput
-                            value={values.spaceNumber}
-                            onChangeText={handleChange('spaceNumber')}
-                            variant="compact"
-                            placeholder='No of spaces'
-                            style={{ width: 120, height: 50, marginLeft: 20 }}
-                        />
+                        <Text style={styles.inputLabel}>Space Available</Text>
+                        <View style={styles.rowContainer}>
+                            <CustomDropdown
+                                value={values.spaceType}
+                                options={spaceTypes}
+                                onSelect={(value) => setFieldValue('spaceType', value)}
+                                placeholder="Select space type"
+                                showLabel={false}
+
+                            />
+                            {touched.spaceType && errors.spaceType && (
+                                <Text style={styles.errorText}>{errors.spaceType}</Text>
+                            )}
+
+
+                            <CustomTextInput
+                                value={values.spaceNumber}
+                                onChangeText={handleChange('spaceNumber')}
+                                variant="compact"
+                                placeholder='No of spaces'
+                                style={{ width: 120, height: 50, marginLeft: 20 }}
+                            />
                         </View>
 
                         <CustomButton
                             title="Continue"
                             variant="primary"
+                            loading={loading}
                             onPress={() => handleSubmit()}
                         />
                     </View>
@@ -246,7 +253,7 @@ const styles = StyleSheet.create({
     },
     formContainer: {
         flex: 1,
-        paddingTop:Theme.spacing.lg,
+        paddingTop: Theme.spacing.lg,
         paddingHorizontal: Theme.spacing.xl,
     },
     title: {

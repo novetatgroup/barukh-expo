@@ -1,10 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View } from "react-native";
+import { useLocalSearchParams } from "expo-router"; 
 import MyShipmentsForm from "../components/forms/traveller/MyShipments";
-import { Shipment } from '../types/shipments';
+import { Shipment } from "../types/shipments";
 
 const MyShipmentsScreen = () => {
+  const { tab } = useLocalSearchParams();
+
   const [activeTab, setActiveTab] = useState("Matched Request");
+
+  useEffect(() => {
+    if (tab && typeof tab === "string") {
+      setActiveTab(tab);
+    }
+  }, [tab]);
 
   const sampleShipments: Shipment[] = [
     {
@@ -31,7 +40,6 @@ const MyShipmentsScreen = () => {
       avatar: "https://i.pravatar.cc/100?img=3",
       status: "Matched Request",
     },
-
     {
       id: "4",
       name: "Emily Watson",
@@ -48,34 +56,33 @@ const MyShipmentsScreen = () => {
       avatar: "https://i.pravatar.cc/100?img=5",
       status: "Accepted",
     },
-
     {
       id: "6",
       trackingNumber: "#SK1058",
       item: "MacBook Pro",
       status: "Shipments",
-      progress:"In Transit"
+      progress: "In Transit",
     },
     {
       id: "7",
       trackingNumber: "#SK1059",
       item: "iPhone 15 Pro",
       status: "Shipments",
-      progress:"Delivered"
+      progress: "Delivered",
     },
     {
       id: "8",
       trackingNumber: "#BK1624",
       item: "Sony Camera",
       status: "Shipments",
-      progress:"In Transit"
+      progress: "In Transit",
     },
     {
       id: "9",
       trackingNumber: "#SK2001",
       item: "iPad Air",
       status: "Shipments",
-      progress:"Delivered"
+      progress: "Delivered",
     },
   ];
 

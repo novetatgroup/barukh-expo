@@ -1,14 +1,17 @@
 import React, { createContext, useState, useEffect, ReactNode } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 import { jwtDecode } from "jwt-decode";
+import { deleteSecureItem, getSecureItem, saveSecureItem } from "../utils/secureStorage";
 
 interface DecodedToken {
   userId: string | number;
   issuer?: string;
+  exp: string;
 }
 
 interface AuthState {
   accessToken: string | null;
+  refreshToken:string | null;
   isAuthenticated: boolean;
   userId: number | null;
 }
@@ -25,6 +28,7 @@ export const AuthContext = createContext<AuthContextType>({} as AuthContextType)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [authState, setAuthStateInternal] = useState<AuthState>({
     accessToken: null,
+    refreshToken: null,
     isAuthenticated: false,
     userId: null,
   });
@@ -34,14 +38,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const loadAuthState = async () => {
       try {
-        const token = await AsyncStorage.getItem("accessToken");
+        const token = await getSecureItem("accessToken");
+        console.log("Loaded token Secure Store:", token);
+
         if (token) {
           const decoded: DecodedToken = jwtDecode(token);
-          setAuthStateInternal({
-            accessToken: token,
-            isAuthenticated: true,
-            userId: decoded.userId ? Number(decoded.userId) : null,
-          });
+          const currentTime = Date.now() / 1000;
+
+          if (decoded.exp && Number(decoded.exp) < currentTime) {
+            console.log("Token expired — removing from storage.");
+            await deleteSecureItem("accessToken");
+            setAuthStateInternal({
+              accessToken: null,
+              refreshToken: null,
+              isAuthenticated: false,
+              userId: null,
+            });
+          } else {
+            setAuthStateInternal({
+              accessToken: token,
+              refreshToken: null,
+              isAuthenticated: true,
+              userId: decoded.userId ? Number(decoded.userId) : null,
+            });
+          }
         }
       } catch (err) {
         console.error("Failed to load auth state:", err);
@@ -56,39 +76,60 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const setAuthState = async (state: AuthState) => {
     setAuthStateInternal(state);
     if (state.accessToken) {
-      await AsyncStorage.setItem("accessToken", state.accessToken);
+      await saveSecureItem("accessToken", state.accessToken);
+      console.log("Access token saved to Secure Store:", state.accessToken);
+    }
+    if (state.refreshToken){
+      await saveSecureItem("refreshToken", state.refreshToken);
+      console.log("Refresh token saved to Secure Store:", state.refreshToken);
     }
   };
 
-const authFetch = async (url: string, options: RequestInit = {}) => {
-  let existingHeaders: Record<string, string> = {};
+  const authFetch = async (url: string, options: RequestInit = {}) => {
+    const token = authState.accessToken;
+    if (!token) throw new Error("No access token found");
 
-  if (options.headers instanceof Headers) {
-    existingHeaders = Object.fromEntries(options.headers.entries());
-  } else if (Array.isArray(options.headers)) {
-    existingHeaders = Object.fromEntries(options.headers);
-  } else if (typeof options.headers === "object" && options.headers !== null) {
-    existingHeaders = options.headers as Record<string, string>;
-  }
+    const decoded: DecodedToken = jwtDecode(token);
+    const currentTime = Date.now() / 1000;
 
-  const headers: Record<string, string> = {
-    ...existingHeaders,
-    Authorization: `Bearer ${authState.accessToken}`, 
-    "Content-Type": "application/json",
+    if (decoded.exp && Number(decoded.exp) < currentTime) {
+      console.log("Access token expired — logging out.");
+      await logout();
+      throw new Error("Token expired");
+    }
+
+    let existingHeaders: Record<string, string> = {};
+
+    if (options.headers instanceof Headers) {
+      existingHeaders = Object.fromEntries(options.headers.entries());
+    } else if (Array.isArray(options.headers)) {
+      existingHeaders = Object.fromEntries(options.headers);
+    } else if (typeof options.headers === "object" && options.headers !== null) {
+      existingHeaders = options.headers as Record<string, string>;
+    }
+
+    const headers: Record<string, string> = {
+      ...existingHeaders,
+      Authorization: `Bearer ${authState.accessToken}`,
+      "Content-Type": "application/json",
+    };
+
+    return fetch(url, { ...options, headers });
   };
-
-  return fetch(url, { ...options, headers });
-};
 
   const logout = async () => {
-    await AsyncStorage.removeItem("accessToken");
-    setAuthStateInternal({
-      accessToken: null,
-      isAuthenticated: false,
-      userId: null,
-    });
-  };
+  await deleteSecureItem("accessToken");
+  await deleteSecureItem("refreshToken");
 
+  setAuthStateInternal({
+    accessToken: null,
+    refreshToken: null,
+    isAuthenticated: false,
+    userId: null,
+  });
+
+  router.replace("/(onboarding)"); // force navigation reset
+};
   return (
     <AuthContext.Provider
       value={{ ...authState, setAuthState, logout, authFetch, loading }}

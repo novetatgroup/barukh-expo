@@ -58,6 +58,7 @@ export default function OnboardingScreen() {
             style={{ width: 45, height: 45,marginTop: 325,marginBottom: 20 }}
             resizeMode="contain"
           />
+          
         )}
         <Text style={styles.title}>{currentData.title}</Text>
         <Text style={styles.subtitle}>{currentData.subtitle}</Text>

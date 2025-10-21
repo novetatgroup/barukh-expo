@@ -1,4 +1,4 @@
-import React from "react";
+import React,{useState} from "react";
 import Theme from "@/app/constants/Theme";
 import { Formik } from "formik";
 import * as Yup from "yup";
@@ -6,6 +6,7 @@ import {
     View,
     StyleSheet,
     Text,
+    TouchableOpacity
 } from "react-native";
 import CustomButton from "../../ui/CustomButton";
 import CustomDropdown from "../../ui/Dropdown";
@@ -32,11 +33,12 @@ const ValidationSchema = Yup.object().shape({
 });
 
 const initialValues = {
-    allowedCategories: [],
+    allowedCategories: [] as string[],
     weight: "",
     height: "",
     width: "",
-}
+};
+
 
 const allowedCategoriesOptions = [
     'Electronics',
@@ -52,6 +54,8 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
     onSubmit,
 
 }) => {
+    const [loading, setLoading] = useState(false);
+
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Traveller Details</Text>
@@ -60,10 +64,15 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
             <Formik
                 initialValues={{ ...initialValues, ...initialValues }}
                 validationSchema={ValidationSchema}
-                onSubmit={(values, { setSubmitting }) => {
-                    console.log("Submitting from Traveller Details Form:", values);
-                    onSubmit(values);
-                    setSubmitting(false);
+                onSubmit={async (values) => {
+                    try {
+                        setLoading(true);
+                        await onSubmit(values);
+                    } catch (error) {
+                        console.error("Error Submitting package details:", error);
+                    } finally {
+                        setLoading(false);
+                    }
                 }}>{({
                     values,
                     handleChange,
@@ -73,19 +82,37 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
                     <View style={styles.formContainer}>
                         <Text style={styles.inputLabel}>Allowed Categories</Text>
                         <CustomDropdown
-                            value={values.allowedCategories}
-                            options={allowedCategoriesOptions}
-                            onSelect={(value) => setFieldValue('allowedCategories', [value])} 
+                            value=""
+                            options={allowedCategoriesOptions.filter(opt => !values.allowedCategories.includes(opt))}
+                            onSelect={(value) => {
+                                const updated = [...values.allowedCategories, value];
+                                setFieldValue('allowedCategories', updated);
+                            }}
                             placeholder="Select category"
-                            showLabel={false}
                         />
+
+                        <View style={styles.tagsContainer}>
+                            {values.allowedCategories.map((category) => (
+                                <View key={category} style={styles.tag}>
+                                    <Text style={styles.tagText}>{category}</Text>
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            const filtered = values.allowedCategories.filter((c) => c !== category);
+                                            setFieldValue('allowedCategories', filtered);
+                                        }}
+                                    >
+                                        <Text style={styles.tagRemove}>×</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            ))}
+                        </View>
 
                         <Text style={styles.inputLabel}>Weight</Text>
                         <CustomTextInput
                             value={values.weight}
                             onChangeText={handleChange('weight')}
                             variant="compact"
-                            style={{ width: 120,  }}
+                            style={{ width: 120, }}
                         />
 
 
@@ -96,7 +123,7 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
                                 variant="compact"
                                 placeholder="Height"
                                 onChangeText={handleChange('height')}
-                                style={{ width: 120, marginRight:20}}
+                                style={{ width: 120, marginRight: 20 }}
 
                             />
                             <CustomTextInput
@@ -111,6 +138,7 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
                         <CustomButton
                             title="Update Status"
                             variant="primary"
+                            loading={loading}
                             onPress={() => handleSubmit()}
                         />
                     </View>
@@ -132,7 +160,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: Theme.colors.white,
     },
- title: {
+    title: {
         ...Theme.typography.h2,
         color: Theme.colors.black,
         textAlign: 'center',
@@ -141,9 +169,9 @@ const styles = StyleSheet.create({
     },
     formContainer: {
         flex: 1,
-        paddingTop:Theme.spacing.lg,
+        paddingTop: Theme.spacing.lg,
         paddingHorizontal: Theme.spacing.lg,
-      
+
     },
     inputLabel: {
         ...Theme.typography.caption,
@@ -156,6 +184,31 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         marginBottom: Theme.spacing.md,
     },
+    tagsContainer: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        marginVertical: 8,
+        gap: 8,
+    },
+    tag: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: Theme.colors.green,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 20,
+    },
+    tagText: {
+        color: "#fff",
+        fontSize: 13,
+        marginRight: 6,
+    },
+    tagRemove: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "600",
+    },
+
 })
 
 export default PackageDetailsForm;

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { Ionicons } from "@expo/vector-icons";
 import Theme from "@/app/constants/Theme";
 import CustomButton from "../../ui/CustomButton";
+import { router } from "expo-router";
 
 interface shipmentDetailsFormProps {
     itemId: string;
@@ -91,7 +92,8 @@ const ShipmentDetailsForm: React.FC<shipmentDetailsFormProps> = ({
                     </View>
 
                     <CustomButton
-                        title='Update Order'
+                        title='Start Trip'
+                        onPress={() =>router.push("/(traveller)/packageUpload")}
                    
                     />
                 </View>

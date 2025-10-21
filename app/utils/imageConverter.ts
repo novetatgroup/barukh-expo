@@ -1,20 +1,20 @@
-// import { File } from "expo-file-system";
+import { File } from "expo-file-system";
 
-// type ImageconverterProps = {
-//   imageUri: string;
-// };
+type ImageconverterProps = {
+  imageUri: string;
+};
 
-// const convertImageUriToBase64 = async ({ imageUri }: ImageconverterProps): Promise<string | null> => {
-//   try {
-//     const file = new File(imageUri);
+const convertImageUriToBase64 = async ({ imageUri }: ImageconverterProps): Promise<string | null> => {
+  try {
+    const file = new File(imageUri);
 
-//     const base64code: string = await file.base64();
+    const base64code: string = await file.base64();
 
-//     return `data:image/jpeg;base64,${base64code}`;
-//   } catch (error) {
-//     console.error("Error converting image to Base64 with modern API:", error);
-//     return null;
-//   }
-// };
+    return `data:image/jpeg;base64,${base64code}`;
+  } catch (error) {
+    console.error("Error converting image to Base64 with modern API:", error);
+    return null;
+  }
+};
 
-// export default convertImageUriToBase64;
+export default convertImageUriToBase64;

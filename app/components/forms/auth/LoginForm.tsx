@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { Formik } from 'formik';
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Dimensions, 
   Image, 
@@ -19,26 +19,27 @@ type LoginFormProps = {
   onSubmit: (data: { email: string }) => void;
   onGooglePress: () => void;
   onLoginPress: () => void;
-
 };
+
 const { width: screenWidth } = Dimensions.get('window');
 
 const ValidationSchema = Yup.object().shape({
   email: Yup.string()
     .email('Invalid email address')
     .required('Email is required'),
-})
+});
 
 const initialValues = {
   email: '',
-
-}
+};
 
 const LoginForm: React.FC<LoginFormProps> = ({ 
   onSubmit, 
   onGooglePress, 
   onLoginPress 
 }) => {
+
+  const [loading, setLoading] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -56,15 +57,20 @@ const LoginForm: React.FC<LoginFormProps> = ({
       <Text style={styles.subtitle}>Login to continue your journey.</Text>
       
       <Formik
-      initialValues={initialValues}
-      validationSchema={ValidationSchema}
-      onSubmit={(values, { setSubmitting }) => {
-          console.log("Submitting from RegisterForm:", values);
-          onSubmit(values);
-          setSubmitting(false);
-        }}>
-       {({
-        
+        initialValues={initialValues}
+        validationSchema={ValidationSchema}
+        onSubmit={async (values) => {
+          try {
+            setLoading(true);
+            await onSubmit(values);
+          } catch (error) {
+            console.error("Error sending OTP:", error);
+          } finally {
+            setLoading(false);
+          }
+        }}
+      >
+        {({
           values,
           errors,
           touched,
@@ -95,7 +101,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
               variant="primary"
               onPress={() => handleSubmit()}
               style={styles.otpButton}
-              disabled={isSubmitting || !isValid || !dirty}
+              disabled={loading || isSubmitting || !isValid || !dirty}
+              loading={loading}
             />
 
             <Divider text="Or" />
@@ -110,7 +117,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
             <FooterLink
               text="Don't have an account?"
               linkText="Sign up"
-               onLinkPress={() => router.push("/(auth)/register")}
+              onLinkPress={() => router.push("/(auth)/register")}
             />
 
           </View>
@@ -119,7 +126,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
     </View>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
@@ -131,9 +137,8 @@ const styles = StyleSheet.create({
     height: 45,
     marginLeft: Theme.screenPadding.horizontal,
     marginTop: Theme.spacing.xxxxxxxl,
-
   },
-  grid:{
+  grid: {
     width: 350,
     height: 350,
     position: 'absolute', 

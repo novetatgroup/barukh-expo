@@ -3,7 +3,6 @@ import {
   View, 
   StyleSheet, 
   Alert, 
-  Image 
 } from "react-native";
 import * as ImagePicker from 'expo-image-picker';
 import SelfieCaptureForm from "../components/forms/KYC/SelfieInterfaceForm";
@@ -112,7 +111,7 @@ export default function SelfieCaptureScreen() {
       });
 
       setTimeout(() => {
-        router.push("/(KYC)/selfieCaptureScreen");
+        router.push("/(traveller)/travellerDetails");
       }, 1500);
     } catch (error) {
       console.error('Submission error:', error);

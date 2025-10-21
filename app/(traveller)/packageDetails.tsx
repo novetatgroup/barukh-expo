@@ -22,10 +22,13 @@ const PackageDetailsScreen = () => {
       text1: 'Status Updated Successfully',
       text2: 'You will be notified when a match is found',
       position: 'top',
-      visibilityTime: 6000,
+      visibilityTime: 2000,
     });
     
-    router.push("/(traveller)/home" );
+    setTimeout(() =>{
+       router.push("/(traveller)/home" );
+    }, 600);
+   
   };
 
   return (
