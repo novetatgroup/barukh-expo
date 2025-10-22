@@ -153,7 +153,9 @@ const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
 			}
 
 			console.log("Opening WebBrowser for Google OAuth");
-			const redirecturi = AuthSession.makeRedirectUri();
+			const redirecturi = AuthSession.makeRedirectUri({
+				scheme: "barukhexpo",
+			});
 			console.log("Redirect URI:", redirecturi);
 			const result = await WebBrowser.openAuthSessionAsync(
 				consentUrl,
