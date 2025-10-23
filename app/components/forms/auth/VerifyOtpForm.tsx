@@ -8,13 +8,6 @@ import {
 	View,
 	TextInput,
 	TouchableOpacity,
-	Dimensions,
-	Image,
-	StyleSheet,
-	Text,
-	View,
-	TextInput,
-	TouchableOpacity,
 } from "react-native";
 import CustomButton from "../../ui/CustomButton";
 import AuthScreenLayout from "./AuthScreenLayout";
@@ -32,7 +25,7 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({
 }) => {
 	const [otp, setOtp] = useState(["", "", "", "", "", ""]);
 	const [countdown, setCountdown] = useState(60);
-  const [loading, setLoading] = useState(false);
+	const [loading, setLoading] = useState(false);
 	const inputRefs = useRef<(TextInput | null)[]>([]);
 
 	useEffect(() => {
@@ -79,13 +72,13 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({
 
 		if (otpString.length !== 6) return;
 
-    try {
+		try {
 			setLoading(true);
-      await onSubmit({ otp: otpString });
-    } catch (error) {
-      console.error("Error verifying OTP:", error);
-    } finally {
-      setLoading(false);
+			await onSubmit({ otp: otpString });
+		} catch (error) {
+			console.error("Error verifying OTP:", error);
+		} finally {
+			setLoading(false);
 		}
 	};
 
@@ -98,58 +91,66 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({
 
 	const isOtpComplete = otp.every((digit) => digit !== "");
 
-  return (
-    <AuthScreenLayout
-      title="Verify Your Code"
-      subtitle="We've sent a 6-digit code to your email"
-    >
-      <View style={styles.content}>
-        <View style={styles.otpContainer}>
-          {otp.map((digit, index) => (
-            <TextInput
-              key={index}
-              ref={(ref) => { inputRefs.current[index] = ref; }}
-              style={[
-                styles.otpInput,
-                digit ? styles.otpInputFilled : styles.otpInputEmpty
-              ]}
-              value={digit}
-              onChangeText={(text) => handleOtpChange(text, index)}
-              onKeyPress={(event) => handleKeyPress(event, index)}
-              keyboardType="number-pad"
-              maxLength={1}
-              selectTextOnFocus
-              textAlign="center"
-              autoFocus={index === 0}
-            />
-          ))}
-        </View>
+	return (
+		<AuthScreenLayout
+			title="Verify Your Code"
+			subtitle="We've sent a 6-digit code to your email">
+			<View style={styles.content}>
+				<View style={styles.otpContainer}>
+					{otp.map((digit, index) => (
+						<TextInput
+							key={index}
+							ref={(ref) => {
+								inputRefs.current[index] = ref;
+							}}
+							style={[
+								styles.otpInput,
+								digit
+									? styles.otpInputFilled
+									: styles.otpInputEmpty,
+							]}
+							value={digit}
+							onChangeText={(text) =>
+								handleOtpChange(text, index)
+							}
+							onKeyPress={(event) => handleKeyPress(event, index)}
+							keyboardType="number-pad"
+							maxLength={1}
+							selectTextOnFocus
+							textAlign="center"
+							autoFocus={index === 0}
+						/>
+					))}
+				</View>
 
-        <View style={styles.resendContainer}>
-          <TouchableOpacity
-            onPress={handleResendCode}
-            disabled={countdown > 0}
-          >
-            <Text style={[
-              styles.resendText,
-              countdown > 0 ? styles.resendTextDisabled : styles.resendTextEnabled
-            ]}>
-              Send code again {countdown > 0 && formatTime(countdown)}
-            </Text>
-          </TouchableOpacity>
-        </View>
+				<View style={styles.resendContainer}>
+					<TouchableOpacity
+						onPress={handleResendCode}
+						disabled={countdown > 0}>
+						<Text
+							style={[
+								styles.resendText,
+								countdown > 0
+									? styles.resendTextDisabled
+									: styles.resendTextEnabled,
+							]}>
+							Send code again{" "}
+							{countdown > 0 && formatTime(countdown)}
+						</Text>
+					</TouchableOpacity>
+				</View>
 
-        <CustomButton
-          title="Verify"
-          variant="primary"
-          onPress={handleSubmit}
-          style={styles.button}
-          disabled={!isOtpComplete}
-          loading={loading}
-        />
-      </View>
-    </AuthScreenLayout>
-  );
+				<CustomButton
+					title="Verify"
+					variant="primary"
+					onPress={handleSubmit}
+					style={styles.button}
+					disabled={!isOtpComplete}
+					loading={loading}
+				/>
+			</View>
+		</AuthScreenLayout>
+	);
 };
 
 const styles = StyleSheet.create({
@@ -236,6 +237,11 @@ const styles = StyleSheet.create({
 	button: {
 		width: "100%",
 		marginTop: Theme.spacing.lg,
+	},
+	content: {
+		width: "100%",
+		alignItems: "center",
+		paddingHorizontal: Theme.screenPadding.horizontal,
 	},
 });
 

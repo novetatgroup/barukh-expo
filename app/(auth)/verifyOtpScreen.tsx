@@ -11,9 +11,9 @@ const VerifyOtpScreen = () => {
 	const { setAuthState } = useContext(AuthContext);
 	const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
-  useEffect(() => {
-    Toast.hide();
-  }, []);
+	useEffect(() => {
+		Toast.hide();
+	}, []);
 
 	const handleVerifyOtp = async ({ otp }: { otp: string }) => {
 		try {
@@ -30,27 +30,29 @@ const VerifyOtpScreen = () => {
 				return;
 			}
 
-      const response = await fetch(`${apiUrl}/auth/verify-otp`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-client-platform": "barukh_mobile",
-        },
-        body: JSON.stringify({ otpCode: otp, sessionId }),
-        credentials: "include",
-      });
+			const response = await fetch(`${apiUrl}/auth/verify-otp`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"x-client-platform": "barukh_mobile",
+				},
+				body: JSON.stringify({ otpCode: otp, sessionId }),
+				credentials: "include",
+			});
 
 			const data = await response.json();
 
-      if (response.ok && data.accessToken) {
-        const decoded = jwtDecode<{ userId: string | number }>(data.accessToken);
+			if (response.ok && data.accessToken) {
+				const decoded = jwtDecode<{ userId: string | number }>(
+					data.accessToken
+				);
 
-        await setAuthState({
-          refreshToken: data.refreshToken,
-          accessToken: data.accessToken,
-          isAuthenticated: true,
-          userId: decoded.userId ? Number(decoded.userId) : null,
-        });
+				await setAuthState({
+					refreshToken: data.refreshToken,
+					accessToken: data.accessToken,
+					isAuthenticated: true,
+					userId: decoded.userId ? Number(decoded.userId) : null,
+				});
 
 				Toast.show({
 					type: "success",
@@ -159,10 +161,9 @@ const VerifyOtpScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1,
-  },
+	container: {
+		flex: 1,
+	},
 });
 
 export default VerifyOtpScreen;
-
