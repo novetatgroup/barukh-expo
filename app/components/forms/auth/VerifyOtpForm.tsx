@@ -1,28 +1,22 @@
-import React, { useState, useRef, useEffect } from "react";
+import Theme from "@/app/constants/Theme";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  Dimensions, 
-  Image, 
-  StyleSheet, 
-  Text, 
-  View, 
-  TextInput, 
-  TouchableOpacity, 
+  StyleSheet,
+  Text, TextInput,
+  TouchableOpacity, View
 } from "react-native";
 import CustomButton from "../../ui/CustomButton";
-import Theme from "@/app/constants/Theme";
+import AuthScreenLayout from "./AuthScreenLayout";
 
 type VerifyOtpFormProps = {
   onSubmit: (data: { otp: string }) => void;
 };
 
-const { width: screenWidth } = Dimensions.get('window');
-
 const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({ onSubmit }) => {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [countdown, setCountdown] = useState(60);
+  const [loading, setLoading] = useState(false);
   const inputRefs = useRef<(TextInput | null)[]>([]);
-
-
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -61,19 +55,19 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({ onSubmit }) => {
   };
 
   const handleSubmit = async () => {
-  const otpString = otp.join("");
+    const otpString = otp.join("");
 
-  if (otpString.length !== 6) return;
+    if (otpString.length !== 6) return;
 
-  try {
-    setLoading(true);
-    await onSubmit({ otp: otpString });
-  } catch (error) {
-    console.error("Error verifying OTP:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      setLoading(true);
+      await onSubmit({ otp: otpString });
+    } catch (error) {
+      console.error("Error verifying OTP:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleResendCode = () => {
     if (countdown === 0) {
@@ -85,25 +79,12 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({ onSubmit }) => {
 
   const isOtpComplete = otp.every(digit => digit !== "");
 
-  const [loading, setLoading] = useState(false);
-
   return (
-    <View style={styles.container}>
-      <Image
-        source={require('../../../../assets/images/logo.png')}
-        style={styles.logo}
-      />
-
-      <Image
-        source={require('../../../../assets/images/grid.png')}
-        style={styles.grid}
-      />
-
-
-      <Text style={styles.title}>Verify Your Code</Text>
-      <Text style={styles.subtitle}>We've sent a 6-digit code to your email</Text>
-
-      <View style={styles.formContainer}>
+    <AuthScreenLayout
+      title="Verify Your Code"
+      subtitle="We've sent a 6-digit code to your email"
+    >
+      <View style={styles.content}>
         <View style={styles.otpContainer}>
           {otp.map((digit, index) => (
             <TextInput
@@ -148,48 +129,12 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({ onSubmit }) => {
           loading={loading}
         />
       </View>
-    </View>
+    </AuthScreenLayout>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Theme.colors.primary,
-  },
-  logo: {
-    width: 45,
-    height: 45,
-    marginLeft: Theme.screenPadding.horizontal,
-    marginTop: Theme.spacing.xxxxxxxl,
-  },
-  grid: {
-    width: 350,
-    height: 350,
-    position: 'absolute',
-    top: 0,
-    left: screenWidth - 240 - 10,
-  },
-  title: {
-    ...Theme.typography.h1,
-    textAlign: 'left',
-    marginLeft: Theme.screenPadding.horizontal,
-    color: Theme.colors.text.light,
-  },
-  subtitle: {
-    ...Theme.typography.caption,
-    marginLeft: Theme.screenPadding.horizontal,
-    textAlign: 'left',
-    marginTop: -10,
-    marginBottom: Theme.spacing.xl,
-    color: Theme.colors.text.light,
-  },
-  formContainer: {
-    backgroundColor: Theme.colors.white,
-    borderTopLeftRadius: Theme.borderRadius.xl,
-    borderTopRightRadius: Theme.borderRadius.xl,
-    padding: Theme.screenPadding.horizontal,
-    flex: 1,
+  content: {
     alignItems: 'center',
     paddingTop: Theme.spacing.xxl,
   },
@@ -206,8 +151,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     fontSize: 20,
     fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
     color: Theme.colors.text.dark,
-    marginHorizontal: 8,
+    marginHorizontal: 4,
     textAlign: 'center',
   },
   otpInputEmpty: {
@@ -224,6 +170,7 @@ const styles = StyleSheet.create({
   },
   resendText: {
     fontSize: 14,
+    fontFamily: 'Inter-Regular',
     textAlign: 'center',
   },
   resendTextDisabled: {
@@ -232,6 +179,7 @@ const styles = StyleSheet.create({
   resendTextEnabled: {
     color: Theme.colors.primary,
     fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
   },
   button: {
     width: '100%',

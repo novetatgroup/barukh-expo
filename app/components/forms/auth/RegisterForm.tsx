@@ -1,72 +1,58 @@
-import React,{useState} from 'react';
-import { 
-  Dimensions,
-  Image,
-  StyleSheet, 
-  Text, 
-  View 
-} from 'react-native';
-import {Formik} from 'formik';
+import Theme from '@/app/constants/Theme';
+import { Formik } from 'formik';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import * as Yup from 'yup';
 import CustomButton from '../../ui/CustomButton';
 import CustomTextInput from '../../ui/CustomTextInput';
 import Divider from '../../ui/Divider';
 import FooterLink from '../../ui/FooterLink';
-import Theme from '@/app/constants/Theme';
-import { router } from "expo-router";
+import AuthScreenLayout from './AuthScreenLayout';
 
 type RegisterFormProps = {
   onSubmit: (data: { name: string; email: string }) => void;
   onGooglePress: () => void;
   onLoginPress: () => void;
-
+  activeTab?: "login" | "register";
+  onTabChange?: (tab: "login" | "register") => void;
 };
-
-const { width: screenWidth } = Dimensions.get('window');
 
 const ValidationSchema = Yup.object().shape({
   name: Yup.string()
-  
     .min(2, 'Name is too short!')
     .max(50, 'Name is too long!')
     .required('Name is required'),
   email: Yup.string()
     .email('Invalid email address')
     .required('Email is required'),
-})
+});
 
 const initialValues = {
-  name :'',
+  name: '',
   email: '',
-
-}
+};
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ 
   onSubmit, 
-  onGooglePress, 
+  onGooglePress,
+  onLoginPress,
+  activeTab,
+  onTabChange,
 }) => {
-
   const [loading, setLoading] = useState(false);
 
   return (
-    <View style={styles.container}>
-      <Image 
-        source={require('../../../../assets/images/logo.png')} 
-        style={styles.logo} 
-      />
-
-      <Image 
-              source={require('../../../../assets/images/grid.png')} 
-              style={styles.grid} 
-            />
-
-      <Text style={styles.title}>Let's   Get   Started</Text>
-      <Text style={styles.subtitle}>Login to continue your journey.</Text>
-      
+    <AuthScreenLayout
+      title="Let's Get Started"
+      subtitle="Sign up to start your journey."
+      showTabSwitcher={!!activeTab && !!onTabChange}
+      activeTab={activeTab}
+      onTabChange={onTabChange}
+    >
       <Formik
-      initialValues={initialValues}
-      validationSchema={ValidationSchema}
-      onSubmit={async (values) => {
+        initialValues={initialValues}
+        validationSchema={ValidationSchema}
+        onSubmit={async (values) => {
           try {
             setLoading(true);
             await onSubmit(values);
@@ -75,8 +61,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           } finally {
             setLoading(false);
           }
-        }}>
-       {({
+        }}
+      >
+        {({
           values,
           errors,
           touched,
@@ -87,7 +74,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           isValid,
           dirty
         }) => (
-          <View style={styles.formContainer}>
+          <View>
             <Text style={styles.inputLabel}>Name</Text>
             <CustomTextInput
               placeholder="Enter your name"
@@ -114,7 +101,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             )}
 
             <CustomButton
-              title="Send OTP"
+              title="Sign up"
               variant="primary"
               onPress={() => handleSubmit()}
               style={styles.otpButton}
@@ -125,7 +112,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             <Divider text="Or" />
 
             <CustomButton
-              title="Google"
+              title="Continue with Google"
               variant="google"
               onPress={onGooglePress}
               showGoogleIcon={true}
@@ -134,60 +121,22 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             <FooterLink
               text="Already have an account?"
               linkText="Sign in"
-              onLinkPress={() => router.push("/(auth)/login")}
+              onLinkPress={onLoginPress}
             />
           </View>
         )}
       </Formik>
-    </View>
+    </AuthScreenLayout>
   );
 };
 
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Theme.colors.primary,
-  },
-  logo: {
-    width: 45,
-    height: 45,
-    marginLeft: Theme.screenPadding.horizontal,
-    marginTop: Theme.spacing.xxxxxxxl,
-  },
-   grid:{
-    width: 350,
-    height: 350,
-    position: 'absolute', 
-    top: 0,
-    left: screenWidth - 240 - 10,
-  },
-  title: {
-    ...Theme.typography.h1,
-    textAlign: 'left',
-    marginLeft: Theme.screenPadding.horizontal,
-    color: Theme.colors.text.light,
-  },
-  subtitle: {
-    ...Theme.typography.caption,
-    marginLeft: Theme.screenPadding.horizontal,
-    textAlign: 'left',
-    marginTop: -10,
-    marginBottom: Theme.spacing.xl,
-    color: Theme.colors.text.light,
-  },
-  formContainer: {
-    backgroundColor: Theme.colors.white,
-    borderTopLeftRadius: Theme.borderRadius.xl,
-    borderTopRightRadius: Theme.borderRadius.xl,
-    padding: Theme.screenPadding.horizontal,
-    flex: 1,
-  },
   inputLabel: {
     ...Theme.typography.body,
+    fontFamily: 'Inter-Regular',
     paddingBottom: Theme.spacing.sm,
     color: Theme.colors.text.dark,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   otpButton: {
     height: Theme.components.button.height,
@@ -195,6 +144,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: Theme.colors.error,
+    fontFamily: 'Inter-Regular',
     fontSize: 12,
     marginTop: 4,
     marginBottom: 8,

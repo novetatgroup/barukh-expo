@@ -1,12 +1,17 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import RegisterForm from "../components/forms/auth/RegisterForm";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import Toast from "react-native-toast-message";
-import { router } from "expo-router";
+import RegisterForm from "../components/forms/auth/RegisterForm";
 import OtpResponse from "../Interfaces/auth";
 
-const RegisterScreen = () => {
+interface RegisterScreenProps {
+  activeTab: "login" | "register";
+  onTabChange: (tab: "login" | "register") => void;
+}
+
+const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
   const handleRegister = async ({ name, email }: { name: string; email: string }) => {
@@ -19,10 +24,8 @@ const RegisterScreen = () => {
         body: JSON.stringify({ name, email }),
       });
 
-      
       const contentType = response.headers.get("content-type");
       let data: OtpResponse | string;
-
 
       if (contentType && contentType.includes("application/json")) {
         data = await response.json();
@@ -103,9 +106,10 @@ const RegisterScreen = () => {
       <RegisterForm
         onSubmit={handleRegister}
         onGooglePress={() => console.log("Google pressed")}
-        onLoginPress={() => console.log("Navigate to Login")}
+        onLoginPress={() => onTabChange("login")}
+        activeTab={activeTab}
+        onTabChange={onTabChange}
       />
-      
     </View>
   );
 };
@@ -113,7 +117,6 @@ const RegisterScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0b3d2e",
   },
 });
 

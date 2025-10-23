@@ -1,6 +1,6 @@
-import React from 'react';
-import { TextInput, StyleSheet, TextInputProps } from 'react-native';
 import Theme from '@/app/constants/Theme';
+import React from 'react';
+import { StyleSheet, TextInput, TextInputProps } from 'react-native';
 
 interface CustomTextInputProps extends TextInputProps {
   variant?: 'default' | 'rounded' | 'compact';
@@ -33,13 +33,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,       
     paddingHorizontal: 10,
     paddingVertical: 8,    
-    fontSize: 14,
+    fontSize: 16,
     marginBottom: 16,
     backgroundColor: '#fff',
     color: Theme.colors.text.dark,
   },
   rounded: {
-    borderRadius: 25,
+    borderRadius: 100,
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
     borderRadius: 7,
     paddingVertical: 10,
     paddingHorizontal: 8,
-    fontSize: 13,
+    //fontSize: 13,
 
   },
 });
