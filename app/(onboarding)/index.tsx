@@ -2,30 +2,33 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Image,
   StatusBar,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
-import Logo from '../../assets/images/logo.png';
+//import Logo from '../../assets/images/logo.png';
+import { Logo } from '../../assets/svgs/index';
 import styles from '../styles/onboardingStyles';
 
 const onboardingData = [
   {
     title: "Send Smarter,\nAcross Borders",
     subtitle: "Shop anywhere. Let trusted travelers deliver for less.",
-    image: Logo,
+    //image: Logo,
+    ImageComponent: Logo,
   },
   {
-    title: "Verified\nTravelers Only", 
+    title: "Verified\nTravelers Only",
     subtitle: "Every delivery is matched with a vetted, rated traveler",
-    image: Logo,
+    //image: Logo,
+    ImageComponent: Logo,
   },
   {
     title: "Pay When\nDelivered",
     subtitle: "Your money is held securely until the recipient confirms delivery",
-    image: Logo,
+    //image: Logo,
+    ImageComponent: Logo,
   }
 ];
 
@@ -50,19 +53,24 @@ export default function OnboardingScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0A5D52" />
-      
+
       <View style={styles.content}>
-        {currentData.image && (
+        {/* {currentData.image && (
           <Image
             source={currentData.image}  
             style={{ width: 45, height: 45,marginTop: 325,marginBottom: 20 }}
             resizeMode="contain"
           />
           
+        )} */}
+        {currentData.ImageComponent && (
+          <View style={{ marginTop: 325, marginBottom: 20 }}>
+            <currentData.ImageComponent width={45} height={45} />
+          </View>
         )}
         <Text style={styles.title}>{currentData.title}</Text>
         <Text style={styles.subtitle}>{currentData.subtitle}</Text>
-        
+
         <View style={styles.dotsContainer}>
           {onboardingData.map((_, index) => (
             <View
@@ -75,7 +83,7 @@ export default function OnboardingScreen() {
           ))}
         </View>
       </View>
-      
+
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
           <Text style={styles.nextButtonText}>Next</Text>
