@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import React, { useEffect } from "react";
-import { Linking, StyleSheet, View } from "react-native";
+import React from "react";
+import { StyleSheet, View } from "react-native";
 import Toast from "react-native-toast-message";
 import RegisterForm from "../components/forms/auth/RegisterForm";
 import OtpResponse from "../Interfaces/auth";
@@ -25,8 +25,6 @@ const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
 		name: string;
 		email: string;
 	}) => {
-		console.log("Register pressed:", name, email);
-
 		try {
 			Toast.show({
 				type: "info",
@@ -55,10 +53,7 @@ const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
 			}
 
 			if (response.ok) {
-				console.log("API response success");
-
 				const otpData = data as OtpResponse;
-
 				if (otpData.sessionId) {
 					await AsyncStorage.setItem("sessionId", otpData.sessionId);
 					await AsyncStorage.setItem("otpFlow", "register");
@@ -67,38 +62,23 @@ const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
 						otpData.attemptsLeft.toString()
 					);
 					await AsyncStorage.setItem("expiresAt", otpData.expiresAt);
-					console.log("Session data saved");
+					await AsyncStorage.setItem("email", email);
 				}
 
 				Toast.hide();
-
 				setTimeout(() => {
 					Toast.show({
 						type: "success",
 						text1: "OTP Sent!",
-						text2: `Verification code has been sent to the email`,
+						text2: "Verification code has been sent to the email",
 						position: "top",
 						visibilityTime: 4000,
 					});
-
-					console.log("Success toast displayed");
-
 					setTimeout(() => {
 						router.push("/(auth)/verifyOtpScreen");
 					}, 2500);
 				}, 300);
 			} else {
-				console.log("API error:", data);
-
-				let errorMessage =
-					typeof data === "string"
-						? data
-						: data?.message || "Please try again";
-
-				if (errorMessage === "User already exists") {
-					console.log("Custom log: Email already exists");
-				}
-
 				Toast.hide();
 				setTimeout(() => {
 					Toast.show({
@@ -114,8 +94,6 @@ const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
 				}, 300);
 			}
 		} catch (error) {
-			console.error("Network error:", error);
-
 			Toast.hide();
 			setTimeout(() => {
 				Toast.show({
@@ -139,72 +117,50 @@ const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
 			});
 
 			const response = await fetch(`${apiUrl}/auth/consentScreen`);
-			console.log("URL to open consent screen:", response.status);
-
-			if (!response.ok) {
+			if (!response.ok)
 				throw new Error("Failed to get consent screen URL");
-			}
+
 			const data = await response.json();
 			const consentUrl = data.url;
-			console.log("Consent URL:", consentUrl);
-
-			if (!consentUrl) {
-				throw new Error("No URL");
-			}
-
-			console.log("Opening WebBrowser for Google OAuth");
 			const redirecturi = AuthSession.makeRedirectUri({
 				scheme: "barukhexpo",
 			});
-			console.log("Redirect URI:", redirecturi);
 			const result = await WebBrowser.openAuthSessionAsync(
 				consentUrl,
 				redirecturi
 			);
-			console.log("WebBrowser result:", result);
 
 			if (result.type === "success") {
-				console.log("Received redirect URL:", result.url);
-				try {
-					const url = result.url;
-					const urlObj = new URL(url);
-
-					const accessToken = urlObj.searchParams.get("accessToken");
-					console.log("Extracted access token:", accessToken);
-
-					if (accessToken) {
-						await AsyncStorage.setItem("accessToken", accessToken);
-						Toast.hide();
-						setTimeout(() => {
-							router.push("/roleSelection");
-						}, 1500);
-					}
-				} catch (error) {
+				const url = result.url;
+				const urlObj = new URL(url);
+				const accessToken = urlObj.searchParams.get("accessToken");
+				if (accessToken) {
 					Toast.show({
-						type: "info",
-						text1: "Error occured with google redirect",
+						type: "success",
+						text1: "Google Login Successful",
+						text2: "Redirecting...",
 						position: "top",
-						visibilityTime: 200,
+						visibilityTime: 2000,
 					});
+					router.push("/roleSelection");
 				}
-				console.log("Google OAuth successful");
-			} else if (result.type === "cancel") {
+			} else {
 				Toast.show({
-					type: "info",
-					text1: "Google Sign-In Cancelled",
+					type: "error",
+					text1: "Google Login Cancelled",
 					position: "top",
 					visibilityTime: 2000,
 				});
 			}
 		} catch (error) {
+			console.error("Google OAuth Error:", error);
 			Toast.show({
 				type: "error",
-				text1: "Google OAuth Error",
-				text2: "Unable to proceed with Google Sign-In",
+				text1: "Google Login Failed",
+				text2: "Please try again later.",
 				position: "top",
 				visibilityTime: 3000,
 			});
-			console.error("Google OAuth error:", error);
 		}
 	};
 

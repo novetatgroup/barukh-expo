@@ -36,13 +36,16 @@ const LoginScreen = ({ activeTab, onTabChange }: LoginScreenProps) => {
 
         const otpData = data as OtpResponse;
 
-        if (otpData.sessionId) {
-          await AsyncStorage.setItem("sessionId", otpData.sessionId);
-          await AsyncStorage.setItem("otpFlow", "login");
-          await AsyncStorage.setItem("attemptsLeft", otpData.attemptsLeft.toString());
-          await AsyncStorage.setItem("expiresAt", otpData.expiresAt);
-          console.log("Session data saved");
-        }
+				if (otpData.sessionId) {
+					await AsyncStorage.setItem("sessionId", otpData.sessionId);
+					await AsyncStorage.setItem("otpFlow", "login");
+					await AsyncStorage.setItem(
+						"attemptsLeft",
+						otpData.attemptsLeft.toString()
+					);
+					await AsyncStorage.setItem("expiresAt", otpData.expiresAt);
+					await AsyncStorage.setItem("email", email);
+				}
 
         Toast.show({
           type: 'success',

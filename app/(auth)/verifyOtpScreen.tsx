@@ -90,9 +90,70 @@ const VerifyOtpScreen = () => {
 		}
 	};
 
+	const handleResendOtp = async () => {
+		try {
+			const otpFlow = await AsyncStorage.getItem("otpFlow");
+			const email = await AsyncStorage.getItem("email");
+
+			if (!otpFlow || !email) {
+				Toast.show({
+					type: "error",
+					text1: "Missing data",
+					text2: "Please go back and try again.",
+					position: "top",
+					visibilityTime: 2500,
+				});
+				return;
+			}
+
+			const endpoint =
+				otpFlow === "register"
+					? `${apiUrl}/users/register/request-otp`
+					: `${apiUrl}/auth/login/request-otp`;
+
+			const response = await fetch(endpoint, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ email }),
+			});
+
+			const data = await response.json();
+
+			if (response.ok && data.sessionId) {
+				await AsyncStorage.setItem("sessionId", data.sessionId);
+				Toast.show({
+					type: "success",
+					text1: "New OTP Sent!",
+					position: "top",
+					visibilityTime: 2000,
+				});
+			} else {
+				Toast.show({
+					type: "error",
+					text1: "Failed to resend code",
+					text2: data?.message || "Please try again",
+					position: "top",
+					visibilityTime: 3000,
+				});
+			}
+		} catch (error) {
+			console.error("Resend OTP error:", error);
+			Toast.show({
+				type: "error",
+				text1: "Network Error",
+				text2: "Could not resend code. Try again later.",
+				position: "top",
+				visibilityTime: 3000,
+			});
+		}
+	};
+
 	return (
 		<View style={styles.container}>
-			<VerifyOtpForm onSubmit={handleVerifyOtp} />
+			<VerifyOtpForm
+				onSubmit={handleVerifyOtp}
+				onResend={handleResendOtp}
+			/>
 		</View>
 	);
 };

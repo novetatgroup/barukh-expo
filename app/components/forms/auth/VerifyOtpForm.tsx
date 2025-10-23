@@ -1,83 +1,93 @@
 import Theme from "@/app/constants/Theme";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  StyleSheet,
-  Text, TextInput,
-  TouchableOpacity, View
+	Dimensions,
+	Image,
+	StyleSheet,
+	Text,
+	View,
+	TextInput,
+	TouchableOpacity,
 } from "react-native";
 import CustomButton from "../../ui/CustomButton";
 import AuthScreenLayout from "./AuthScreenLayout";
 
 type VerifyOtpFormProps = {
-  onSubmit: (data: { otp: string }) => void;
+	onSubmit: (data: { otp: string }) => void;
+	onResend?: () => void;
 };
 
-const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({ onSubmit }) => {
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [countdown, setCountdown] = useState(60);
+const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({
+	onSubmit,
+	onResend,
+}) => {
+	const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+	const [countdown, setCountdown] = useState(60);
   const [loading, setLoading] = useState(false);
-  const inputRefs = useRef<(TextInput | null)[]>([]);
+	const inputRefs = useRef<(TextInput | null)[]>([]);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
+	useEffect(() => {
+		const timer = setInterval(() => {
+			setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+		}, 1000);
+		return () => clearInterval(timer);
+	}, []);
 
-    return () => clearInterval(timer);
-  }, []);
+	const formatTime = (seconds: number) => {
+		const mins = Math.floor(seconds / 60);
+		const secs = seconds % 60;
+		return `${mins.toString().padStart(2, "0")}:${secs
+			.toString()
+			.padStart(2, "0")}`;
+	};
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+	const handleOtpChange = (text: string, index: number) => {
+		const newOtp = [...otp];
+		if (text.length > 0) {
+			newOtp[index] = text.slice(-1);
+			setOtp(newOtp);
+			if (index < 5 && text.length > 0) {
+				inputRefs.current[index + 1]?.focus();
+			}
+		} else {
+			newOtp[index] = "";
+			setOtp(newOtp);
+		}
+	};
 
-  const handleOtpChange = (text: string, index: number) => {
-    const newOtp = [...otp];
+	const handleKeyPress = (event: any, index: number) => {
+		if (
+			event.nativeEvent.key === "Backspace" &&
+			otp[index] === "" &&
+			index > 0
+		) {
+			inputRefs.current[index - 1]?.focus();
+		}
+	};
 
-    if (text.length > 0) {
-      newOtp[index] = text.slice(-1);
-      setOtp(newOtp);
+	const handleSubmit = async () => {
+		const otpString = otp.join("");
 
-      if (index < 5 && text.length > 0) {
-        inputRefs.current[index + 1]?.focus();
-      }
-    } else {
-      newOtp[index] = "";
-      setOtp(newOtp);
-    }
-  };
-
-  const handleKeyPress = (event: any, index: number) => {
-    if (event.nativeEvent.key === 'Backspace' && otp[index] === "" && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleSubmit = async () => {
-    const otpString = otp.join("");
-
-    if (otpString.length !== 6) return;
+		if (otpString.length !== 6) return;
 
     try {
-      setLoading(true);
+			setLoading(true);
       await onSubmit({ otp: otpString });
     } catch (error) {
       console.error("Error verifying OTP:", error);
     } finally {
       setLoading(false);
-    }
-  };
+		}
+	};
 
-  const handleResendCode = () => {
-    if (countdown === 0) {
-      setCountdown(50);
-      // TODO: Add resend OTP logic here
-      console.log("Resending OTP...");
-    }
-  };
+	const handleResendCode = () => {
+		if (countdown === 0 && onResend) {
+			setCountdown(60);
+			onResend();
+		}
+	};
 
-  const isOtpComplete = otp.every(digit => digit !== "");
+	const isOtpComplete = otp.every((digit) => digit !== "");
 
   return (
     <AuthScreenLayout
