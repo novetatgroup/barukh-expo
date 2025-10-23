@@ -1,23 +1,22 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import { jwtDecode } from "jwt-decode";
 import React, { useContext, useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import Toast from "react-native-toast-message";
 import VerifyOtpForm from "../components/forms/auth/VerifyOtpForm";
 import { AuthContext } from "../context/AuthContext";
-import { jwtDecode } from "jwt-decode";
 
 const VerifyOtpScreen = () => {
   const { setAuthState } = useContext(AuthContext);
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
-    useEffect(() => {
-        Toast.hide();
-      }, []);
+  useEffect(() => {
+    Toast.hide();
+  }, []);
 
   const handleVerifyOtp = async ({ otp }: { otp: string }) => {
     try {
-
       const sessionId = await AsyncStorage.getItem("sessionId");
 
       if (!sessionId) {
@@ -51,7 +50,6 @@ const VerifyOtpScreen = () => {
           isAuthenticated: true,
           userId: decoded.userId ? Number(decoded.userId) : null,
         });
-
 
         Toast.show({
           type: "success",
@@ -97,7 +95,9 @@ const VerifyOtpScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { 
+    flex: 1,
+  },
 });
 
 export default VerifyOtpScreen;

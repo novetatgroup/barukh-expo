@@ -1,6 +1,7 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, View, ActivityIndicator, TouchableOpacityProps } from 'react-native';
-import Theme from '../../constants/Theme'; 
+import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, TouchableOpacityProps } from 'react-native';
+import Theme from '../../constants/Theme';
+
 
 interface CustomButtonProps extends TouchableOpacityProps {
   title: string;
@@ -51,9 +52,16 @@ const CustomButton: React.FC<CustomButtonProps> = ({
       ) : (
         <>
           {variant === 'google' && showGoogleIcon && (
-            <View style={styles.googleIconContainer}>
+            <>
+            {/* <View style={styles.googleIconContainer}>
               <Text style={styles.googleIcon}>G</Text>
-            </View>
+            </View> */}
+            <Image
+            source={require("../../../assets/images/googleIcon.png")}
+            style={styles.googleIconContainer}
+          />
+            </>
+            
           )}
           <Text
             style={[
@@ -101,7 +109,8 @@ const styles = StyleSheet.create({
   },
   baseText: {
     fontSize: Theme.typography.body.fontSize,
-    fontWeight: '600',
+    fontWeight: '500',
+    fontFamily: 'Inter-Regular'
   },
   primaryText: {
     color: Theme.colors.white,
@@ -114,9 +123,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   googleIconContainer: {
-    width: 20,
-    height: 20,
-    backgroundColor: '#4285F4',
+    // width: 20,
+    // height: 20,
+    //backgroundColor: '#4285F4',
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',

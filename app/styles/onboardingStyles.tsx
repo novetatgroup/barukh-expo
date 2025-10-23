@@ -14,7 +14,7 @@ const OnboardingStyles = StyleSheet.create({
   },
   title: {
     fontSize: 35,
-    fontFamily: 'inter',
+    fontFamily: 'Inter-Regular',
     color: 'white',
     fontWeight: '500', 
     textAlign: 'center',
@@ -23,7 +23,7 @@ const OnboardingStyles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 13,
-    fontFamily: 'inter',
+    fontFamily: 'Inter-Regular',
     color: '#C0C0C0',
     textAlign: 'center',
     lineHeight: 22,
@@ -59,7 +59,7 @@ const OnboardingStyles = StyleSheet.create({
   },
   nextButtonText: {
     color: '#0A5D52',
-    fontFamily: 'inter',
+    fontFamily: 'Inter-Bold',
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
@@ -73,6 +73,7 @@ const OnboardingStyles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     textAlign: 'center',
+    fontFamily: 'Inter-Regular',
   },
 });
 

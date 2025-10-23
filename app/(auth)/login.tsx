@@ -6,7 +6,12 @@ import Toast from "react-native-toast-message";
 import LoginForm from "../components/forms/auth/LoginForm";
 import OtpResponse from "../Interfaces/auth";
 
-const LoginScreen = () => {
+interface LoginScreenProps {
+  activeTab: "login" | "register";
+  onTabChange: (tab: "login" | "register") => void;
+}
+
+const LoginScreen = ({ activeTab, onTabChange }: LoginScreenProps) => {
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
   const handleLogin = async ({ email }: { email: string }) => {
@@ -90,7 +95,9 @@ const LoginScreen = () => {
       <LoginForm
         onSubmit={handleLogin}
         onGooglePress={() => console.log("Google pressed")}
-        onLoginPress={() => console.log("Navigate to Login")}
+        onRegisterPress={() => onTabChange("register")}
+        activeTab={activeTab}
+        onTabChange={onTabChange}
       />
     </View>
   );
@@ -99,7 +106,6 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0b3d2e",
   },
 });
 

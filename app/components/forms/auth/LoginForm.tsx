@@ -1,27 +1,21 @@
-import { router } from "expo-router";
+import Theme from '@/app/constants/Theme';
 import { Formik } from 'formik';
 import React, { useState } from 'react';
-import { 
-  Dimensions, 
-  Image, 
-  StyleSheet, 
-  Text, 
-  View 
-} from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import * as Yup from 'yup';
-import Theme from '@/app/constants/Theme';
 import CustomButton from '../../ui/CustomButton';
 import CustomTextInput from '../../ui/CustomTextInput';
 import Divider from '../../ui/Divider';
 import FooterLink from '../../ui/FooterLink';
+import AuthScreenLayout from './AuthScreenLayout';
 
 type LoginFormProps = {
   onSubmit: (data: { email: string }) => void;
   onGooglePress: () => void;
-  onLoginPress: () => void;
+  onRegisterPress: () => void;
+  activeTab?: "login" | "register";
+  onTabChange?: (tab: "login" | "register") => void;
 };
-
-const { width: screenWidth } = Dimensions.get('window');
 
 const ValidationSchema = Yup.object().shape({
   email: Yup.string()
@@ -36,26 +30,20 @@ const initialValues = {
 const LoginForm: React.FC<LoginFormProps> = ({ 
   onSubmit, 
   onGooglePress, 
-  onLoginPress 
+  onRegisterPress,
+  activeTab,
+  onTabChange,
 }) => {
-
   const [loading, setLoading] = useState(false);
 
   return (
-    <View style={styles.container}>
-      <Image 
-        source={require('../../../../assets/images/logo.png')} 
-        style={styles.logo} 
-      />
-
-      <Image 
-        source={require('../../../../assets/images/grid.png')} 
-        style={styles.grid} 
-      />
-      
-      <Text style={styles.title}>Welcome Back</Text>
-      <Text style={styles.subtitle}>Login to continue your journey.</Text>
-      
+    <AuthScreenLayout
+      title="Welcome Back"
+      subtitle="Login to continue your journey."
+      showTabSwitcher={!!activeTab && !!onTabChange}
+      activeTab={activeTab}
+      onTabChange={onTabChange}
+    >
       <Formik
         initialValues={initialValues}
         validationSchema={ValidationSchema}
@@ -81,8 +69,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
           isValid,
           dirty
         }) => (
-          <View style={styles.formContainer}>
-
+          <View>
             <Text style={styles.inputLabel}>Email</Text>
             <CustomTextInput
               placeholder="Enter your Email"
@@ -97,7 +84,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
             )}
 
             <CustomButton
-              title="Send OTP"
+              title="Sign in"
               variant="primary"
               onPress={() => handleSubmit()}
               style={styles.otpButton}
@@ -108,7 +95,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
             <Divider text="Or" />
 
             <CustomButton
-              title="Google"
+              title="Continue with Google"
               variant="google"
               onPress={onGooglePress}
               showGoogleIcon={true}
@@ -117,67 +104,30 @@ const LoginForm: React.FC<LoginFormProps> = ({
             <FooterLink
               text="Don't have an account?"
               linkText="Sign up"
-              onLinkPress={() => router.push("/(auth)/register")}
+              onLinkPress={onRegisterPress}
             />
-
           </View>
         )}
       </Formik>
-    </View>
+    </AuthScreenLayout>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Theme.colors.primary,
-  },
-  logo: {
-    width: 45,
-    height: 45,
-    marginLeft: Theme.screenPadding.horizontal,
-    marginTop: Theme.spacing.xxxxxxxl,
-  },
-  grid: {
-    width: 350,
-    height: 350,
-    position: 'absolute', 
-    top: 0,
-    left: screenWidth - 240 - 10,
-  },
-  title: {
-    ...Theme.typography.h1,
-    textAlign: 'left',
-    marginLeft: Theme.screenPadding.horizontal,
-    color: Theme.colors.text.light,
-  },
-  subtitle: {
-    ...Theme.typography.caption,
-    marginLeft: Theme.screenPadding.horizontal,
-    textAlign: 'left',
-    marginTop: -10,
-    marginBottom: Theme.spacing.xl,
-    color: Theme.colors.text.light,
-  },
-  formContainer: {
-    backgroundColor: Theme.colors.white,
-    borderTopLeftRadius: Theme.borderRadius.xl,
-    borderTopRightRadius: Theme.borderRadius.xl,
-    padding: Theme.screenPadding.horizontal,
-    flex: 1,
-  },
   inputLabel: {
     ...Theme.typography.body,
+    fontFamily: 'Inter-Regular',
     paddingBottom: Theme.spacing.sm,
     color: Theme.colors.text.dark,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   otpButton: {
-    height: Theme.components.button.height,
+    //height: Theme.components.button.height,
     marginTop: Theme.spacing.md,
   },
   errorText: {
     color: Theme.colors.error,
+    fontFamily: 'Inter-Regular',
     fontSize: 12,
     marginBottom: 8,
   },
