@@ -45,7 +45,23 @@ const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
 
 			const contentType = response.headers.get("content-type");
 			let data: OtpResponse | string;
+			const response = await fetch(
+				`${apiUrl}/users/register/request-otp`,
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ name, email }),
+				}
+			);
 
+			const contentType = response.headers.get("content-type");
+			let data: OtpResponse | string;
+
+			if (contentType && contentType.includes("application/json")) {
+				data = await response.json();
+			} else {
+				data = await response.text();
+			}
 			if (contentType && contentType.includes("application/json")) {
 				data = await response.json();
 			} else {
@@ -64,7 +80,117 @@ const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
 					await AsyncStorage.setItem("expiresAt", otpData.expiresAt);
 					await AsyncStorage.setItem("email", email);
 				}
+			if (response.ok) {
+				const otpData = data as OtpResponse;
+				if (otpData.sessionId) {
+					await AsyncStorage.setItem("sessionId", otpData.sessionId);
+					await AsyncStorage.setItem("otpFlow", "register");
+					await AsyncStorage.setItem(
+						"attemptsLeft",
+						otpData.attemptsLeft.toString()
+					);
+					await AsyncStorage.setItem("expiresAt", otpData.expiresAt);
+					await AsyncStorage.setItem("email", email);
+				}
 
+				Toast.hide();
+				setTimeout(() => {
+					Toast.show({
+						type: "success",
+						text1: "OTP Sent!",
+						text2: "Verification code has been sent to the email",
+						position: "top",
+						visibilityTime: 4000,
+					});
+					setTimeout(() => {
+						router.push("/(auth)/verifyOtpScreen");
+					}, 2500);
+				}, 300);
+			} else {
+				Toast.hide();
+				setTimeout(() => {
+					Toast.show({
+						type: "error",
+						text1: "Failed to Send OTP",
+						text2:
+							typeof data === "string"
+								? data
+								: data.message || "Please try again",
+						position: "top",
+						visibilityTime: 4000,
+					});
+				}, 300);
+			}
+		} catch (error) {
+			Toast.hide();
+			setTimeout(() => {
+				Toast.show({
+					type: "error",
+					text1: "Network Error",
+					text2: "Please check your connection",
+					position: "top",
+					visibilityTime: 4000,
+				});
+			}, 300);
+		}
+	};
+
+	const handleGoogleOauth = async () => {
+		try {
+			Toast.show({
+				type: "info",
+				text1: "Redirecting to Google...",
+				position: "top",
+				visibilityTime: 3000,
+			});
+
+			const response = await fetch(`${apiUrl}/auth/consentScreen`);
+			if (!response.ok)
+				throw new Error("Failed to get consent screen URL");
+
+			const data = await response.json();
+			const consentUrl = data.url;
+			const redirecturi = AuthSession.makeRedirectUri({
+				scheme: "barukhexpo",
+			});
+			const result = await WebBrowser.openAuthSessionAsync(
+				consentUrl,
+				redirecturi
+			);
+
+			if (result.type === "success") {
+				const url = result.url;
+				const urlObj = new URL(url);
+				const accessToken = urlObj.searchParams.get("accessToken");
+				if (accessToken) {
+					Toast.show({
+						type: "success",
+						text1: "Google Login Successful",
+						text2: "Redirecting...",
+						position: "top",
+						visibilityTime: 2000,
+					});
+					router.push("/roleSelection");
+				}
+			} else {
+				Toast.show({
+					type: "error",
+					text1: "Google Login Cancelled",
+					position: "top",
+					visibilityTime: 2000,
+				});
+			}
+		} catch (error) {
+			console.error("Google OAuth Error:", error);
+			Toast.show({
+				type: "error",
+				text1: "Google Login Failed",
+				text2: "Please try again later.",
+				position: "top",
+				visibilityTime: 3000,
+			});
+		}
+	};
 				Toast.hide();
 				setTimeout(() => {
 					Toast.show({

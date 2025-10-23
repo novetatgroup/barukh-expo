@@ -8,8 +8,8 @@ import VerifyOtpForm from "../components/forms/auth/VerifyOtpForm";
 import { AuthContext } from "../context/AuthContext";
 
 const VerifyOtpScreen = () => {
-  const { setAuthState } = useContext(AuthContext);
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+	const { setAuthState } = useContext(AuthContext);
+	const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
   useEffect(() => {
     Toast.hide();
@@ -165,3 +165,4 @@ const styles = StyleSheet.create({
 });
 
 export default VerifyOtpScreen;
+

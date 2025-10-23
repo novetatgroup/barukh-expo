@@ -8,6 +8,13 @@ import {
 	View,
 	TextInput,
 	TouchableOpacity,
+	Dimensions,
+	Image,
+	StyleSheet,
+	Text,
+	View,
+	TextInput,
+	TouchableOpacity,
 } from "react-native";
 import CustomButton from "../../ui/CustomButton";
 import AuthScreenLayout from "./AuthScreenLayout";
@@ -16,6 +23,8 @@ type VerifyOtpFormProps = {
 	onSubmit: (data: { otp: string }) => void;
 	onResend?: () => void;
 };
+
+const { width: screenWidth } = Dimensions.get("window");
 
 const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({
 	onSubmit,
@@ -144,57 +153,90 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({
 };
 
 const styles = StyleSheet.create({
-  content: {
-    alignItems: 'center',
-    paddingTop: Theme.spacing.xxl,
-  },
-  otpContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: Theme.spacing.xl,
-    paddingHorizontal: Theme.spacing.sm,
-  },
-  otpInput: {
-    width: 50,
-    height: 50,
-    borderRadius: Theme.borderRadius.xl,
-    backgroundColor: '#f5f5f5',
-    fontSize: 20,
-    fontWeight: '600',
-    fontFamily: 'Inter-SemiBold',
-    color: Theme.colors.text.dark,
-    marginHorizontal: 4,
-    textAlign: 'center',
-  },
-  otpInputEmpty: {
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  otpInputFilled: {
-    borderWidth: 2,
-    borderColor: Theme.colors.primary,
-    backgroundColor: '#fff',
-  },
-  resendContainer: {
-    marginBottom: Theme.spacing.xxl,
-  },
-  resendText: {
-    fontSize: 14,
-    fontFamily: 'Inter-Regular',
-    textAlign: 'center',
-  },
-  resendTextDisabled: {
-    color: '#666',
-  },
-  resendTextEnabled: {
-    color: Theme.colors.primary,
-    fontWeight: '600',
-    fontFamily: 'Inter-SemiBold',
-  },
-  button: {
-    width: '100%',
-    marginTop: Theme.spacing.lg,
-  },
+	container: {
+		flex: 1,
+		backgroundColor: Theme.colors.primary,
+	},
+	logo: {
+		width: 45,
+		height: 45,
+		marginLeft: Theme.screenPadding.horizontal,
+		marginTop: Theme.spacing.xxxxxxxl,
+	},
+	grid: {
+		width: 350,
+		height: 350,
+		position: "absolute",
+		top: 0,
+		left: screenWidth - 240 - 10,
+	},
+	title: {
+		...Theme.typography.h1,
+		textAlign: "left",
+		marginLeft: Theme.screenPadding.horizontal,
+		color: Theme.colors.text.light,
+	},
+	subtitle: {
+		...Theme.typography.caption,
+		marginLeft: Theme.screenPadding.horizontal,
+		textAlign: "left",
+		marginTop: -10,
+		marginBottom: Theme.spacing.xl,
+		color: Theme.colors.text.light,
+	},
+	formContainer: {
+		backgroundColor: Theme.colors.white,
+		borderTopLeftRadius: Theme.borderRadius.xl,
+		borderTopRightRadius: Theme.borderRadius.xl,
+		padding: Theme.screenPadding.horizontal,
+		flex: 1,
+		alignItems: "center",
+		paddingTop: Theme.spacing.xxl,
+	},
+	otpContainer: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		marginBottom: Theme.spacing.xl,
+		paddingHorizontal: Theme.spacing.sm,
+	},
+	otpInput: {
+		width: 50,
+		height: 50,
+		borderRadius: Theme.borderRadius.xl,
+		backgroundColor: "#f5f5f5",
+		fontSize: 20,
+		fontWeight: "600",
+		color: Theme.colors.text.dark,
+		marginHorizontal: 8,
+		textAlign: "center",
+	},
+	otpInputEmpty: {
+		borderWidth: 1,
+		borderColor: "#e0e0e0",
+	},
+	otpInputFilled: {
+		borderWidth: 2,
+		borderColor: Theme.colors.primary,
+		backgroundColor: "#fff",
+	},
+	resendContainer: {
+		marginBottom: Theme.spacing.xxl,
+	},
+	resendText: {
+		fontSize: 14,
+		textAlign: "center",
+	},
+	resendTextDisabled: {
+		color: "#666",
+	},
+	resendTextEnabled: {
+		color: Theme.colors.primary,
+		fontWeight: "600",
+	},
+	button: {
+		width: "100%",
+		marginTop: Theme.spacing.lg,
+	},
 });
 
 export default VerifyOtpForm;
