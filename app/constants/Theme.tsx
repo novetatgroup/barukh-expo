@@ -67,7 +67,7 @@ export const Theme = {
   },
   components: {
     button: {
-      height: 50,
+      height: 60,
     },
     input: {
       marginBottom: 12,

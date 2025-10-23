@@ -149,8 +149,9 @@ const styles = StyleSheet.create({
   },
 
     submitButton: {
+      marginBottom: Theme.spacing.xxxxxxl,
       height: Theme.components.button.height,
-      borderRadius: Theme.borderRadius.sm + Theme.spacing.xs, 
+      margin: Theme.spacing.xl,
     },
 
   imageContainer: {

@@ -13,14 +13,6 @@ const RegisterScreen = () => {
     console.log("Register pressed:", name, email);
 
     try {
-      Toast.show({
-        type: 'info',
-        text1: 'Sending OTP...',
-        text2: 'Please wait',
-        position: 'top',
-        visibilityTime: 3000,
-      });
-
       const response = await fetch(`${apiUrl}/users/register/request-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

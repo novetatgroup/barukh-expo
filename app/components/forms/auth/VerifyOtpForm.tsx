@@ -60,12 +60,20 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({ onSubmit }) => {
     }
   };
 
-  const handleSubmit = () => {
-    const otpString = otp.join("");
-    if (otpString.length === 6) {
-      onSubmit({ otp: otpString });
-    }
-  };
+  const handleSubmit = async () => {
+  const otpString = otp.join("");
+
+  if (otpString.length !== 6) return;
+
+  try {
+    setLoading(true);
+    await onSubmit({ otp: otpString });
+  } catch (error) {
+    console.error("Error verifying OTP:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleResendCode = () => {
     if (countdown === 0) {
@@ -76,6 +84,8 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({ onSubmit }) => {
   };
 
   const isOtpComplete = otp.every(digit => digit !== "");
+
+  const [loading, setLoading] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -135,6 +145,7 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({ onSubmit }) => {
           onPress={handleSubmit}
           style={styles.button}
           disabled={!isOtpComplete}
+          loading={loading}
         />
       </View>
     </View>

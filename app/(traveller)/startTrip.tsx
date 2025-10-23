@@ -2,6 +2,8 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Theme from "@/app/constants/Theme";
+import CustomButton from "../components/ui/CustomButton";
+import { router } from "expo-router";
 
 type StartTripScreenProps = {
   onCancel: () => void;
@@ -41,13 +43,19 @@ const StartTripScreen: React.FC<StartTripScreenProps> = ({
       </View>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
+        <CustomButton
+          title="Cancel"
+          onPress={onCancel}
+          style={styles.cancelButton}
+          textStyle={styles.cancelButtonText}
+        />
 
-        <TouchableOpacity style={styles.startButton} onPress={onStartTrip}>
-          <Text style={styles.startButtonText}>Start Trip</Text>
-        </TouchableOpacity>
+        <CustomButton
+          title="Start Trip"
+          onPress= {() => router.push('/(traveller)/deliveryUpload')}
+          style={styles.startButton}
+          textStyle={styles.startButtonText}
+        />
       </View>
     </View>
   );
@@ -73,7 +81,7 @@ const styles = StyleSheet.create({
     fontFamily: "Figtree-Bold",
     fontSize: 20,
     color: Theme.colors.text.dark,
-    fontWeight:'600',
+    fontWeight: "600",
   },
   moreButton: {
     padding: Theme.spacing.xs,
@@ -101,12 +109,12 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   message: {
-    fontFamily: "Figtree-Regular",
-    fontSize: 30,
+    fontFamily: "inter",
+    fontSize: 34,
     textAlign: "center",
     color: Theme.colors.primary,
-    lineHeight: 30,
-    fontWeight:'300',
+    lineHeight: 34,
+    fontWeight: "300",
     marginBottom: Theme.spacing.lg,
   },
   buttonContainer: {
@@ -117,26 +125,24 @@ const styles = StyleSheet.create({
   cancelButton: {
     flex: 1,
     backgroundColor: Theme.colors.background.secondary,
-    paddingVertical: Theme.spacing.sm, 
+    paddingVertical: Theme.spacing.md,
     borderRadius: Theme.borderRadius.lg,
     alignItems: "center",
-    justifyContent: "center",
   },
   cancelButtonText: {
-    fontFamily: "Figtree-SemiBold",
+    fontFamily:"inter",
     color: Theme.colors.text.dark,
     fontSize: 15,
   },
   startButton: {
     flex: 1,
     backgroundColor: Theme.colors.primary,
-    paddingVertical: Theme.spacing.sm,
+    paddingVertical: Theme.spacing.md,
     borderRadius: Theme.borderRadius.lg,
     alignItems: "center",
-    justifyContent: "center",
   },
   startButtonText: {
-    fontFamily: "Figtree-SemiBold",
+    fontFamily: "inter",
     color: Theme.colors.white,
     fontSize: 15,
   },

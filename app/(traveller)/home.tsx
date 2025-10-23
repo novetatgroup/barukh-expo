@@ -2,15 +2,15 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import HomeForm from "../components/forms/traveller/HomeForm";
-import { useShipment } from "../context/ShipmentContext"; 
+import { useShipment } from "../context/ShipmentContext";
 
 const HomeScreen = () => {
   const router = useRouter();
-  const {isTravelerActive, setIsTravelerActive} = useShipment();
+  const { isTravelerActive, setIsTravelerActive } = useShipment();
 
   const handleActivateTravelerMode = () => {
-     if (!isTravelerActive) {
-      router.push("/(traveller)/travellerDetails");
+    if (!isTravelerActive) {
+      router.push("/(KYC)/KYCLanding");
     } else {
       setIsTravelerActive(false);
     }
@@ -22,8 +22,27 @@ const HomeScreen = () => {
         userName="Naomi Nyakaru"
         onActivateTravelerMode={handleActivateTravelerMode}
         onNavigateToDetails={() => router.push("/(traveller)/travellerDetails")}
-        onNavigateToShipments={() => router.push("/(traveller)/myShipments")}
-        isTravelerActive={isTravelerActive} shipments={[]}      />
+        onNavigateToShipments={(tab) =>
+          router.push({
+            pathname: "/(traveller)/myShipments",
+            params: { tab: tab || "Shipments" },
+          })
+        }
+        isTravelerActive={isTravelerActive} shipments={[{
+          id: "6",
+          trackingNumber: "#SK1058",
+          item: "MacBook Pro",
+          status: "Shipments",
+          progress: "In Transit"
+        },
+        {
+          id: "7",
+          trackingNumber: "#SK1059",
+          item: "iPhone 15 Pro",
+          status: "Shipments",
+          progress: "Delivered"
+        },
+        ]} />
     </View>
   );
 };

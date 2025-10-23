@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 16,
     backgroundColor: '#fff',
-    color: Theme.colors.text.lightGray,
+    color: Theme.colors.text.dark,
   },
   rounded: {
     borderRadius: 25,

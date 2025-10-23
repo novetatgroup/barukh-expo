@@ -9,8 +9,8 @@ export default function TravellerLayout() {
       <Stack.Screen name="myShipments" />
       <Stack.Screen name="matchDetails" />
       <Stack.Screen name="shipmentDetails" />
-      <Stack.Screen name="trackingScreen" />
       <Stack.Screen name="startTrip" />
+      <Stack.Screen name="deliveryUpload" />
     </Stack>
   );
 }

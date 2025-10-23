@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Theme from '@/app/constants/Theme';
+import CustomButton from '../../ui/CustomButton';
 
 interface MatchDetailsFormProps {
   matchedUserName: string;
@@ -82,6 +83,20 @@ const MatchDetailsForm: React.FC<MatchDetailsFormProps> = ({
                 <Text style={styles.detailValue}>{toLocation}</Text>
               </View>
             </View>
+{/* TODO: Ensure the confirmed users are moved to accepted  */}
+            <View style={styles.buttonRow}>
+              <CustomButton
+                title="Confirm"
+                style={styles.actionButton}
+                variant="primary"
+              />
+              <CustomButton
+                title="Decline"
+                style={styles.actionButton}
+                variant="primary"
+              />
+            </View>
+
 
           </View>
         </View>
@@ -206,6 +221,15 @@ const styles = StyleSheet.create({
     color: Theme.colors.black,
     fontWeight: '500',
   },
+  buttonRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  gap: 10,
+  marginTop: Theme.spacing.md,
+},
+actionButton: {
+  flex: 1,                          
+},
 });
 
 export default MatchDetailsForm;
