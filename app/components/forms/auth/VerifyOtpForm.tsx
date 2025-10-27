@@ -1,67 +1,48 @@
 import Theme from "@/app/constants/Theme";
-import React, { useEffect, useRef, useState } from "react";
-import {
-  StyleSheet,
-  Text, TextInput,
-  TouchableOpacity, View
-} from "react-native";
+import React, { useEffect, useState } from "react";
+import { 
+  StyleSheet, 
+  Text, 
+  TouchableOpacity, View } from "react-native";
 import CustomButton from "../../ui/CustomButton";
 import AuthScreenLayout from "./AuthScreenLayout";
+import { OtpInput } from "react-native-otp-entry";
 
 type VerifyOtpFormProps = {
   onSubmit: (data: { otp: string }) => void;
+  length: number;
 };
 
-const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({ onSubmit }) => {
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({ onSubmit, length }) => {
+  const [otp, setOtp] = useState("");
   const [countdown, setCountdown] = useState(60);
   const [loading, setLoading] = useState(false);
-  const inputRefs = useRef<(TextInput | null)[]>([]);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
   };
 
-  const handleOtpChange = (text: string, index: number) => {
-    const newOtp = [...otp];
-
-    if (text.length > 0) {
-      newOtp[index] = text.slice(-1);
-      setOtp(newOtp);
-
-      if (index < 5 && text.length > 0) {
-        inputRefs.current[index + 1]?.focus();
-      }
-    } else {
-      newOtp[index] = "";
-      setOtp(newOtp);
-    }
-  };
-
-  const handleKeyPress = (event: any, index: number) => {
-    if (event.nativeEvent.key === 'Backspace' && otp[index] === "" && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
+  const handleOtpChange = (text: string) => {
+    setOtp(text);
   };
 
   const handleSubmit = async () => {
-    const otpString = otp.join("");
-
-    if (otpString.length !== 6) return;
+    if (otp.length !== length) return;
 
     try {
       setLoading(true);
-      await onSubmit({ otp: otpString });
+      await onSubmit({ otp });
     } catch (error) {
       console.error("Error verifying OTP:", error);
     } finally {
@@ -72,12 +53,12 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({ onSubmit }) => {
   const handleResendCode = () => {
     if (countdown === 0) {
       setCountdown(50);
-      // TODO: Add resend OTP logic here
+      setOtp("");
       console.log("Resending OTP...");
     }
   };
 
-  const isOtpComplete = otp.every(digit => digit !== "");
+  const isOtpComplete = otp.length === length;
 
   return (
     <AuthScreenLayout
@@ -86,35 +67,35 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({ onSubmit }) => {
     >
       <View style={styles.content}>
         <View style={styles.otpContainer}>
-          {otp.map((digit, index) => (
-            <TextInput
-              key={index}
-              ref={(ref) => { inputRefs.current[index] = ref; }}
-              style={[
-                styles.otpInput,
-                digit ? styles.otpInputFilled : styles.otpInputEmpty
-              ]}
-              value={digit}
-              onChangeText={(text) => handleOtpChange(text, index)}
-              onKeyPress={(event) => handleKeyPress(event, index)}
-              keyboardType="number-pad"
-              maxLength={1}
-              selectTextOnFocus
-              textAlign="center"
-              autoFocus={index === 0}
-            />
-          ))}
+          <OtpInput
+            numberOfDigits={length}
+            onTextChange={handleOtpChange}
+            focusColor={Theme.colors.primary}
+            theme={{
+              containerStyle: styles.otpInnerContainer,
+              pinCodeContainerStyle: styles.otpInput,
+              pinCodeTextStyle: styles.otpText,
+              focusStickStyle: {
+                backgroundColor: Theme.colors.primary,
+              },
+              focusedPinCodeContainerStyle: {
+                borderColor: Theme.colors.primary,
+                borderWidth: 2,
+              },
+            }}
+          />
         </View>
 
         <View style={styles.resendContainer}>
-          <TouchableOpacity
-            onPress={handleResendCode}
-            disabled={countdown > 0}
-          >
-            <Text style={[
-              styles.resendText,
-              countdown > 0 ? styles.resendTextDisabled : styles.resendTextEnabled
-            ]}>
+          <TouchableOpacity onPress={handleResendCode} disabled={countdown > 0}>
+            <Text
+              style={[
+                styles.resendText,
+                countdown > 0
+                  ? styles.resendTextDisabled
+                  : styles.resendTextEnabled,
+              ]}
+            >
               Send code again {countdown > 0 && formatTime(countdown)}
             </Text>
           </TouchableOpacity>
@@ -135,54 +116,50 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({ onSubmit }) => {
 
 const styles = StyleSheet.create({
   content: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingTop: Theme.spacing.xxl,
   },
   otpContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     marginBottom: Theme.spacing.xl,
-    paddingHorizontal: Theme.spacing.sm,
+    width: "100%",
+
+  },
+  otpInnerContainer: {
+    gap:8,
+    
   },
   otpInput: {
     width: 50,
     height: 50,
     borderRadius: Theme.borderRadius.xl,
-    backgroundColor: '#f5f5f5',
-    fontSize: 20,
-    fontWeight: '600',
-    fontFamily: 'Inter-SemiBold',
-    color: Theme.colors.text.dark,
-    marginHorizontal: 4,
-    textAlign: 'center',
-  },
-  otpInputEmpty: {
+    backgroundColor: "#f5f5f5",
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: "#e0e0e0",
   },
-  otpInputFilled: {
-    borderWidth: 2,
-    borderColor: Theme.colors.primary,
-    backgroundColor: '#fff',
+  otpText: {
+    fontSize: 20,
+    fontWeight: "600",
+    fontFamily: "Inter-SemiBold",
+    color: Theme.colors.text.dark,
   },
   resendContainer: {
     marginBottom: Theme.spacing.xxl,
   },
   resendText: {
     fontSize: 14,
-    fontFamily: 'Inter-Regular',
-    textAlign: 'center',
+    fontFamily: "Inter-Regular",
+    textAlign: "center",
   },
   resendTextDisabled: {
-    color: '#666',
+    color: "#666",
   },
   resendTextEnabled: {
     color: Theme.colors.primary,
-    fontWeight: '600',
-    fontFamily: 'Inter-SemiBold',
+    fontWeight: "600",
+    fontFamily: "Inter-SemiBold",
   },
   button: {
-    width: '100%',
+    width: "100%",
     marginTop: Theme.spacing.lg,
   },
 });

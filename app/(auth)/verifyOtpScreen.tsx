@@ -89,7 +89,7 @@ const VerifyOtpScreen = () => {
 
   return (
     <View style={styles.container}>
-      <VerifyOtpForm onSubmit={handleVerifyOtp} />
+      <VerifyOtpForm onSubmit={handleVerifyOtp} length={6} />
     </View>
   );
 };
