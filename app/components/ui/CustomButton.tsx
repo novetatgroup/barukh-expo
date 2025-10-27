@@ -1,12 +1,14 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, TouchableOpacityProps, View } from 'react-native';
-import Theme from '../../constants/Theme'; 
+import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, TouchableOpacityProps } from 'react-native';
+import Theme from '../../constants/Theme';
+
 
 interface CustomButtonProps extends TouchableOpacityProps {
   title: string;
   variant?: 'primary' | 'secondary' | 'google';
   textStyle?: object;
   showGoogleIcon?: boolean;
+  loading?: boolean;
 }
 
 const CustomButton: React.FC<CustomButtonProps> = ({ 
@@ -17,55 +19,63 @@ const CustomButton: React.FC<CustomButtonProps> = ({
   showGoogleIcon = false,
   onPress, 
   disabled,
+  loading = false,
   ...props 
 }) => {
-  
-  // Debug logging
-  console.log('CustomButton rendered:', { 
-    title, 
-    variant, 
-    disabled, 
-    hasOnPress: !!onPress 
-  });
 
   const handlePress = (event: any) => {
-    console.log('CustomButton handlePress called!');
-    if (onPress) {
-      console.log('Calling onPress from CustomButton');
+    if (!loading && onPress) {
       onPress(event);
-    } else {
-      console.log('No onPress handler provided to CustomButton');
     }
   };
 
   return (
     <TouchableOpacity
+      activeOpacity={1} 
       style={[
         styles.base,
         variant === 'primary' && styles.primary,
         variant === 'secondary' && styles.secondary,
         variant === 'google' && styles.google,
+        disabled && !loading && styles.disabled,
         style
       ]}
       onPress={handlePress}
+      disabled={disabled || loading}
       {...props}
     >
-      {variant === 'google' && showGoogleIcon && (
-        <View style={styles.googleIconContainer}>
-          <Text style={styles.googleIcon}>G</Text>
-        </View>
+      {loading ? (
+        <ActivityIndicator
+          size="small"
+          color={variant === 'primary' ? '#fff' : Theme.colors.primary}
+        />
+      ) : (
+        <>
+          {variant === 'google' && showGoogleIcon && (
+            <>
+            {/* <View style={styles.googleIconContainer}>
+              <Text style={styles.googleIcon}>G</Text>
+            </View> */}
+            <Image
+            source={require("../../../assets/images/googleIcon.png")}
+            style={styles.googleIconContainer}
+          />
+            </>
+            
+          )}
+          <Text
+            style={[
+              styles.baseText,
+              variant === 'primary' && styles.primaryText,
+              variant === 'secondary' && styles.secondaryText,
+              variant === 'google' && styles.googleText,
+              textStyle
+            ]}
+          >
+            {title}
+          </Text>
+        </>
       )}
-      <Text
-        style={[
-          styles.baseText,
-          variant === 'primary' && styles.primaryText,
-          variant === 'secondary' && styles.secondaryText,
-          variant === 'google' && styles.googleText,
-          textStyle
-        ]}
-      >
-        {title}
-      </Text>
     </TouchableOpacity>
   );
 };
@@ -95,11 +105,12 @@ const styles = StyleSheet.create({
     borderColor: Theme.colors.text.gray,
   },
   disabled: {
-    opacity: 0.5,
+    opacity: 1.0,
   },
   baseText: {
     fontSize: Theme.typography.body.fontSize,
-    fontWeight: '600',
+    fontWeight: '500',
+    fontFamily: 'Inter-Regular'
   },
   primaryText: {
     color: Theme.colors.white,
@@ -111,13 +122,10 @@ const styles = StyleSheet.create({
     color: Theme.colors.text.dark,
     fontWeight: '500',
   },
-  disabledText: {
-    opacity: 0.7,
-  },
   googleIconContainer: {
-    width: 20,
-    height: 20,
-    backgroundColor: '#4285F4',
+    // width: 20,
+    // height: 20,
+    //backgroundColor: '#4285F4',
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',

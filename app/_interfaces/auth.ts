@@ -1,16 +1,13 @@
-export interface OtpResponse {
+export default interface OtpResponse {
   sessionId: string;
   attemptsLeft: number;
   expiresAt: string;
   message?: string;
 }
 
-export interface VerifyOtpResponse {
+
+export default interface VerifyOtpResponse {
   accessToken: string;
   refreshToken: string;
   message?: string;
-}
-
-export default function AuthInterfaces() {
-  return null;
 }

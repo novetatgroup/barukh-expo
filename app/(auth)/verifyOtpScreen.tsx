@@ -1,58 +1,67 @@
-import AsyncStorage from "@react-native-async-storage/async-storage"; 
-import { router } from "expo-router"; 
-import React, { useContext } from "react"; 
-import { StyleSheet, View } from "react-native"; 
-import Toast from "react-native-toast-message"; 
-import VerifyOtpForm from "../components/forms/VerifyOtpForm"; 
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
+import { jwtDecode } from "jwt-decode";
+import React, { useContext, useEffect } from "react";
+import { StyleSheet, View } from "react-native";
+import Toast from "react-native-toast-message";
+import VerifyOtpForm from "../components/forms/auth/VerifyOtpForm";
 import { AuthContext } from "../context/AuthContext";
 
-const VerifyOtpScreen = () => { 
-  const { setAuthState } = useContext(AuthContext); 
+const VerifyOtpScreen = () => {
+  const { setAuthState } = useContext(AuthContext);
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
-  const handleVerifyOtp = async ({ otp }: { otp: string }) => { 
-    try { 
+  useEffect(() => {
+    Toast.hide();
+  }, []);
+
+  const handleVerifyOtp = async ({ otp }: { otp: string }) => {
+    try {
       const sessionId = await AsyncStorage.getItem("sessionId");
-      const otpFlow = await AsyncStorage.getItem("otpFlow"); 
-      if (!sessionId || !otpFlow) { 
-        Toast.show({ 
-          type: "error", 
-          text1: "Please try again.", 
-          position:"top",
-         }); 
-        
-         return; 
-    }
 
-    const endpoint =
-        otpFlow === "register"
-          ? `${apiUrl}/users/register/verify-otp`
-          : `${apiUrl}/users/login/verify-otp`;
+      if (!sessionId) {
+        Toast.show({
+          type: "error",
+          text1: "Please try again.",
+          position: "top",
+          visibilityTime: 2500,
+        });
+        return;
+      }
 
-    const response = await fetch(endpoint,
-       { method: "POST", 
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch(`${apiUrl}/auth/verify-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-client-platform": "barukh_mobile",
+        },
         body: JSON.stringify({ otpCode: otp, sessionId }),
         credentials: "include",
-       }); 
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (response.ok && data.accessToken) {
-        setAuthState(data.accessToken);
-        await AsyncStorage.removeItem("otpFlow");
+      if (response.ok && data.accessToken) {
+        const decoded = jwtDecode<{ userId: string | number }>(data.accessToken);
+
+        await setAuthState({
+          refreshToken: data.refreshToken,
+          accessToken: data.accessToken,
+          isAuthenticated: true,
+          userId: decoded.userId ? Number(decoded.userId) : null,
+        });
 
         Toast.show({
           type: "success",
           text1: "OTP verified successfully!",
           position: "top",
-          visibilityTime:4000,
+          visibilityTime: 2000,
         });
-        
-        setTimeout(() =>{
-           router.push("/roleSelection");
-        }, 2500)
-        
+
+        setTimeout(() => {
+          router.push("/roleSelection");
+        }, 1500);
+
         return;
       }
 
@@ -64,7 +73,7 @@ const VerifyOtpScreen = () => {
         text1: "Verification Failed",
         text2: errorMessage,
         position: "top",
-        
+        visibilityTime: 3000,
       });
     } catch (error) {
       console.error("API error:", error);
@@ -73,6 +82,7 @@ const VerifyOtpScreen = () => {
         text1: "Network error",
         text2: "Please try again later.",
         position: "top",
+        visibilityTime: 3000,
       });
     }
   };
@@ -85,7 +95,9 @@ const VerifyOtpScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { 
+    flex: 1,
+  },
 });
 
 export default VerifyOtpScreen;

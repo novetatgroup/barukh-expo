@@ -5,16 +5,18 @@ import { useEffect } from "react";
 import Toast from "react-native-toast-message";
 import { toastConfig } from "./components/ui/ToastConfig";
 import { AuthProvider } from "./context/AuthContext";
-import "./global.css";
+import { KYCProvider } from "./context/KYCContext";
+import { ShipmentProvider } from "./context/ShipmentContext";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    Inter: require("../assets/fonts/Inter-Regular.ttf"),
-    "Inter-Medium": require("../assets/fonts/Inter-Medium.ttf"),
-    "Inter-SemiBold": require("../assets/fonts/Inter-SemiBold.ttf"),
-    "Inter-Bold": require("../assets/fonts/Inter-Bold.ttf"),
+    'Inter-Regular': require('../assets/fonts/Inter-Regular.ttf'),
+    'Inter-Bold': require('../assets/fonts/Inter-Bold.ttf'),
+    'Inter-SemiBold': require('../assets/fonts/Inter-SemiBold.ttf'),
+    'Inter-Italic': require('../assets/fonts/Inter-Italic.ttf'),
+    'SpaceMono-Regular': require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
   useEffect(() => {
@@ -26,11 +28,17 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontError) {
     return null;
   }
-
+  
   return (
     <AuthProvider>
-      <Slot />
-      <Toast config={toastConfig} />
+      <KYCProvider>
+        <ShipmentProvider>
+          <Slot />
+      
+        <Toast config={toastConfig} />
+        </ShipmentProvider>
+        
+      </KYCProvider> 
     </AuthProvider>
   );
 }

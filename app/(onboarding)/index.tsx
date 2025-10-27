@@ -1,91 +1,91 @@
-// app/(onboarding)/index.tsx
-import { useRouter } from "expo-router";
-import React, { useRef, useState } from "react";
+import { useRouter } from 'expo-router';
+import React, { useRef, useState } from 'react';
 import {
-  Dimensions,
-  FlatList,
-  Image,
-  StatusBar,
-  Text,
+  Dimensions, FlatList, StatusBar, StyleSheet, Text,
   TouchableOpacity,
-  View,
-  ViewToken,
-} from "react-native";
-import Logo from "../../assets/images/logo.png";
-import styles from "../styles/onboardingStyles";
+  View, ViewToken
+} from 'react-native';
+import { Logo } from '../../assets/svgs/index';
+import styles from '../styles/onboardingStyles';
 
-const { width } = Dimensions.get("window");
+const { width } = Dimensions.get('window');
 
-interface OnboardingItem {
-  title: string;
-  subtitle: string;
-  image: any;
-}
-
-const onboardingData: OnboardingItem[] = [
+const onboardingData = [
   {
+    id: '0',
     title: "Send Smarter,\nAcross Borders",
     subtitle: "Shop anywhere. Let trusted travelers deliver for less.",
-    image: Logo,
+    ImageComponent: Logo,
   },
   {
+    id: '1',
     title: "Verified\nTravelers Only",
     subtitle: "Every delivery is matched with a vetted, rated traveler",
-    image: Logo,
+    ImageComponent: Logo,
   },
   {
+    id: '2',
     title: "Pay When\nDelivered",
-    subtitle:
-      "Your money is held securely until the recipient confirms delivery",
-    image: Logo,
-  },
+    subtitle: "Your money is held securely until the recipient confirms delivery",
+    ImageComponent: Logo,
+  }
 ];
 
-const OnboardingScreen = () => {
+export default function OnboardingScreen() {
   const [currentStep, setCurrentStep] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const router = useRouter();
 
   const handleNext = () => {
     if (currentStep < onboardingData.length - 1) {
-      const nextIndex = currentStep + 1;
-      setTimeout(() => {
-        flatListRef.current?.scrollToOffset({
-          offset: nextIndex * width,
-          animated: true,
-        });
-        setCurrentStep(nextIndex);
-      }, 50);
+      flatListRef.current?.scrollToIndex({
+        index: currentStep + 1,
+        animated: true,
+      });
     } else {
-      router.replace("/(auth)");
+      router.replace('/(auth)');
     }
   };
 
   const handleSkip = () => {
-    router.replace("/(auth)");
+    router.replace('/(auth)');
   };
 
-  const onViewableItemsChanged = useRef(
-    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-      if (viewableItems.length > 0 && viewableItems[0].index !== null) {
-        setCurrentStep(viewableItems[0].index);
-      }
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    if (viewableItems.length > 0 && viewableItems[0].index !== null) {
+      setCurrentStep(viewableItems[0].index);
     }
-  ).current;
+  }).current;
 
   const viewabilityConfig = useRef({
     itemVisiblePercentThreshold: 50,
   }).current;
 
-  const renderItem = ({ item }: { item: OnboardingItem }) => (
-    <View style={[styles.slide, { width }]}>
-      {item.image && (
-        <Image source={item.image} style={styles.logo} resizeMode="contain" />
+  const renderItem = ({ item }: { item: typeof onboardingData[0] }) => (
+    <View style={[styles.content, { width }]}>
+      {item.ImageComponent && (
+        <View style={{ marginTop: 325, marginBottom: 20 }}>
+          <item.ImageComponent width={45} height={45} />
+        </View>
       )}
       <Text style={styles.title}>{item.title}</Text>
       <Text style={styles.subtitle}>{item.subtitle}</Text>
+
+      <View style={styles.dotsContainer}>
+        {onboardingData.map((_, dotIndex) => (
+          <View
+            key={dotIndex}
+            style={[
+              styles.dot,
+              dotIndex === currentStep ? styles.activeDot : styles.inactiveDot
+            ]}
+          />
+        ))}
+      </View>
     </View>
   );
+
+  const isLastStep = currentStep === onboardingData.length - 1;
 
   return (
     <View style={styles.container}>
@@ -95,56 +95,48 @@ const OnboardingScreen = () => {
         ref={flatListRef}
         data={onboardingData}
         renderItem={renderItem}
-        keyExtractor={(_, index) => index.toString()}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         bounces={false}
+        keyExtractor={(item) => item.id}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
+        scrollEventThrottle={16}
       />
 
-      <View style={styles.footer}>
-        <View style={styles.dotsContainer}>
-          {onboardingData.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.dot,
-                index === currentStep ? styles.activeDot : styles.inactiveDot,
-              ]}
-            />
-          ))}
-        </View>
-
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.nextButton}
-            onPress={handleNext}
-            accessibilityLabel={
-              currentStep < onboardingData.length - 1
-                ? "Go to next screen"
-                : "Complete onboarding"
-            }
-            accessibilityRole="button"
-          >
-            <Text style={styles.nextButtonText}>
-              {currentStep < onboardingData.length - 1 ? "Next" : "Get Started"}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.skipButton}
-            onPress={handleSkip}
-            accessibilityLabel="Skip onboarding"
-            accessibilityRole="button"
-          >
-            <Text style={styles.skipButtonText}>Skip</Text>
-          </TouchableOpacity>
+      <View style={[styles.buttonContainer, fixedStyles.buttonContainerFixed]}>
+        <TouchableOpacity 
+          style={styles.nextButton} 
+          onPress={handleNext} 
+          activeOpacity={1}
+        >
+          <Text style={styles.nextButtonText}>
+            {isLastStep ? 'Get Started' : 'Next'}
+          </Text>
+        </TouchableOpacity>
+        
+        <View style={fixedStyles.skipButtonWrapper}>
+          {!isLastStep && (
+            <TouchableOpacity 
+              style={styles.skipButton} 
+              onPress={handleSkip}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.skipButtonText}>Skip</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </View>
   );
-};
+}
 
-export default OnboardingScreen;
+const fixedStyles = StyleSheet.create({
+  buttonContainerFixed: {
+    minHeight: 130, 
+  },
+  skipButtonWrapper: {
+    height: 63, 
+  },
+});

@@ -1,5 +1,8 @@
-import OnboardingScreen from "./(onboarding)";
+import OnboardingScreen from "./(onboarding)/index";
+import "./global.css";
 
 export default function Index() {
-  return <OnboardingScreen />;
+  return (
+    <OnboardingScreen />
+  );
 }
