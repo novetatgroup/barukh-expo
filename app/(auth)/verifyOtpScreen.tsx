@@ -19,6 +19,7 @@ const VerifyOtpScreen = () => {
 		try {
 			const sessionId = await AsyncStorage.getItem("sessionId");
 			const otpFlow = await AsyncStorage.getItem("otpFlow");
+			const email = await AsyncStorage.getItem("email");
 
 			if (!sessionId || !otpFlow) {
 				Toast.show({
@@ -30,14 +31,17 @@ const VerifyOtpScreen = () => {
 				return;
 			}
 
-			const response = await fetch(`${apiUrl}/auth/verify-otp`, {
+			const endpoint =
+				otpFlow === "register"
+					? `${apiUrl}/users/register/verify-otp`
+					: `${apiUrl}/auth/login/verify-otp`;
+			const response = await fetch(endpoint, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 					"x-client-platform": "barukh_mobile",
 				},
-				body: JSON.stringify({ otpCode: otp, sessionId }),
-				credentials: "include",
+				body: JSON.stringify({ sessionId, otpCode: otp }),
 			});
 
 			const data = await response.json();

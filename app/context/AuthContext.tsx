@@ -5,7 +5,7 @@ import {
 	deleteSecureItem,
 	getSecureItem,
 	saveSecureItem,
-} from "../../utils/secureStorage";
+} from "../utils/secureStorage";
 
 interface DecodedToken {
 	userId: string | number;

@@ -75,7 +75,10 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({ onSubmit, length }) => {
 						: `${apiUrl}/auth/login/request-otp`;
 				const response = await fetch(endpoint, {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
+					headers: {
+						"Content-Type": "application/json",
+						"x-client-platform": "barukh_mobile",
+					},
 					body: JSON.stringify({ email }),
 				});
 				const data = await response.json();

@@ -20,7 +20,10 @@ const LoginScreen = ({ activeTab, onTabChange }: LoginScreenProps) => {
 		try {
 			const response = await fetch(`${apiUrl}/auth/login/request-otp`, {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: {
+					"Content-Type": "application/json",
+					"x-client-platform": "barukh_mobile",
+				},
 				body: JSON.stringify({ email }),
 			});
 

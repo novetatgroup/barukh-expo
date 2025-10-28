@@ -32,7 +32,10 @@ const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
 				`${apiUrl}/users/register/request-otp`,
 				{
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
+					headers: {
+						"Content-Type": "application/json",
+						"x-client-platform": "barukh_mobile",
+					},
 					body: JSON.stringify({ name, email }),
 				}
 			);
