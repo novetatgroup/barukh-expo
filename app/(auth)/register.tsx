@@ -1,12 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
+import * as AuthSession from "expo-auth-session";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import Toast from "react-native-toast-message";
 import RegisterForm from "../components/forms/auth/RegisterForm";
 import OtpResponse from "../Interfaces/auth";
-import * as WebBrowser from "expo-web-browser";
-import * as AuthSession from "expo-auth-session";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -25,15 +25,9 @@ const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
 		name: string;
 		email: string;
 	}) => {
-		try {
-			Toast.show({
-				type: "info",
-				text1: "Sending OTP...",
-				text2: "Please wait",
-				position: "top",
-				visibilityTime: 3000,
-			});
+		console.log("Register pressed:", name, email);
 
+		try {
 			const response = await fetch(
 				`${apiUrl}/users/register/request-otp`,
 				{
@@ -54,6 +48,7 @@ const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
 
 			if (response.ok) {
 				const otpData = data as OtpResponse;
+
 				if (otpData.sessionId) {
 					await AsyncStorage.setItem("sessionId", otpData.sessionId);
 					await AsyncStorage.setItem("otpFlow", "register");
@@ -62,7 +57,6 @@ const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
 						otpData.attemptsLeft.toString()
 					);
 					await AsyncStorage.setItem("expiresAt", otpData.expiresAt);
-					await AsyncStorage.setItem("email", email);
 				}
 
 				Toast.hide();
@@ -74,9 +68,10 @@ const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
 						position: "top",
 						visibilityTime: 4000,
 					});
-					setTimeout(() => {
-						router.push("/(auth)/verifyOtpScreen");
-					}, 2500);
+					setTimeout(
+						() => router.push("/(auth)/verifyOtpScreen"),
+						2500
+					);
 				}, 300);
 			} else {
 				Toast.hide();
@@ -94,6 +89,7 @@ const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
 				}, 300);
 			}
 		} catch (error) {
+			console.error("Network error:", error);
 			Toast.hide();
 			setTimeout(() => {
 				Toast.show({
@@ -123,17 +119,14 @@ const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
 			const data = await response.json();
 			const consentUrl = data.url;
 
-			const redirecturi = AuthSession.makeRedirectUri({
-				native: AuthSession.getDefaultReturnUrl(),
+			const redirectUri = AuthSession.makeRedirectUri({
+				scheme: "barukhexpo",
 			});
-
-			console.log("Redirect uri: ", redirecturi);
 
 			const result = await WebBrowser.openAuthSessionAsync(
 				consentUrl,
-				redirecturi
+				redirectUri
 			);
-			console.log("Result received: ", result);
 
 			if (result.type === "success") {
 				const url = result.url;
@@ -184,9 +177,7 @@ const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
 };
 
 const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-	},
+	container: { flex: 1 },
 });
 
 export default RegisterScreen;

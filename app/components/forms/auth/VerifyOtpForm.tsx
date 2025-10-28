@@ -1,32 +1,21 @@
 import Theme from "@/app/constants/Theme";
-import React, { useEffect, useRef, useState } from "react";
-import {
-	Dimensions,
-	Image,
-	StyleSheet,
-	Text,
-	View,
-	TextInput,
-	TouchableOpacity,
-} from "react-native";
+import React, { useEffect, useState } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import CustomButton from "../../ui/CustomButton";
 import AuthScreenLayout from "./AuthScreenLayout";
+import { OtpInput } from "react-native-otp-entry";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Toast from "react-native-toast-message";
 
 type VerifyOtpFormProps = {
-	onSubmit: (data: { otp: string }) => void;
-	onResend?: () => void;
+	onSubmit: (data: { otp: string }) => Promise<void>;
+	length: number;
 };
 
-const { width: screenWidth } = Dimensions.get("window");
-
-const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({
-	onSubmit,
-	onResend,
-}) => {
-	const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({ onSubmit, length }) => {
+	const [otp, setOtp] = useState("");
 	const [countdown, setCountdown] = useState(60);
 	const [loading, setLoading] = useState(false);
-	const inputRefs = useRef<(TextInput | null)[]>([]);
 
 	useEffect(() => {
 		const timer = setInterval(() => {
@@ -43,53 +32,85 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({
 			.padStart(2, "0")}`;
 	};
 
-	const handleOtpChange = (text: string, index: number) => {
-		const newOtp = [...otp];
-		if (text.length > 0) {
-			newOtp[index] = text.slice(-1);
-			setOtp(newOtp);
-			if (index < 5 && text.length > 0) {
-				inputRefs.current[index + 1]?.focus();
-			}
-		} else {
-			newOtp[index] = "";
-			setOtp(newOtp);
-		}
-	};
-
-	const handleKeyPress = (event: any, index: number) => {
-		if (
-			event.nativeEvent.key === "Backspace" &&
-			otp[index] === "" &&
-			index > 0
-		) {
-			inputRefs.current[index - 1]?.focus();
-		}
+	const handleOtpChange = (text: string) => {
+		setOtp(text);
 	};
 
 	const handleSubmit = async () => {
-		const otpString = otp.join("");
-
-		if (otpString.length !== 6) return;
-
+		if (otp.length !== length) {
+			Toast.show({
+				type: "error",
+				text1: "Incomplete code",
+				text2: "Please enter all digits",
+			});
+			return;
+		}
 		try {
 			setLoading(true);
-			await onSubmit({ otp: otpString });
-		} catch (error) {
-			console.error("Error verifying OTP:", error);
+			await onSubmit({ otp });
 		} finally {
 			setLoading(false);
 		}
 	};
 
-	const handleResendCode = () => {
-		if (countdown === 0 && onResend) {
-			setCountdown(60);
-			onResend();
+	const handleResendCode = async () => {
+		if (countdown === 0) {
+			try {
+				const otpFlow = await AsyncStorage.getItem("otpFlow");
+				const email = await AsyncStorage.getItem("email");
+				if (!otpFlow || !email) {
+					Toast.show({
+						type: "error",
+						text1: "Missing data",
+						text2: "Please go back and try again.",
+						position: "top",
+						visibilityTime: 2500,
+					});
+					return;
+				}
+				const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+				const endpoint =
+					otpFlow === "register"
+						? `${apiUrl}/users/register/request-otp`
+						: `${apiUrl}/auth/login/request-otp`;
+				const response = await fetch(endpoint, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ email }),
+				});
+				const data = await response.json();
+				if (response.ok && data.sessionId) {
+					await AsyncStorage.setItem("sessionId", data.sessionId);
+					setCountdown(50);
+					setOtp("");
+					Toast.show({
+						type: "success",
+						text1: "New OTP Sent!",
+						position: "top",
+						visibilityTime: 2000,
+					});
+				} else {
+					Toast.show({
+						type: "error",
+						text1: "Failed to resend code",
+						text2: data?.message || "Please try again",
+						position: "top",
+						visibilityTime: 3000,
+					});
+				}
+			} catch {
+				Toast.show({
+					type: "error",
+					text1: "Network Error",
+					text2: "Could not resend code. Try again later.",
+					position: "top",
+					visibilityTime: 3000,
+				});
+			}
 		}
 	};
 
-	const isOtpComplete = otp.every((digit) => digit !== "");
+	const isOtpComplete = otp.length === length;
 
 	return (
 		<AuthScreenLayout
@@ -97,30 +118,23 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({
 			subtitle="We've sent a 6-digit code to your email">
 			<View style={styles.content}>
 				<View style={styles.otpContainer}>
-					{otp.map((digit, index) => (
-						<TextInput
-							key={index}
-							ref={(ref) => {
-								inputRefs.current[index] = ref;
-							}}
-							style={[
-								styles.otpInput,
-								digit
-									? styles.otpInputFilled
-									: styles.otpInputEmpty,
-							]}
-							value={digit}
-							onChangeText={(text) =>
-								handleOtpChange(text, index)
-							}
-							onKeyPress={(event) => handleKeyPress(event, index)}
-							keyboardType="number-pad"
-							maxLength={1}
-							selectTextOnFocus
-							textAlign="center"
-							autoFocus={index === 0}
-						/>
-					))}
+					<OtpInput
+						numberOfDigits={length}
+						onTextChange={handleOtpChange}
+						focusColor={Theme.colors.primary}
+						theme={{
+							containerStyle: styles.otpInnerContainer,
+							pinCodeContainerStyle: styles.otpInput,
+							pinCodeTextStyle: styles.otpText,
+							focusStickStyle: {
+								backgroundColor: Theme.colors.primary,
+							},
+							focusedPinCodeContainerStyle: {
+								borderColor: Theme.colors.primary,
+								borderWidth: 2,
+							},
+						}}
+					/>
 				</View>
 
 				<View style={styles.resendContainer}>
@@ -154,95 +168,36 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({
 };
 
 const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: Theme.colors.primary,
-	},
-	logo: {
-		width: 45,
-		height: 45,
-		marginLeft: Theme.screenPadding.horizontal,
-		marginTop: Theme.spacing.xxxxxxxl,
-	},
-	grid: {
-		width: 350,
-		height: 350,
-		position: "absolute",
-		top: 0,
-		left: screenWidth - 240 - 10,
-	},
-	title: {
-		...Theme.typography.h1,
-		textAlign: "left",
-		marginLeft: Theme.screenPadding.horizontal,
-		color: Theme.colors.text.light,
-	},
-	subtitle: {
-		...Theme.typography.caption,
-		marginLeft: Theme.screenPadding.horizontal,
-		textAlign: "left",
-		marginTop: -10,
-		marginBottom: Theme.spacing.xl,
-		color: Theme.colors.text.light,
-	},
-	formContainer: {
-		backgroundColor: Theme.colors.white,
-		borderTopLeftRadius: Theme.borderRadius.xl,
-		borderTopRightRadius: Theme.borderRadius.xl,
-		padding: Theme.screenPadding.horizontal,
-		flex: 1,
-		alignItems: "center",
-		paddingTop: Theme.spacing.xxl,
-	},
-	otpContainer: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		marginBottom: Theme.spacing.xl,
-		paddingHorizontal: Theme.spacing.sm,
-	},
+	content: { alignItems: "center", paddingTop: Theme.spacing.xxl },
+	otpContainer: { marginBottom: Theme.spacing.xl, width: "100%" },
+	otpInnerContainer: { gap: 8 },
 	otpInput: {
 		width: 50,
 		height: 50,
 		borderRadius: Theme.borderRadius.xl,
 		backgroundColor: "#f5f5f5",
-		fontSize: 20,
-		fontWeight: "600",
-		color: Theme.colors.text.dark,
-		marginHorizontal: 8,
-		textAlign: "center",
-	},
-	otpInputEmpty: {
 		borderWidth: 1,
 		borderColor: "#e0e0e0",
 	},
-	otpInputFilled: {
-		borderWidth: 2,
-		borderColor: Theme.colors.primary,
-		backgroundColor: "#fff",
+	otpText: {
+		fontSize: 20,
+		fontWeight: "600",
+		fontFamily: "Inter-SemiBold",
+		color: Theme.colors.text.dark,
 	},
-	resendContainer: {
-		marginBottom: Theme.spacing.xxl,
-	},
+	resendContainer: { marginBottom: Theme.spacing.xxl },
 	resendText: {
 		fontSize: 14,
+		fontFamily: "Inter-Regular",
 		textAlign: "center",
 	},
-	resendTextDisabled: {
-		color: "#666",
-	},
+	resendTextDisabled: { color: "#666" },
 	resendTextEnabled: {
 		color: Theme.colors.primary,
 		fontWeight: "600",
+		fontFamily: "Inter-SemiBold",
 	},
-	button: {
-		width: "100%",
-		marginTop: Theme.spacing.lg,
-	},
-	content: {
-		width: "100%",
-		alignItems: "center",
-		paddingHorizontal: Theme.screenPadding.horizontal,
-	},
+	button: { width: "100%", marginTop: Theme.spacing.lg },
 });
 
 export default VerifyOtpForm;
