@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import Toast from "react-native-toast-message";
+import { Toast } from "toastify-react-native";
 import LoginForm from "../components/forms/auth/LoginForm";
 import OtpResponse from "../Interfaces/auth";
 
@@ -19,14 +19,15 @@ const LoginScreen = ({ activeTab, onTabChange }: LoginScreenProps) => {
 
     try {
       const response = await fetch(`${apiUrl}/auth/login/request-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
 
       let data;
       try {
         data = await response.json();
+        console.log("API response data:", data);
       } catch {
         data = { message: "Unexpected server response" };
       }
@@ -39,54 +40,28 @@ const LoginScreen = ({ activeTab, onTabChange }: LoginScreenProps) => {
         if (otpData.sessionId) {
           await AsyncStorage.setItem("sessionId", otpData.sessionId);
           await AsyncStorage.setItem("otpFlow", "login");
-          await AsyncStorage.setItem("attemptsLeft", otpData.attemptsLeft.toString());
+          await AsyncStorage.setItem(
+            "attemptsLeft",
+            otpData.attemptsLeft.toString()
+          );
           await AsyncStorage.setItem("expiresAt", otpData.expiresAt);
           console.log("Session data saved");
         }
 
-        Toast.show({
-          type: 'success',
-          text1: 'OTP Sent!',
-          text2: 'Verification code has been sent to your email',
-          position: 'top',
-          visibilityTime: 1000,
-          autoHide: true,
-        });
+        Toast.success("OTP sent to your email!");
 
         setTimeout(() => {
-          Toast.hide();
           router.push("/(auth)/verifyOtpScreen");
         }, 2000);
-
       } else {
         console.log("API error:", data);
 
-        setTimeout(() => {
-          Toast.show({
-            type: 'error',
-            text1: 'Failed to Send OTP',
-            text2: data?.message || 'Please try again',
-            position: 'top',
-            visibilityTime: 3000,
-            autoHide: true,
-          });
-        }, 100);
+        Toast.error("Failed to send OTP. Please try again.");
       }
     } catch (error) {
-      console.error('Network error:', error);
+      console.error("Network error:", error);
 
-      Toast.hide();
-
-      setTimeout(() => {
-        Toast.show({
-          type: 'error',
-          text1: 'Network Error',
-          text2: 'Please check your connection',
-          position: 'top',
-          visibilityTime: 3000,
-          autoHide: true,
-        });
-      }, 100);
+      Toast.error("Please check your connection.");
     }
   };
 

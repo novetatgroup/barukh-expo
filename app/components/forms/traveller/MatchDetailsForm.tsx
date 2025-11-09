@@ -1,8 +1,15 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import Theme from '@/app/constants/Theme';
-import CustomButton from '../../ui/CustomButton';
+import Theme from "@/app/constants/Theme";
+import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import CustomButton from "../../ui/CustomButton";
 
 interface MatchDetailsFormProps {
   matchedUserName: string;
@@ -39,7 +46,6 @@ const MatchDetailsForm: React.FC<MatchDetailsFormProps> = ({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-
         <View style={styles.userCard}>
           <View style={styles.userInfo}>
             {matchedUserImage ? (
@@ -83,7 +89,7 @@ const MatchDetailsForm: React.FC<MatchDetailsFormProps> = ({
                 <Text style={styles.detailValue}>{toLocation}</Text>
               </View>
             </View>
-{/* TODO: Ensure the confirmed users are moved to accepted  */}
+            {/* TODO: Ensure the confirmed users are moved to accepted  */}
             <View style={styles.buttonRow}>
               <CustomButton
                 title="Confirm"
@@ -96,11 +102,8 @@ const MatchDetailsForm: React.FC<MatchDetailsFormProps> = ({
                 variant="primary"
               />
             </View>
-
-
           </View>
         </View>
-
       </ScrollView>
     </View>
   );
@@ -109,40 +112,39 @@ const MatchDetailsForm: React.FC<MatchDetailsFormProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Theme.colors.background.secondary,
+    backgroundColor: "#F4F1F2",
+    fontFamily: "Inter-Regular",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Theme.spacing.md,
-    paddingVertical: Theme.spacing.md,
-    backgroundColor: Theme.colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.text.border,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+
+    marginTop: 60,
+    marginBottom: 30,
   },
   line: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E5E5E5',
+    backgroundColor: "#E5E5E5",
   },
   lineContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginVertical: 20,
   },
   iconButton: {
     width: 40,
     height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerCenter: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerTitle: {
     fontSize: Theme.typography.h2.fontSize,
@@ -167,8 +169,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: Theme.spacing.lg,
   },
   avatar: {
@@ -178,13 +180,13 @@ const styles = StyleSheet.create({
     marginRight: Theme.spacing.md,
   },
   avatarPlaceholder: {
-    backgroundColor: '#D4A574',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#D4A574",
+    alignItems: "center",
+    justifyContent: "center",
   },
   avatarText: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Theme.colors.white,
   },
   userTextContainer: {
@@ -192,7 +194,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: Theme.typography.body.fontSize,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Theme.colors.black,
     marginBottom: 2,
   },
@@ -204,7 +206,7 @@ const styles = StyleSheet.create({
     marginBottom: Theme.spacing.lg,
   },
   detailRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: Theme.spacing.md,
     gap: Theme.spacing.md,
   },
@@ -219,17 +221,17 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: Theme.typography.body.fontSize,
     color: Theme.colors.black,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   buttonRow: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  gap: 10,
-  marginTop: Theme.spacing.md,
-},
-actionButton: {
-  flex: 1,                          
-},
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10,
+    marginTop: Theme.spacing.md,
+  },
+  actionButton: {
+    flex: 1,
+  },
 });
 
 export default MatchDetailsForm;

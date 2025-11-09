@@ -1,15 +1,16 @@
 import Theme from "@/app/constants/Theme";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
 import {
+  FlatList,
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  FlatList
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { Shipment, UserShipment, TrackingShipment } from '../../../types/shipments';
+import { Shipment, UserShipment } from "../../../types/shipments";
 
 type MyShipmentsFormProps = {
   activeTab: string;
@@ -23,95 +24,73 @@ const MyShipmentsForm: React.FC<MyShipmentsFormProps> = ({
   onTabChange,
   shipments,
 }) => {
-  const tabs = ["Matched Request", "Accepted", "Shipments"];
+  const tabs = ["All", "Accepted", "Rejected", "Cancelled"];
 
-  const filteredShipments = shipments.filter(
-    (shipment) => shipment.status === activeTab
-  );
+  const filteredShipments = shipments.filter((shipment) => {
+    if (!("name" in shipment)) return false;
+
+    if (activeTab === "All") {
+      return (
+        shipment.status === "Accepted" ||
+        shipment.status === "Rejected" ||
+        shipment.status === "Cancelled"
+      );
+    }
+
+    return shipment.status === activeTab;
+  });
 
   const handleCardPress = (shipment: Shipment) => {
-    switch (activeTab) {
-      case "Matched Request":
-        router.push({
-          pathname: '/(traveller)/matchDetails',
-          params: {
-            matchedUserName: (shipment as UserShipment).name,
-            matchedUserImage: (shipment as UserShipment).avatar,
-            itemName: (shipment as UserShipment).item,
-            category: 'Personal Electronics',
-            fromLocation: 'Ontario, Canada',
-            toLocation: 'Kampala, Uganda'
-          }
-        });
-        break;
-      case "Shipments":
-        router.push({
-          pathname: '/(traveller)/shipmentDetails',
-          params: {
-            itemId: (shipment as TrackingShipment).trackingNumber,
-            shipperName: 'User Test',
-            receiverName: 'User Example',
-            itemName: (shipment as TrackingShipment).item,
-            fromLocation: 'Ontario, Canada',
-            toLocation: 'Kampala, Uganda',
-            status: 'In Transit',
-          }
-        });
-
-        break;
-      case "Accepted":
-        return;
+    if ("name" in shipment) {
+      router.push({
+        pathname: "/(traveller)/matchDetails",
+        params: {
+          matchedUserName: (shipment as UserShipment).name,
+          matchedUserImage: (shipment as UserShipment).avatar,
+          itemName: (shipment as UserShipment).item,
+          category: "Personal Electronics",
+          fromLocation: "Ontario, Canada",
+          toLocation: "Kampala, Uganda",
+        },
+      });
     }
   };
 
-  const renderMatchedRequest = ({ item }: { item: UserShipment }) => (
+  const renderUserShipment = ({ item }: { item: UserShipment }) => (
     <TouchableOpacity style={styles.card} onPress={() => handleCardPress(item)}>
-      <Ionicons name="person-circle" size={30} color={Theme.colors.primary} style={styles.cube} />
+      <View style={styles.avatarContainer}>
+        {item.avatar ? (
+          <Image source={{ uri: item.avatar }} style={styles.avatar} />
+        ) : (
+          <Ionicons
+            name="person-circle"
+            size={48}
+            color={Theme.colors.primary}
+          />
+        )}
+      </View>
       <View style={styles.cardText}>
         <Text style={styles.name}>{item.name}</Text>
         <Text style={styles.item}>{item.item}</Text>
       </View>
       <View style={styles.ratingContainer}>
-        <Text style={styles.stars}>⭐ {item.rating}</Text>
-      </View>
-    </TouchableOpacity>
-  );
-
-  const renderTrackingShipment = ({ item }: { item: TrackingShipment }) => (
-    <TouchableOpacity style={styles.card} onPress={() => handleCardPress(item)}>
-      <Ionicons name="cube-outline" size={30} color={Theme.colors.yellow} style={styles.cube} />
-      <View style={styles.cardText}>
-        <Text style={styles.name}>{item.trackingNumber}</Text>
-        <Text style={styles.item}>{item.item}</Text>
-      </View>
-      <View
-        style={[
-          styles.statusBadge,
-          item.progress === "Delivered"
-            ? styles.delivered
-            : styles.inTransit,
-        ]}
-      >
-        <Text
-          style={[
-            styles.statusText,
-            item.progress === "Delivered"
-              ? styles.deliveredText
-              : styles.inTransitText,
-          ]}
-        >
-          {item.progress=== "Delivered" ? "Delivered" : "In Transit"}
-        </Text>
+        <View style={styles.starsRow}>
+          {[1, 2, 3, 4, 5].map((star) => (
+            <Ionicons
+              key={star}
+              name="star"
+              size={14}
+              color="#FFD700"
+              style={styles.starIcon}
+            />
+          ))}
+        </View>
       </View>
     </TouchableOpacity>
   );
 
   const renderShipment = ({ item }: { item: Shipment }) => {
-    if (activeTab === "Shipments") {
-      return renderTrackingShipment({ item: item as TrackingShipment });
-    } else {
-      return renderMatchedRequest({ item: item as UserShipment });
-    }
+    return renderUserShipment({ item: item as UserShipment });
   };
 
   return (
@@ -126,6 +105,7 @@ const MyShipmentsForm: React.FC<MyShipmentsFormProps> = ({
             key={tab}
             style={[styles.tab, activeTab === tab && styles.activeTab]}
             onPress={() => onTabChange(tab)}
+            activeOpacity={0.7}
           >
             <Text
               style={[
@@ -144,11 +124,46 @@ const MyShipmentsForm: React.FC<MyShipmentsFormProps> = ({
           data={filteredShipments}
           keyExtractor={(item) => item.id}
           renderItem={renderShipment}
+          showsVerticalScrollIndicator={false}
         />
       ) : (
-        <Text style={styles.emptyText}>No shipments found in this category.</Text>
+        <Text style={styles.emptyText}>
+          No shipments found in this category.
+        </Text>
       )}
 
+      <View style={styles.bottomNav}>
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => router.push("/(traveller)/home")}
+        >
+          <Ionicons name="home" size={24} color={Theme.colors.primary} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => router.push("/(traveller)/travellerDetails")}
+        >
+          <Ionicons
+            name="briefcase-outline"
+            size={24}
+            color={Theme.colors.text.gray}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem}>
+          <Ionicons
+            name="chatbubble-outline"
+            size={24}
+            color={Theme.colors.text.gray}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem}>
+          <Ionicons
+            name="person-outline"
+            size={24}
+            color={Theme.colors.text.gray}
+          />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -156,113 +171,117 @@ const MyShipmentsForm: React.FC<MyShipmentsFormProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: Theme.spacing.sm,
-    paddingHorizontal: Theme.screenPadding.horizontal / 2,
-    backgroundColor: "#fff",
+    paddingTop: Theme.spacing.xxxl,
+    paddingHorizontal: Theme.screenPadding.horizontal / 1.5,
+    backgroundColor: Theme.colors.background.secondary,
   },
   title: {
-    fontSize: 30,
-    fontWeight: "600",
-    marginBottom: Theme.spacing.md,
-    marginTop: Theme.spacing.md,
-    color: Theme.colors.primary,
+    fontSize: 28,
+    fontFamily: "Inter-Regular",
+    marginBottom: Theme.spacing.xl,
+    marginTop: Theme.spacing.lg,
+    color: Theme.colors.text.dark,
   },
   highlight: {
-    color: Theme.colors.primary,
-    fontWeight: "700",
+    color: Theme.colors.text.dark,
+    fontFamily: "Inter-Bold",
   },
   tabContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 30,
+    marginBottom: Theme.spacing.xl,
+    gap: Theme.spacing.xs,
   },
   tab: {
     flex: 1,
-    marginHorizontal: Theme.spacing.xs,
-    paddingVertical: 5,
-    borderRadius: 12,
-    backgroundColor: "#C6C6C6",
+    paddingVertical: 12,
+    borderRadius: 23,
+    backgroundColor: "#E5E5E5",
     alignItems: "center",
   },
   activeTab: {
-    backgroundColor: Theme.colors.yellow,
+    backgroundColor: "#CDFF00",
   },
   tabText: {
-    color: "#484848",
-    fontWeight: "500",
+    color: Theme.colors.text.gray,
+    fontSize: 14,
+    fontFamily: "Inter-Regular",
   },
   activeTabText: {
     color: Theme.colors.text.dark,
+    fontFamily: "Inter-SemiBold",
   },
   card: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: Theme.borderRadius.md,
+    backgroundColor: Theme.colors.white,
+    borderRadius: Theme.borderRadius.lg,
     padding: Theme.spacing.md,
-    marginVertical:Theme.spacing.sm,
+    marginBottom: Theme.spacing.sm,
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
   },
-  avatar: {
-    width: 45,
-    height: 45,
-    borderRadius: Theme.borderRadius.md,
+  avatarContainer: {
     marginRight: Theme.spacing.md,
   },
-  cube: {
-    borderRadius: Theme.borderRadius.md,
-    marginRight: Theme.spacing.md,
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: Theme.borderRadius.xl,
   },
   cardText: {
     flex: 1,
   },
   name: {
-    fontWeight: "600",
+    fontFamily: "Inter-Bold",
     fontSize: 16,
-  },
-  statusBadge: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-  },
-  inTransit: {
-    backgroundColor: Theme.colors.lightPurple, 
-  },
-  delivered: {
-    backgroundColor: Theme.colors.lightGreen,
-  },
-  inTransitText: {
-    color: Theme.colors.white,
-    fontWeight: "400",
-  },
-  deliveredText: {
-    color: "#155724",
-    fontWeight: "400",
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: "600",
+    color: Theme.colors.text.dark,
+    marginBottom: 2,
   },
   item: {
-    color: "#888",
+    color: Theme.colors.text.gray,
+    fontSize: 13,
+    fontFamily: "Inter-Regular",
   },
   ratingContainer: {
     alignItems: "flex-end",
   },
-  stars: {
-    fontSize: 12,
+  starsRow: {
+    flexDirection: "row",
+    marginBottom: 2,
   },
-  rating: {
-    color: "#888",
-    fontWeight: "500",
+  starIcon: {
+    marginLeft: 1,
+  },
+  ratingText: {
+    fontSize: 12,
+    fontFamily: "Inter-SemiBold",
+    color: Theme.colors.text.dark,
   },
   emptyText: {
     textAlign: "center",
-    color: "#999",
+    color: Theme.colors.text.gray,
     marginTop: Theme.spacing.xxl,
+    fontSize: 14,
+    fontFamily: "Inter-Regular",
+  },
+  bottomNav: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    backgroundColor: Theme.colors.white,
+    borderRadius: Theme.borderRadius.xl,
+    paddingVertical: 12,
+    marginBottom: Theme.spacing.md,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  navItem: {
+    padding: Theme.spacing.sm,
   },
 });
 
