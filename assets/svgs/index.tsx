@@ -1,12 +1,14 @@
-import Svg, { Defs, Image, Path, Pattern, Rect, SvgProps } from "react-native-svg"
+import Svg, {
+  Defs,
+  Image,
+  Path,
+  Pattern,
+  Rect,
+  SvgProps,
+} from "react-native-svg";
 
 export const Logo = (props: SvgProps) => (
-  <Svg
-    width={39}
-    height={45}
-    fill="none"
-    {...props}
-  >
+  <Svg width={39} height={45} fill="none" {...props}>
     <Path
       fill="#CDFF00"
       fillRule="evenodd"
@@ -14,9 +16,13 @@ export const Logo = (props: SvgProps) => (
       clipRule="evenodd"
     />
   </Svg>
-)
+);
 
-export const GridBackground = ({ width = 239, height = 350, ...props }: SvgProps) => (
+export const GridBackground = ({
+  width = 239,
+  height = 350,
+  ...props
+}: SvgProps) => (
   <Svg
     width={width}
     height={height}
@@ -41,4 +47,45 @@ export const GridBackground = ({ width = 239, height = 350, ...props }: SvgProps
       </Pattern>
     </Defs>
   </Svg>
-)
+);
+
+export const BarukhSendIcon = (props: SvgProps) => (
+  <Svg width={24} height={24} fill="none" {...props}>
+    <Path
+      stroke="#CDFF00"
+      strokeLinecap="round"
+      strokeWidth={1.439}
+      d="M3.25 7.197c-.24.375-.371.806-.371 1.253v6.13c0 .896.528 1.723 1.385 2.17l5.866 3.066c.429.224.907.335 1.385.335M3.25 7.197c.24-.375.585-.694 1.014-.917l2.933-1.533M3.25 7.197l8.265 4.318m0 0v8.636m0-8.636 4.133-2.159m-4.133 10.795c.478 0 .957-.111 1.385-.335l5.866-3.065c.858-.448 1.386-1.276 1.386-2.171V8.45c0-.447-.133-.878-.372-1.253m0 0a2.652 2.652 0 0 0-1.014-.917L12.9 3.215a3.024 3.024 0 0 0-2.77 0L7.197 4.747m12.583 2.45-4.132 2.16m0 0-8.451-4.61m8.45 4.61v3.118"
+    />
+  </Svg>
+);
+
+export const BarukhGoIcon = (props: SvgProps) => (
+  <Svg width={24} height={24} fill="none" {...props}>
+    <Path
+      stroke="#CDFF00"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M9.5 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"
+    />
+    <Path
+      stroke="#CDFF00"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M18.5 15v5M20.5 17l-2-2-2 2M13.5 14H9.4c-2.24 0-3.36 0-4.216.436a4 4 0 0 0-1.748 1.748C3 17.04 3 18.16 3 20.4v.6h10.5"
+    />
+  </Svg>
+);
+
+export const ArrowRightIcon = (props: SvgProps) => (
+  <Svg width={24} height={24} fill="none" viewBox="0 0 24 24" {...props}>
+    <Path
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="m9 18 6-6-6-6"
+    />
+  </Svg>
+);

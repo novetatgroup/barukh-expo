@@ -27,6 +27,7 @@ const LoginScreen = ({ activeTab, onTabChange }: LoginScreenProps) => {
       let data;
       try {
         data = await response.json();
+        console.log("API response data:", data);
       } catch {
         data = { message: "Unexpected server response" };
       }
