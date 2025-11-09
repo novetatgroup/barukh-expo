@@ -74,7 +74,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           isValid,
           dirty
         }) => (
-          <View>
+          <View style={styles.formContent}>
             <Text style={styles.inputLabel}>Name</Text>
             <CustomTextInput
               placeholder="Enter your name"
@@ -131,6 +131,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
 };
 
 const styles = StyleSheet.create({
+  formContent: {
+    paddingBottom: 40, // Add bottom padding to ensure content is accessible above keyboard
+  },
   inputLabel: {
     ...Theme.typography.body,
     fontFamily: 'Inter-Regular',

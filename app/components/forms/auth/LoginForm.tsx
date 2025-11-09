@@ -69,7 +69,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
           isValid,
           dirty
         }) => (
-          <View>
+          <View style={styles.formContent}>
             <Text style={styles.inputLabel}>Email</Text>
             <CustomTextInput
               placeholder="Enter your Email"
@@ -114,6 +114,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
 };
 
 const styles = StyleSheet.create({
+  formContent: {
+    paddingBottom: 40, // Add bottom padding to ensure content is accessible above keyboard
+  },
   inputLabel: {
     ...Theme.typography.body,
     fontFamily: 'Inter-Regular',
