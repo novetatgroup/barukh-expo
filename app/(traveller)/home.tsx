@@ -1,10 +1,10 @@
-import React from "react";
-import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
+import React from "react";
+import { StyleSheet, View } from "react-native";
 import HomeForm from "../components/forms/traveller/HomeForm";
 import { useShipment } from "../context/ShipmentContext";
 
-const HomeScreen = () => {
+const TravellerHomeScreen = () => {
   const router = useRouter();
   const { isTravelerActive, setIsTravelerActive } = useShipment();
 
@@ -28,21 +28,24 @@ const HomeScreen = () => {
             params: { tab: tab || "Shipments" },
           })
         }
-        isTravelerActive={isTravelerActive} shipments={[{
-          id: "6",
-          trackingNumber: "#SK1058",
-          item: "MacBook Pro",
-          status: "Shipments",
-          progress: "In Transit"
-        },
-        {
-          id: "7",
-          trackingNumber: "#SK1059",
-          item: "iPhone 15 Pro",
-          status: "Shipments",
-          progress: "Delivered"
-        },
-        ]} />
+        isTravelerActive={isTravelerActive}
+        shipments={[
+          {
+            id: "6",
+            trackingNumber: "#SK1058",
+            item: "MacBook Pro",
+            status: "Shipments",
+            progress: "In Transit",
+          },
+          {
+            id: "7",
+            trackingNumber: "#SK1059",
+            item: "iPhone 15 Pro",
+            status: "Shipments",
+            progress: "Delivered",
+          },
+        ]}
+      />
     </View>
   );
 };
@@ -51,4 +54,4 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
 });
 
-export default HomeScreen;
+export default TravellerHomeScreen;

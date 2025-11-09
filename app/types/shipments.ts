@@ -4,7 +4,7 @@ export type UserShipment = {
   item: string;
   rating: number;
   avatar: string;
-  status: "Matched Request" | "Accepted";
+  status: "Accepted" | "Rejected" | "Cancelled";
 };
 
 export type TrackingShipment = {
@@ -12,7 +12,6 @@ export type TrackingShipment = {
   trackingNumber: string;
   item: string;
   status: "Shipments";
-  progress:string
+  progress: string;
 };
-
 export type Shipment = UserShipment | TrackingShipment;

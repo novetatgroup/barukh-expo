@@ -25,6 +25,7 @@ const RoleSelectionScreen = () => {
 
       if (response.ok) {
         setTimeout(() => {
+          // NAOMI, Why does this all lead to traveller home?
           router.push("/(traveller)/home");
         }, 400);
       } else {
