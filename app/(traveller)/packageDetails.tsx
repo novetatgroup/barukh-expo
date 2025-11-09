@@ -1,10 +1,9 @@
-import React from "react";
-import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
+import React from "react";
+import { StyleSheet, View } from "react-native";
+import { Toast } from "toastify-react-native";
 import PackageDetailsForm from "../components/forms/traveller/PackageDetailsForm";
-import { useShipment } from "../context/ShipmentContext";
-import { ShipmentData } from "../context/ShipmentContext";
-import Toast from "react-native-toast-message";
+import { ShipmentData, useShipment } from "../context/ShipmentContext";
 
 const PackageDetailsScreen = () => {
   const router = useRouter();
@@ -17,18 +16,13 @@ const PackageDetailsScreen = () => {
     console.log(JSON.stringify(fullShipmentData, null, 2));
     setIsTravelerActive(true);
 
-    Toast.show({
-      type: 'success',
-      text1: 'Status Updated Successfully',
-      text2: 'You will be notified when a match is found',
-      position: 'top',
-      visibilityTime: 2000,
-    });
-    
-    setTimeout(() =>{
-       router.push("/(traveller)/home" );
+    Toast.success(
+      "Status updated successfully! You will be notified when a match is found."
+    );
+
+    setTimeout(() => {
+      router.push("/(traveller)/home");
     }, 600);
-   
   };
 
   return (

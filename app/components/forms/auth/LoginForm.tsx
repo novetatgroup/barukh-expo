@@ -1,13 +1,13 @@
-import Theme from '@/app/constants/Theme';
-import { Formik } from 'formik';
-import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import * as Yup from 'yup';
-import CustomButton from '../../ui/CustomButton';
-import CustomTextInput from '../../ui/CustomTextInput';
-import Divider from '../../ui/Divider';
-import FooterLink from '../../ui/FooterLink';
-import AuthScreenLayout from './AuthScreenLayout';
+import Theme from "@/app/constants/Theme";
+import { Formik } from "formik";
+import React, { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import * as Yup from "yup";
+import CustomButton from "../../ui/CustomButton";
+import CustomTextInput from "../../ui/CustomTextInput";
+import Divider from "../../ui/Divider";
+import FooterLink from "../../ui/FooterLink";
+import AuthScreenLayout from "./AuthScreenLayout";
 
 type LoginFormProps = {
   onSubmit: (data: { email: string }) => void;
@@ -19,17 +19,17 @@ type LoginFormProps = {
 
 const ValidationSchema = Yup.object().shape({
   email: Yup.string()
-    .email('Invalid email address')
-    .required('Email is required'),
+    .email("Invalid email address")
+    .required("Email is required"),
 });
 
 const initialValues = {
-  email: '',
+  email: "",
 };
 
-const LoginForm: React.FC<LoginFormProps> = ({ 
-  onSubmit, 
-  onGooglePress, 
+const LoginForm: React.FC<LoginFormProps> = ({
+  onSubmit,
+  onGooglePress,
   onRegisterPress,
   activeTab,
   onTabChange,
@@ -67,15 +67,15 @@ const LoginForm: React.FC<LoginFormProps> = ({
           handleSubmit,
           isSubmitting,
           isValid,
-          dirty
+          dirty,
         }) => (
           <View style={styles.formContent}>
             <Text style={styles.inputLabel}>Email</Text>
             <CustomTextInput
               placeholder="Enter your Email"
               value={values.email}
-              onChangeText={handleChange('email')}
-              onBlur={handleBlur('email')}
+              onChangeText={handleChange("email")}
+              onBlur={handleBlur("email")}
               keyboardType="email-address"
               autoCapitalize="none"
             />
@@ -119,10 +119,10 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     ...Theme.typography.body,
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     paddingBottom: Theme.spacing.sm,
     color: Theme.colors.text.dark,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   otpButton: {
     //height: Theme.components.button.height,
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: Theme.colors.error,
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     fontSize: 12,
     marginBottom: 8,
   },

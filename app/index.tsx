@@ -1,8 +1,11 @@
-import OnboardingScreen from "./(onboarding)/index";
+import RoleSelectionScreen from "./(auth)/roleSelection";
 import "./global.css";
 
 export default function Index() {
   return (
-    <OnboardingScreen />
+    <>
+      {/*  <OnboardingScreen /> */}
+      <RoleSelectionScreen />
+    </>
   );
 }

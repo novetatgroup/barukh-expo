@@ -35,14 +35,14 @@ const OnboardingStyles = StyleSheet.create({
     marginBottom: 10,
   },
   dot: {
-    width: 40,
+    width: 20,
     height: 4,
     borderRadius: 4,
     marginHorizontal: 4,
   },
   activeDot: {
     backgroundColor: "#CDFF00",
-    width: 60, // ADDED: Make active dot longer
+    width: 60,
   },
   inactiveDot: {
     backgroundColor: "rgba(255, 255, 255, 0.3)",

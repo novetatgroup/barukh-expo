@@ -1,7 +1,16 @@
 import Theme from "@/app/constants/Theme";
 import { Logo } from "@/assets/svgs/index";
 import React from "react";
-import { Dimensions, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Dimensions,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 interface AuthLayoutProps {
   title: string;
@@ -25,12 +34,12 @@ const AuthScreenLayout: React.FC<AuthLayoutProps> = ({
   onTabChange,
 }) => {
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -50,18 +59,14 @@ const AuthScreenLayout: React.FC<AuthLayoutProps> = ({
         />
         {/* <GridBackground width={200} height={300} /> */}
 
-        <Text  style={styles.title}>{title}</Text>
+        <Text style={styles.title}>{title}</Text>
         <Text style={styles.subtitle}>{subtitle}</Text>
 
         <View style={styles.formContainer}>
-
           {showTabSwitcher && activeTab && onTabChange && (
             <View style={styles.tabContainer}>
               <View
-                style={[
-                  styles.tab,
-                  activeTab === "login" && styles.activeTab,
-                ]}
+                style={[styles.tab, activeTab === "login" && styles.activeTab]}
                 onTouchEnd={() => onTabChange("login")}
               >
                 <Text
@@ -127,7 +132,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...Theme.typography.h1,
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     textAlign: "left",
     marginLeft: Theme.screenPadding.horizontal,
     color: Theme.colors.text.light,
@@ -136,7 +141,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     ...Theme.typography.caption,
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     marginLeft: Theme.screenPadding.horizontal,
     textAlign: "left",
     fontSize: 14,
@@ -172,7 +177,7 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 16,
     fontWeight: "500",
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     color: "#666",
   },
   activeTabText: {
