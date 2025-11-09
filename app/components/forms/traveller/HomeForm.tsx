@@ -145,7 +145,7 @@ const HomeForm: React.FC<HomeFormProps> = ({
                         : styles.inTransitText,
                     ]}
                   >
-                    {item.progress === "Delivered" ? "Delivered" : "In Process"}
+                    {item.progress === "Delivered" ? "Delivered" : "In Transit"}
                   </Text>
                 </View>
               </View>
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     marginTop: Theme.spacing.md,
     marginBottom: Theme.spacing.lg,
     borderRadius: Theme.borderRadius.lg,
-    paddingVertical: Theme.spacing.md,
+    paddingVertical: 18,
     alignItems: "center",
   },
   dotRow: {
@@ -340,10 +340,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   inTransit: {
-    backgroundColor: "#B8A4E8",
+    backgroundColor: "#7856D3",
   },
   delivered: {
-    backgroundColor: "#4ADE80",
+    backgroundColor: "#32BF5B",
   },
   statusText: {
     fontSize: 12,

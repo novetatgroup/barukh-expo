@@ -131,6 +131,39 @@ const MyShipmentsForm: React.FC<MyShipmentsFormProps> = ({
           No shipments found in this category.
         </Text>
       )}
+
+      <View style={styles.bottomNav}>
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => router.push("/(traveller)/home")}
+        >
+          <Ionicons name="home" size={24} color={Theme.colors.primary} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => router.push("/(traveller)/travellerDetails")}
+        >
+          <Ionicons
+            name="briefcase-outline"
+            size={24}
+            color={Theme.colors.text.gray}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem}>
+          <Ionicons
+            name="chatbubble-outline"
+            size={24}
+            color={Theme.colors.text.gray}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem}>
+          <Ionicons
+            name="person-outline"
+            size={24}
+            color={Theme.colors.text.gray}
+          />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -144,7 +177,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontFamily: "Inter-SemiBold",
+    fontFamily: "Inter-Regular",
     marginBottom: Theme.spacing.xl,
     marginTop: Theme.spacing.lg,
     color: Theme.colors.text.dark,
@@ -233,6 +266,22 @@ const styles = StyleSheet.create({
     marginTop: Theme.spacing.xxl,
     fontSize: 14,
     fontFamily: "Inter-Regular",
+  },
+  bottomNav: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    backgroundColor: Theme.colors.white,
+    borderRadius: Theme.borderRadius.xl,
+    paddingVertical: 12,
+    marginBottom: Theme.spacing.md,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  navItem: {
+    padding: Theme.spacing.sm,
   },
 });
 
