@@ -1,12 +1,16 @@
-import Svg, { Defs, Image, Path, Pattern, Rect, SvgProps } from "react-native-svg"
+import Svg, {
+  ClipPath,
+  Defs,
+  G,
+  Image,
+  Path,
+  Pattern,
+  Rect,
+  SvgProps,
+} from "react-native-svg";
 
 export const Logo = (props: SvgProps) => (
-  <Svg
-    width={39}
-    height={45}
-    fill="none"
-    {...props}
-  >
+  <Svg width={39} height={45} fill="none" {...props}>
     <Path
       fill="#CDFF00"
       fillRule="evenodd"
@@ -14,9 +18,13 @@ export const Logo = (props: SvgProps) => (
       clipRule="evenodd"
     />
   </Svg>
-)
+);
 
-export const GridBackground = ({ width = 239, height = 350, ...props }: SvgProps) => (
+export const GridBackground = ({
+  width = 239,
+  height = 350,
+  ...props
+}: SvgProps) => (
   <Svg
     width={width}
     height={height}
@@ -41,4 +49,72 @@ export const GridBackground = ({ width = 239, height = 350, ...props }: SvgProps
       </Pattern>
     </Defs>
   </Svg>
-)
+);
+
+export const BarukhSendIcon = (props: SvgProps) => (
+  <Svg width={24} height={24} fill="none" {...props}>
+    <Path
+      stroke="#CDFF00"
+      strokeLinecap="round"
+      strokeWidth={1.439}
+      d="M3.25 7.197c-.24.375-.371.806-.371 1.253v6.13c0 .896.528 1.723 1.385 2.17l5.866 3.066c.429.224.907.335 1.385.335M3.25 7.197c.24-.375.585-.694 1.014-.917l2.933-1.533M3.25 7.197l8.265 4.318m0 0v8.636m0-8.636 4.133-2.159m-4.133 10.795c.478 0 .957-.111 1.385-.335l5.866-3.065c.858-.448 1.386-1.276 1.386-2.171V8.45c0-.447-.133-.878-.372-1.253m0 0a2.652 2.652 0 0 0-1.014-.917L12.9 3.215a3.024 3.024 0 0 0-2.77 0L7.197 4.747m12.583 2.45-4.132 2.16m0 0-8.451-4.61m8.45 4.61v3.118"
+    />
+  </Svg>
+);
+
+export const BarukhGoIcon = (props: SvgProps) => (
+  <Svg width={24} height={24} fill="none" {...props}>
+    <Path
+      stroke="#CDFF00"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M9.5 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"
+    />
+    <Path
+      stroke="#CDFF00"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M18.5 15v5M20.5 17l-2-2-2 2M13.5 14H9.4c-2.24 0-3.36 0-4.216.436a4 4 0 0 0-1.748 1.748C3 17.04 3 18.16 3 20.4v.6h10.5"
+    />
+  </Svg>
+);
+
+export const ArrowRightIcon = (props: SvgProps) => (
+  <Svg width={24} height={24} fill="none" viewBox="0 0 24 24" {...props}>
+    <Path
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="m9 18 6-6-6-6"
+    />
+  </Svg>
+);
+
+export const PackagePattern: React.FC = () => {
+  return (
+    <Svg
+      width="100%"
+      height="100%"
+      viewBox="0 0 203 237"
+      fill="none"
+      preserveAspectRatio="xMaxYMin slice"
+    >
+      <Defs>
+        <ClipPath id="clip0_1165_2209">
+          <Rect width="203" height="237" fill="white" />
+        </ClipPath>
+      </Defs>
+      <G clipPath="url(#clip0_1165_2209)">
+        <Path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M25.3352 59.4475L99.0971 16.5888C100.772 15.614 102.848 15.5972 104.539 16.572L128.669 30.3708L55.7442 56.8424C50.8212 58.6239 50.1514 65.3469 54.6223 68.0864L94.8773 92.6924C99.1138 95.0118 104.338 94.4067 107.972 91.2133L155.812 48.9597C157.169 47.7664 159.128 47.5983 160.669 48.5395L183.793 62.6745L105.661 108.071C102.898 109.668 99.499 109.685 96.736 108.071C72.9414 94.2386 49.1467 80.4062 25.3352 66.5906C22.6058 65.0107 22.6058 61.061 25.3352 59.4643V59.4475ZM94.6764 121.87V218.193L12.8434 170.645V74.322C40.1211 90.1713 67.3987 106.021 94.6764 121.87ZM203 58.792C169.259 39.1947 135.534 19.5973 101.81 0C67.8676 19.715 33.9422 39.4468 0 59.1618V178.191L101.24 237.017L203 177.889V58.792Z"
+          fill="#CDFF00"
+          fillOpacity="0.1"
+        />
+      </G>
+    </Svg>
+  );
+};

@@ -1,101 +1,81 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { jwtDecode } from "jwt-decode";
-import React, { useContext, useEffect } from "react";
+import React, { useContext } from "react";
 import { StyleSheet, View } from "react-native";
-import Toast from "react-native-toast-message";
+import { Toast } from "toastify-react-native";
 import VerifyOtpForm from "../components/forms/auth/VerifyOtpForm";
 import { AuthContext } from "../context/AuthContext";
 
 const VerifyOtpScreen = () => {
-	const { setAuthState } = useContext(AuthContext);
-	const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+  const { setAuthState } = useContext(AuthContext);
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
-	useEffect(() => {
-		Toast.hide();
-	}, []);
+  const handleVerifyOtp = async ({ otp }: { otp: string }) => {
+    try {
+      const sessionId = await AsyncStorage.getItem("sessionId");
 
-	const handleVerifyOtp = async ({ otp }: { otp: string }) => {
-		try {
-			const sessionId = await AsyncStorage.getItem("sessionId");
-			const otpFlow = await AsyncStorage.getItem("otpFlow");
-			const email = await AsyncStorage.getItem("email");
+      if (!sessionId) {
+        Toast.error("Please try again.");
+        return;
+      }
 
-			if (!sessionId || !otpFlow) {
-				Toast.show({
-					type: "error",
-					text1: "Please try again.",
-					position: "top",
-					visibilityTime: 2500,
-				});
-				return;
-			}
+      const response = await fetch(`${apiUrl}/auth/verify-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-client-platform": "barukh_mobile",
+        },
+        body: JSON.stringify({ otpCode: otp, sessionId }),
+        credentials: "include",
+      });
 
-			const endpoint =
-				otpFlow === "register"
-					? `${apiUrl}/users/register/verify-otp`
-					: `${apiUrl}/auth/login/verify-otp`;
-			const response = await fetch(endpoint, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					"x-client-platform": "barukh_mobile",
-				},
-				body: JSON.stringify({ sessionId, otpCode: otp }),
-			});
+      const data = await response.json();
 
-			const data = await response.json();
+      if (response.ok && data.accessToken) {
+        const decoded = jwtDecode<{ userId: string | number }>(
+          data.accessToken
+        );
 
-			if (response.ok && data.accessToken) {
-				const decoded = jwtDecode<{ userId: string | number }>(
-					data.accessToken
-				);
-				await setAuthState({
-					refreshToken: data.refreshToken,
-					accessToken: data.accessToken,
-					isAuthenticated: true,
-					userId: decoded.userId ? Number(decoded.userId) : null,
-				});
-				Toast.show({
-					type: "success",
-					text1: "OTP verified successfully!",
-					position: "top",
-					visibilityTime: 2000,
-				});
-				setTimeout(() => {
-					router.push("/roleSelection");
-				}, 1500);
-				return;
-			}
+        await setAuthState({
+          refreshToken: data.refreshToken,
+          accessToken: data.accessToken,
+          isAuthenticated: true,
+          userId: decoded.userId ? Number(decoded.userId) : null,
+        });
 
-			Toast.show({
-				type: "error",
-				text1: "Verification Failed",
-				text2:
-					data?.message ||
-					data?.error ||
-					"Verification failed. Please try again.",
-				position: "top",
-				visibilityTime: 3000,
-			});
-		} catch {
-			Toast.show({
-				type: "error",
-				text1: "Network error",
-				text2: "Please try again later.",
-				position: "top",
-				visibilityTime: 3000,
-			});
-		}
-	};
+        Toast.success("OTP verified successfully!");
 
-	return (
-		<View style={styles.container}>
-			<VerifyOtpForm onSubmit={handleVerifyOtp} length={6} />
-		</View>
-	);
+        setTimeout(() => {
+          router.push("/roleSelection");
+        }, 1500);
+
+        return;
+      }
+
+      const errorMessage =
+        data?.message ||
+        data?.error ||
+        "Verification failed. Please try again.";
+
+      Toast.error("Verification failed. Please try again.");
+    } catch (error) {
+      console.error("API error:", error);
+      Toast.error("Network error. Please try again later.");
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <VerifyOtpForm onSubmit={handleVerifyOtp} length={6} />
+    </View>
+  );
 };
 
-const styles = StyleSheet.create({ container: { flex: 1 } });
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});
 
 export default VerifyOtpScreen;

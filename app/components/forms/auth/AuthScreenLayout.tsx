@@ -1,7 +1,16 @@
 import Theme from "@/app/constants/Theme";
 import { Logo } from "@/assets/svgs/index";
 import React from "react";
-import { Dimensions, Image, StyleSheet, Text, View } from "react-native";
+import {
+  Dimensions,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 interface AuthLayoutProps {
   title: string;
@@ -25,69 +34,74 @@ const AuthScreenLayout: React.FC<AuthLayoutProps> = ({
   onTabChange,
 }) => {
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+    >
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Logo style={styles.logo} />
 
-      <Logo style={styles.logo} />
+        {/* <Image
+          source={require("../../../../assets/images/grid.png")}
+          style={styles.grid}
+        /> */}
+        <Image
+          source={gridImage}
+          style={styles.grid}
+          fadeDuration={0}
+          resizeMode="cover"
+        />
+        {/* <GridBackground width={200} height={300} /> */}
 
-      {/* <Image
-        source={require("../../../../assets/images/grid.png")}
-        style={styles.grid}
-      /> */}
-      <Image
-        source={gridImage}
-        style={styles.grid}
-        fadeDuration={0}
-        resizeMode="cover"
-      />
-      {/* <GridBackground width={200} height={300} /> */}
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.subtitle}>{subtitle}</Text>
 
-      <Text  style={styles.title}>{title}</Text>
-      <Text style={styles.subtitle}>{subtitle}</Text>
-
-
-      <View style={styles.formContainer}>
-
-        {showTabSwitcher && activeTab && onTabChange && (
-          <View style={styles.tabContainer}>
-            <View
-              style={[
-                styles.tab,
-                activeTab === "login" && styles.activeTab,
-              ]}
-              onTouchEnd={() => onTabChange("login")}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === "login" && styles.activeTabText,
-                ]}
+        <View style={styles.formContainer}>
+          {showTabSwitcher && activeTab && onTabChange && (
+            <View style={styles.tabContainer}>
+              <View
+                style={[styles.tab, activeTab === "login" && styles.activeTab]}
+                onTouchEnd={() => onTabChange("login")}
               >
-                Login
-              </Text>
-            </View>
+                <Text
+                  style={[
+                    styles.tabText,
+                    activeTab === "login" && styles.activeTabText,
+                  ]}
+                >
+                  Login
+                </Text>
+              </View>
 
-            <View
-              style={[
-                styles.tab,
-                activeTab === "register" && styles.activeTab,
-              ]}
-              onTouchEnd={() => onTabChange("register")}
-            >
-              <Text
+              <View
                 style={[
-                  styles.tabText,
-                  activeTab === "register" && styles.activeTabText,
+                  styles.tab,
+                  activeTab === "register" && styles.activeTab,
                 ]}
+                onTouchEnd={() => onTabChange("register")}
               >
-                Register
-              </Text>
+                <Text
+                  style={[
+                    styles.tabText,
+                    activeTab === "register" && styles.activeTabText,
+                  ]}
+                >
+                  Register
+                </Text>
+              </View>
             </View>
-          </View>
-        )}
+          )}
 
-        {children}
-      </View>
-    </View>
+          {children}
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -95,6 +109,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Theme.colors.primary,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   logo: {
     width: 45,
@@ -112,7 +132,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...Theme.typography.h1,
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     textAlign: "left",
     marginLeft: Theme.screenPadding.horizontal,
     color: Theme.colors.text.light,
@@ -121,7 +141,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     ...Theme.typography.caption,
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     marginLeft: Theme.screenPadding.horizontal,
     textAlign: "left",
     fontSize: 14,
@@ -135,6 +155,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: Theme.borderRadius.xl,
     padding: Theme.screenPadding.horizontal,
     flex: 1,
+    minHeight: 400, // Ensure minimum height for content
   },
 
   tabContainer: {
@@ -156,7 +177,7 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 16,
     fontWeight: "500",
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     color: "#666",
   },
   activeTabText: {
