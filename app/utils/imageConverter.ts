@@ -4,7 +4,7 @@ type ImageconverterProps = {
   imageUri: string;
 };
 
-const convertImageUriToBase64 = async ({ imageUri }: ImageconverterProps): Promise<string | null> => {
+export const convertImageUriToBase64 = async ({ imageUri }: ImageconverterProps): Promise<string | null> => {
   try {
     const file = new File(imageUri);
 
@@ -17,4 +17,3 @@ const convertImageUriToBase64 = async ({ imageUri }: ImageconverterProps): Promi
   }
 };
 
-export default convertImageUriToBase64;
