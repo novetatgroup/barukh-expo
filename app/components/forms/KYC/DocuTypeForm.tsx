@@ -1,12 +1,7 @@
 import Theme from "@/app/constants/Theme";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useContext } from "react";
-import {
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
-} from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import KYCContext from "@/app/context/KYCContext";
 
 type DocumentTypeSelectionFormProps = {
@@ -63,58 +58,61 @@ const DocumentTypeSelectionForm: React.FC<DocumentTypeSelectionFormProps> = ({ o
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            activeOpacity={1}
-            style={[
-              styles.optionCard,
-              styles.option,
-              id_type === "DRIVING_LICENCE" && styles.selectedOption,
-            ]}
-            onPress={() => handleDocumentTypeSelect("DRIVING_LICENCE")}
-          >
-            <View style={styles.iconContainer}>
-              <Ionicons
-                name="card"
-                size={25}
-                color={Theme.colors.primary}
-              />
-            </View>
-            <View style={styles.optionContent}>
-              <Text style={[styles.optionTitle]}>
-                Driving Licence
-              </Text>
-            </View>
-            <Text style={[styles.arrow]}>›</Text>
-          </TouchableOpacity>
+					<TouchableOpacity
+						activeOpacity={1}
+						style={[
+							styles.optionCard,
+							styles.option,
+							id_type === "DRIVING_LICENCE" &&
+								styles.selectedOption,
+						]}
+						onPress={() =>
+							handleDocumentTypeSelect("DRIVING_LICENCE")
+						}>
+						<View style={styles.iconContainer}>
+							<Ionicons
+								name="card"
+								size={25}
+								color={Theme.colors.primary}
+							/>
+						</View>
+						<View style={styles.optionContent}>
+							<Text style={[styles.optionTitle]}>
+								Driving Licence
+							</Text>
+						</View>
+						<Text style={[styles.arrow]}>›</Text>
+					</TouchableOpacity>
 
-          <TouchableOpacity
-            activeOpacity={1}
-            style={[
-              styles.optionCard,
-              styles.option,
-              id_type === "IDENTITY_CARD" && styles.selectedOption,
-            ]}
-            onPress={() => handleDocumentTypeSelect("IDENTITY_CARD")}
-          >
-            <View style={styles.iconContainer}>
-              <Ionicons
-                name="id-card"
-                size={25}
-                color={Theme.colors.primary}
-              />
-            </View>
-            <View style={styles.optionContent}>
-              <Text style={[styles.optionTitle]}>
-                National ID
-              </Text>
-            </View>
-            <Text style={[styles.arrow]}>›</Text>
-          </TouchableOpacity>
-        </View>
-
-      </View>
-    </View>
-  );
+					<TouchableOpacity
+						activeOpacity={1}
+						style={[
+							styles.optionCard,
+							styles.option,
+							id_type === "IDENTITY_CARD" &&
+								styles.selectedOption,
+						]}
+						onPress={() =>
+							handleDocumentTypeSelect("IDENTITY_CARD")
+						}>
+						<View style={styles.iconContainer}>
+							<Ionicons
+								name="id-card"
+								size={25}
+								color={Theme.colors.primary}
+							/>
+						</View>
+						<View style={styles.optionContent}>
+							<Text style={[styles.optionTitle]}>
+								National ID
+							</Text>
+						</View>
+						<Text style={[styles.arrow]}>›</Text>
+					</TouchableOpacity>
+				</View>
+			</View>
+		</View>
+	);
 };
 
 const styles = StyleSheet.create({

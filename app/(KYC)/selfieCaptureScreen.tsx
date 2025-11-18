@@ -69,10 +69,8 @@ export default function SelfieCaptureScreen() {
       }
     } catch (error) {
       console.error("Camera error:", error);
-      Alert.alert(
-        "Camera Error",
-        "Unable to access camera. Please try again.",
-        [{ text: "OK" }]
+      Toast.error(
+        "Camera Error Unable to access camera. Please try again.",
       );
     } finally {
       setIsLoading(false);
