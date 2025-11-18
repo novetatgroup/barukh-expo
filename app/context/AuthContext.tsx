@@ -130,7 +130,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 		const headers: Record<string, string> = {
 			...existingHeaders,
 			Authorization: `Bearer ${authState.accessToken}`,
-			"Content-Type": "application/json",
       ...(isFormData ? {} : { "Content-Type": "application/json" }), 
 		};
 

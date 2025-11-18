@@ -61,7 +61,7 @@ export default function DocumentCaptureScreen() {
 				const image_type_id = side === "front" ? 3 : 7;
 				addImage({
 					image_type_id: image_type_id,
-					image: '',
+					image: imageUri,
 				});
 			}
 		} catch (error) {
