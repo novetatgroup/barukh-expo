@@ -1,6 +1,5 @@
 import AuthContext from "@/app/context/AuthContext";
 import KYCContext from "@/app/context/KYCContext";
-import convertImageUriToBase64 from "@/app/utils/imageConverter";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import React, { useContext, useState } from "react";
@@ -62,12 +61,10 @@ export default function SelfieCaptureScreen() {
       if (!result.canceled && result.assets && result.assets[0]) {
         const imageUri = result.assets[0].uri;
 
-        const base64Image = await convertImageUriToBase64({ imageUri });
-
         const image_type_id = 2;
         addImage({
           image_type_id: image_type_id,
-          image: base64Image,
+          image: imageUri,
         });
       }
     } catch (error) {
@@ -85,14 +82,48 @@ export default function SelfieCaptureScreen() {
   const handleSubmit = async () => {
     try {
       const payload = buildPayload();
-      console.log("Submitting payload:", JSON.stringify(payload, null, 2));
+
+      if (!payload.userId || !payload.idInfo || !payload.idInfo.id_type || !payload.idInfo.country || payload.images.length < 3) {
+        Toast.error("Please capture all document images and selfie before submitting.");
+        return;
+      }
+
+      const formData = new FormData();
+
+      formData.append("userId", payload.userId.toString());
+      formData.append("id_info[id_type]", payload.idInfo.id_type);
+      formData.append("id_info[country]", payload.idInfo.country);
+
+      payload.images.forEach((img, index) => {
+        formData.append("images", {
+          uri: img.image,
+          type: "image/jpeg",
+          name: `image_${index}.jpg`,
+        } as unknown as Blob);
+      });
+
+      payload.images.forEach((img, index) => {
+        formData.append(`image_type_ids[${index}]`, img.image_type_id.toString());
+      });
+
+      console.log("📦 FormData being sent to server:");
+      console.log("Images order and their types:");
+      payload.images.forEach((img, index) => {
+        console.log(`  Index ${index}: image_type_id = ${img.image_type_id} (${img.image_type_id === 2 ? 'SELFIE' :
+            img.image_type_id === 3 ? 'ID_FRONT' :
+              img.image_type_id === 7 ? 'ID_BACK' : 'UNKNOWN'
+          })`);
+      });
+
+      for (let [key, value] of (formData as any).entries()) {
+        console.log(`${key}:`, value);
+      }
 
       const response = await authFetch(
         `${apiUrl}/smile-id/document-verification`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: formData,
         }
       );
 

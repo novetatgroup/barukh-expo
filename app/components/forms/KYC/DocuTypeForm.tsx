@@ -8,35 +8,20 @@ import {
   View
 } from "react-native";
 import KYCContext from "@/app/context/KYCContext";
-import CustomDropdown from "../../ui/Dropdown";
-
-const countries = [
-  'KENYA',
-  'UGANDA',
-  'TANZANIA',
-]
 
 type DocumentTypeSelectionFormProps = {
   onDocumentTypeSelect: (
     id_type: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENCE",
-    country: string
   ) => void;
 };
 
 const DocumentTypeSelectionForm: React.FC<DocumentTypeSelectionFormProps> = ({ onDocumentTypeSelect }) => {
-  const { country, id_type, updateIdInfo } = useContext(KYCContext);
+  const { id_type, updateIdType } = useContext(KYCContext);
 
   const handleDocumentTypeSelect = (selectedType: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENCE") => {
-    if (!country) return;
 
-    updateIdInfo(country, selectedType);
-    onDocumentTypeSelect(selectedType, country);
-  };
-
-  const handleCountryChange = (selectedCountry: string) => {
-    if (selectedCountry) {
-      updateIdInfo(selectedCountry, id_type || "IDENTITY_CARD");
-    }
+    updateIdType(selectedType);
+    onDocumentTypeSelect(selectedType)
   };
 
   return (
@@ -45,16 +30,6 @@ const DocumentTypeSelectionForm: React.FC<DocumentTypeSelectionFormProps> = ({ o
         <Text style={styles.verifyText}>Verify</Text>
         <Text style={styles.accountText}>Account</Text>
         <Text style={styles.subText}>Choose Your Document Type</Text>
-      </View>
-
-      <View style={styles.countrySection}>
-        <Text style={styles.sectionTitle}>Select Country of Issue</Text>
-        <CustomDropdown
-          value={country || ""}
-          options={countries}
-          placeholder="Select a country..."
-          onSelect={(value) => handleCountryChange(value)}
-        />
       </View>
 
       <View style={styles.documentSection}>
@@ -69,7 +44,7 @@ const DocumentTypeSelectionForm: React.FC<DocumentTypeSelectionFormProps> = ({ o
 
             ]}
             onPress={() => handleDocumentTypeSelect("PASSPORT")}
-            disabled={!country}
+            
           >
             <View style={styles.iconContainer}>
               <Ionicons
@@ -172,9 +147,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: Theme.colors.primary,
   },
-  countrySection: {
-    marginBottom: Theme.spacing.xl,
-  },
   documentSection: {
     flex: 1,
   },
@@ -183,13 +155,6 @@ const styles = StyleSheet.create({
     color: Theme.colors.primary,
     marginBottom: Theme.spacing.md,
     fontWeight: "600",
-  },
-  countryPickerContainer: {
-    borderWidth: 2,
-    borderColor: Theme.colors.primary,
-    borderRadius: Theme.borderRadius.lg,
-    overflow: "hidden",
-    backgroundColor: Theme.colors.white,
   },
   dropdown: {
     height: 50,
