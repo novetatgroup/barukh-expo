@@ -28,7 +28,7 @@ const KYCVerificationScreen: React.FC<KYCVerificationScreenProps> = ({ onBeginKY
         <CustomButton
           title="Begin KYC"
           variant="primary"
-          onPress={() => router.push("/(KYC)/docuTypeScreen")}
+          onPress={() => router.push("/(KYC)/verifyPhoneNoScreen")}
           style={styles.button}
         />
       </View>

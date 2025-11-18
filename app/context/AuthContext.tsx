@@ -125,10 +125,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 			existingHeaders = options.headers as Record<string, string>;
 		}
 
+     const isFormData = options.body instanceof FormData;
+
 		const headers: Record<string, string> = {
 			...existingHeaders,
 			Authorization: `Bearer ${authState.accessToken}`,
-			"Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }), 
 		};
 
 		return fetch(url, { ...options, headers });
@@ -145,7 +147,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 			userId: null,
 		});
 
-		router.replace("/(onboarding)"); // force navigation reset
+		router.replace("/(onboarding)"); 
 	};
 	return (
 		<AuthContext.Provider
