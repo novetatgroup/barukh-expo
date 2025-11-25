@@ -7,11 +7,10 @@ const DocumentTypeSelectionScreen = () => {
 
   const handleDocumentTypeSelect = (
   selectedType: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENCE",
-  selectedCountry: string
 ) => {
   router.push({
     pathname: "/(KYC)/docuCaptureScreen",
-    params: { type: selectedType, country: selectedCountry },
+    params: { type: selectedType },
   });
 };
 

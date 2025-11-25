@@ -1,22 +1,28 @@
-import React, { useState, useRef, useEffect } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  ScrollView,
-  Pressable,
-  Animated,
-  StyleSheet,
-  ViewStyle,
-  TextStyle,
-} from "react-native";
 import Theme from "@/app/constants/Theme";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from "react-native";
+
+type DropdownOption = {
+  label: string;
+  value: string;
+} | string;
+
 
 export interface CustomDropdownProps {
   label?: string;
   value?: string | string[];
-  options: string[];
+  options: DropdownOption[];
   onSelect: (value: string) => void;
   placeholder?: string;
   error?: string;
@@ -47,6 +53,22 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const rotateAnim = useRef(new Animated.Value(0)).current;
 
+  const getLabel = (option: DropdownOption): string => {
+    return typeof option === 'string' ? option : option.label;
+  };
+
+  const getValue = (option: DropdownOption): string => {
+    return typeof option === 'string' ? option : option.value;
+  };
+
+  const getDisplayLabel = (): string => {
+    if (!value) return placeholder;
+    const currentValue = Array.isArray(value) ? value[0] : value;
+    const option = options.find(opt => getValue(opt) === currentValue);
+    return option ? getLabel(option) : currentValue || placeholder;
+  };
+
+
   useEffect(() => {
     Animated.timing(rotateAnim, {
       toValue: isOpen ? 1 : 0,
@@ -55,7 +77,8 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
     }).start();
   }, [isOpen]);
 
-  const handleSelect = (selectedValue: string) => {
+  const handleSelect = (option: DropdownOption) => {
+    const selectedValue = getValue(option);
     onSelect(selectedValue);
     setIsOpen(false);
   };
@@ -89,7 +112,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
           ]}
           numberOfLines={1}
         >
-          {value || placeholder}
+          {getDisplayLabel()}
         </Text>
 
         <Animated.Text style={[styles.dropdownIcon, { transform: [{ rotate }] }]}>
@@ -109,19 +132,25 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
               ]}
             >
               <ScrollView style={styles.optionsList} showsVerticalScrollIndicator={true}>
-                {options.map((option, index) => (
-                  <TouchableOpacity
-                    key={`${option}-${index}`}
-                    style={[styles.option, value === option && styles.selectedOption]}
-                    onPress={() => handleSelect(option)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.optionText, value === option && styles.selectedOptionText]}>
-                      {option}
-                    </Text>
-                    {value === option && <Text style={styles.checkmark}>✓</Text>}
-                  </TouchableOpacity>
-                ))}
+                {options.map((option, index) => {
+                  const optionValue = getValue(option);
+                  const optionLabel = getLabel(option);
+                  const isSelected = value === optionValue;
+
+                  return (
+                    <TouchableOpacity
+                      key={`${optionValue}-${index}`}
+                      style={[styles.option, isSelected && styles.selectedOption]}
+                      onPress={() => handleSelect(option)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.optionText, isSelected && styles.selectedOptionText]}>
+                        {optionLabel}
+                      </Text>
+                      {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                    </TouchableOpacity>
+                  );
+                })}
               </ScrollView>
             </View>
           </View>
@@ -166,6 +195,7 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     color: Theme.colors.text.lightGray,
+    fontSize: Theme.typography.body.fontSize,
   },
   disabledText: {
     color: Theme.colors.text.lightGray,

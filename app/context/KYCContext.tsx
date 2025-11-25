@@ -28,7 +28,8 @@ interface Payload {
 interface KYCContextType extends KYCState {
   setKYCState: (state: KYCState) => void;
   addImage: (imageDetail: ImageDetail) => void;
-  updateIdInfo: (country: string, id_type: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENCE") => void;
+  updateIdType: ( id_type: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENCE") => void;
+  updateCountry: (country: string) => void;
   resetKYC: () => void;
   buildPayload: () => Payload;
 }
@@ -66,10 +67,16 @@ export const KYCProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const updateIdInfo = (country: string, id_type: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENCE") => {
+  const updateCountry = (country: string) => {
     setKYCStateInternal((prevState) => ({
       ...prevState,
       country,
+    }));
+  }
+
+  const updateIdType = (id_type: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENCE") => {
+    setKYCStateInternal((prevState) => ({
+      ...prevState,
       id_type,
     }));
   };
@@ -118,7 +125,8 @@ export const KYCProvider = ({ children }: { children: ReactNode }) => {
       value={{
         ...kycState,
         setKYCState,
-        updateIdInfo,
+        updateIdType,
+        updateCountry,
         addImage,
         resetKYC,
         buildPayload,

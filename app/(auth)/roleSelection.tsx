@@ -25,8 +25,14 @@ const RoleSelectionScreen = () => {
 
       if (response.ok) {
         setTimeout(() => {
-          // NAOMI, Why does this all lead to traveller home?
-          router.push("/(traveller)/home");
+          if (role === "TRAVELLER") {
+            router.push("/(traveller)/home");
+          } else if (role === "SENDER") {
+            router.push("/(sender)/coming-soon"); 
+          } else {
+            Toast.error("Invalid role selected");
+            setSelectedRole(null);
+          }
         }, 400);
       } else {
         const data = await response.json();
