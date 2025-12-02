@@ -13,24 +13,27 @@ type PackageDetailsFormProps = {
 	initialValues?: Partial<ShipmentData>;
 	onSubmit: (data: {
 		allowedCategories: string[];
-		weight: string;
-		height: string;
-		width: string;
+		maxWeightKg: number;
+        maxHeightCm: number;
+        maxWidthCm: number;
+        maxLengthCm: number;
 	}) => void;
 };
 
 const ValidationSchema = Yup.object().shape({
 	allowedCategories: Yup.array().min(1, "Select at least one category"),
-	weight: Yup.string().required("Weight is required"),
-	height: Yup.string().required("Height is required"),
-	width: Yup.string().required("Width is required"),
+	maxWeightKg: Yup.number().required("Max weight is required").positive("Must be positive"),
+    maxHeightCm: Yup.number().required("Max height is required").positive("Must be positive"),
+    maxWidthCm: Yup.number().required("Max width is required").positive("Must be positive"),
+    maxLengthCm: Yup.number().required("Max length is required").positive("Must be positive"),
 });
 
 const initialValues = {
 	allowedCategories: [] as string[],
-	weight: "",
-	height: "",
-	width: "",
+	maxWeightKg: "",
+    maxHeightCm: "",
+    maxWidthCm: "",
+    maxLengthCm: "",
 };
 
 const allowedCategoriesOptions = [
@@ -61,7 +64,14 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
 				onSubmit={async (values) => {
 					try {
 						setLoading(true);
-						await onSubmit(values);
+						const submitData = {
+							allowedCategories: values.allowedCategories,
+							maxWeightKg: Number(values.maxWeightKg),
+							maxHeightCm: Number(values.maxHeightCm),
+							maxWidthCm: Number(values.maxWidthCm),
+							maxLengthCm: Number(values.maxLengthCm),
+						}
+						await onSubmit(submitData);
 					} catch (error) {
 						console.error(
 							"Error Submitting package details:",
@@ -71,7 +81,7 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
 						setLoading(false);
 					}
 				}}>
-				{({ values, handleChange, handleSubmit, setFieldValue }) => (
+				{({ values, handleChange, handleSubmit, setFieldValue, errors,touched, }) => (
 					<View style={styles.formContainer}>
 						<Text style={styles.inputLabel}>
 							Allowed Categories
@@ -114,31 +124,58 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
 							))}
 						</View>
 
-						<Text style={styles.inputLabel}>Weight</Text>
-						<CustomTextInput
-							value={values.weight}
-							onChangeText={handleChange("weight")}
-							variant="compact"
-							style={{ width: 120 }}
-						/>
+						
+						 <Text style={styles.sectionTitle}>Maximum Package Dimensions</Text>
 
-						<Text style={styles.inputLabel}>Dimensions</Text>
-						<View style={styles.rowContainer}>
-							<CustomTextInput
-								value={values.height}
-								variant="compact"
-								placeholder="Height"
-								onChangeText={handleChange("height")}
-								style={{ width: 120, marginRight: 20 }}
-							/>
-							<CustomTextInput
-								value={values.width}
-								variant="compact"
-								placeholder="Width"
-								onChangeText={handleChange("width")}
-								style={{ width: 120 }}
-							/>
-						</View>
+                            <Text style={styles.inputLabel}>Weight (kg)</Text>
+                            <CustomTextInput
+                                value={values.maxWeightKg}
+                                onChangeText={handleChange('maxWeightKg')}
+                                placeholder='Max weight in kg'
+                                keyboardType='numeric'
+                            />
+                            {touched.maxWeightKg && errors.maxWeightKg && (
+                                <Text style={styles.errorText}>{errors.maxWeightKg}</Text>
+                            )}
+
+                            <View style={styles.rowContainer}>
+                                <View style={styles.dimensionInput}>
+                                    <Text style={styles.inputLabel}>Height (cm)</Text>
+                                    <CustomTextInput
+                                        value={values.maxHeightCm}
+                                        onChangeText={handleChange('maxHeightCm')}
+                                        placeholder='Height'
+                                        keyboardType='numeric'
+                                    />
+                                    {touched.maxHeightCm && errors.maxHeightCm && (
+                                        <Text style={styles.errorText}>{errors.maxHeightCm}</Text>
+                                    )}
+                                </View>
+
+                                <View style={styles.dimensionInput}>
+                                    <Text style={styles.inputLabel}>Width (cm)</Text>
+                                    <CustomTextInput
+                                        value={values.maxWidthCm}
+                                        onChangeText={handleChange('maxWidthCm')}
+                                        placeholder='Width'
+                                        keyboardType='numeric'
+                                    />
+                                    {touched.maxWidthCm && errors.maxWidthCm && (
+                                        <Text style={styles.errorText}>{errors.maxWidthCm}</Text>
+                                    )}
+                                </View>
+                            </View>
+
+                            <Text style={styles.inputLabel}>Length (cm)</Text>
+                            <CustomTextInput
+                                value={values.maxLengthCm}
+                                onChangeText={handleChange('maxLengthCm')}
+                                placeholder='Max length in cm'
+                                keyboardType='numeric'
+                            />
+                            {touched.maxLengthCm && errors.maxLengthCm && (
+                                <Text style={styles.errorText}>{errors.maxLengthCm}</Text>
+                            )}
 
 						<CustomButton
 							title="Update Status"
@@ -205,6 +242,23 @@ const styles = StyleSheet.create({
 		fontSize: 16,
 		fontWeight: "600",
 	},
+	sectionTitle: {
+        ...Theme.typography.h2,
+        color: Theme.colors.black,
+        marginTop: Theme.spacing.lg,
+        marginBottom: Theme.spacing.sm,
+        fontWeight: '700',
+    },
+	dimensionInput: {
+        flex: 1,
+    },
+	 errorText: {
+        fontSize: 12,
+        color: Theme.colors.error,
+        marginTop: -8,
+        marginBottom: 12,
+        marginLeft: Theme.spacing.xs,
+    },
 });
 
 export default PackageDetailsForm;

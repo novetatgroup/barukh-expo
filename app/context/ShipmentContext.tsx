@@ -1,18 +1,33 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export interface ShipmentData {
-  departure: string;
-  destination: string;
-  date: string;
-  time: string;
-  modeOfTravel: string;
-  spaceType: string;
-  spaceNumber: string;
+  departure?: string;
+  destination?: string;
+  date?: string;
+  time?: string;
+  modeOfTravel?: string;
+  spaceType?: string;
+  spaceNumber?: string;
   
-  allowedCategories: string[];
-  weight: string;
-  height: string;
-  width: string;
+  userId?: number;
+  originCountry?: string;
+  originCity?: string;
+  destinationCountry?: string;
+  destinationCity?: string;
+  departureAt?: string;
+  arrivalAt?: string;
+  mode?: string;
+  flightNumber?: string;
+  vehiclePlate?: string;
+  
+  allowedCategories?: string[];
+  weight?: string;
+  height?: string;
+  width?: string;
+  maxWeightKg?: number;
+  maxHeightCm?: number;
+  maxWidthCm?: number;
+  maxLengthCm?: number;
 }
 
 export interface Shipment extends ShipmentData {

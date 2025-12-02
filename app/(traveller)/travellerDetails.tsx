@@ -1,18 +1,34 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
+import { router } from "expo-router";
 import TravellerDetailsForm from "../components/forms/traveller/TravellerDetails";
 import { useShipment } from "../context/ShipmentContext";
-import { ShipmentData } from "../context/ShipmentContext";
+import AuthContext from "../context/AuthContext";
 
 const TravellerDetailsScreen = () => {
-	const router = useRouter();
 	const { setCurrentShipment } = useShipment();
 
-	const handleSubmit = (data: Partial<ShipmentData>) => {
+	const handleSubmit =  async (data: {
+		userId: number;
+		originCountry: string;
+		originCity: string;
+		destinationCountry: string;
+		destinationCity: string;
+		departureDate: string;
+		departureAt: string;
+		arrivalDate: string;
+		arrivalAt: string;
+		mode?: string;
+		flightNumber?: string;
+		vehiclePlate?: string;
+	}) => {
 		console.log("Traveller Details submitted:", data);
-		setCurrentShipment((prev) => ({ ...prev, ...data }));
-
+		
+		setCurrentShipment((prev) => ({ 
+			...prev, 
+			...data 
+		}));
+		
 		router.push("/(traveller)/packageDetails");
 	};
 
