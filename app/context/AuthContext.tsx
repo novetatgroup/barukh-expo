@@ -17,7 +17,7 @@ interface AuthState {
 	accessToken: string | null;
 	refreshToken: string | null;
 	isAuthenticated: boolean;
-	userId: number | null;
+	userId: string | null;
 }
 
 interface AuthContextType extends AuthState {
@@ -61,13 +61,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 							userId: null,
 						});
 					} else {
+						const userId = typeof decoded.userId === 'string' || typeof decoded.userId === 'number'
+							? String(decoded.userId)
+							: null;
+
+						if (!userId) {
+							await deleteSecureItem("accessToken");
+							setAuthStateInternal({
+								accessToken: null,
+								refreshToken: null,
+								isAuthenticated: false,
+								userId: null,
+							});
+							return;
+						}
+
 						setAuthStateInternal({
 							accessToken: token,
 							refreshToken: null,
 							isAuthenticated: true,
-							userId: decoded.userId
-								? Number(decoded.userId)
-								: null,
+							userId: userId,
 						});
 					}
 				}

@@ -36,11 +36,20 @@ const VerifyOtpScreen = () => {
 					data.accessToken
 				);
 
+				const userId = typeof decoded.userId === 'string' || typeof decoded.userId === 'number'
+					? String(decoded.userId)
+					: null;
+
+				if (!userId) {
+					Toast.error("Invalid user ID received. Please contact support.");
+					return;
+				}
+
 				await setAuthState({
 					refreshToken: data.refreshToken,
 					accessToken: data.accessToken,
 					isAuthenticated: true,
-					userId: decoded.userId ? Number(decoded.userId) : null,
+					userId: userId,
 				});
 
 				Toast.success("OTP verified successfully!");

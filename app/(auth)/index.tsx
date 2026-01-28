@@ -9,12 +9,12 @@ export default function AuthScreen() {
   return (
     <View style={styles.container}>
       {activeTab === "login" ? (
-        <LoginScreen 
+        <LoginScreen
           activeTab={activeTab}
           onTabChange={setActiveTab}
         />
       ) : (
-        <RegisterScreen 
+        <RegisterScreen
           activeTab={activeTab}
           onTabChange={setActiveTab}
         />

@@ -14,6 +14,12 @@ const RoleSelectionScreen = () => {
   const handleRoleUpdate = async (role: Role) => {
     setSelectedRole(role);
 
+    if (!userId) {
+      Toast.error("Session error. Please log in again.");
+      setSelectedRole(null);
+      return;
+    }
+
     try {
       const response = await authFetch(`${apiUrl}/users/update/${userId}`, {
         method: "PATCH",
