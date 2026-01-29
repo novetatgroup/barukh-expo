@@ -10,9 +10,21 @@ const RoleSelectionScreen = () => {
   const { authFetch, userId } = useContext(AuthContext);
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleRoleUpdate = async (role: Role) => {
+    // Prevent duplicate submissions
+    if (isLoading) return;
+
     setSelectedRole(role);
+    setIsLoading(true);
+
+    if (!userId) {
+      Toast.error("Session error. Please log in again.");
+      setSelectedRole(null);
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const response = await authFetch(`${apiUrl}/users/update/${userId}`, {
@@ -24,26 +36,29 @@ const RoleSelectionScreen = () => {
       });
 
       if (response.ok) {
-        setTimeout(() => {
-          if (role === "TRAVELLER") {
-            router.push("/(traveller)/home");
-          } else if (role === "SENDER") {
-            router.push("/(sender)/coming-soon"); 
-          } else {
-            Toast.error("Invalid role selected");
-            setSelectedRole(null);
-          }
-        }, 400);
+        Toast.success("Role updated successfully!");
+
+        if (role === "TRAVELLER") {
+          router.push("/(traveller)/home");
+        } else if (role === "SENDER") {
+          router.push("/(sender)/coming-soon");
+        } else {
+          Toast.error("Invalid role selected");
+          setSelectedRole(null);
+          setIsLoading(false);
+        }
       } else {
         const data = await response.json();
         console.error("API Error:", data);
         Toast.error(data.message || "Update failed. Please try again.");
         setSelectedRole(null);
+        setIsLoading(false);
       }
     } catch (error) {
       console.error("Network Error:", error);
       Toast.error("Network error. Try again later.");
       setSelectedRole(null);
+      setIsLoading(false);
     }
   };
 
@@ -52,6 +67,7 @@ const RoleSelectionScreen = () => {
       <RoleSelectionForm
         selectedRole={selectedRole}
         onRoleSelect={handleRoleUpdate}
+        isLoading={isLoading}
       />
     </View>
   );

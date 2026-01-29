@@ -1,18 +1,20 @@
 import { Role, ROLE_OPTIONS } from "@/app/constants/roles";
 import Theme from "@/app/constants/Theme";
 import React, { ComponentType } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SvgProps } from "react-native-svg";
 import RoleOption from "../../RoleOption";
 
 interface RoleSelectionFormProps {
   selectedRole: Role | null;
   onRoleSelect: (role: Role) => void;
+  isLoading?: boolean;
 }
 
 const RoleSelectionForm: React.FC<RoleSelectionFormProps> = ({
   selectedRole,
   onRoleSelect,
+  isLoading = false,
 }) => {
   return (
     <View style={styles.container}>
@@ -30,9 +32,17 @@ const RoleSelectionForm: React.FC<RoleSelectionFormProps> = ({
               value={option.value}
               selected={selectedRole === option.value}
               onPress={onRoleSelect}
+              disabled={isLoading}
             />
           ))}
         </View>
+
+        {isLoading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Theme.colors.primary} />
+            <Text style={styles.loadingText}>Setting up your account...</Text>
+          </View>
+        )}
       </View>
 
       <Text style={styles.footerText}>
@@ -72,6 +82,18 @@ const styles = StyleSheet.create({
   },
   optionsContainer: {
     gap: Theme.spacing.md,
+  },
+  loadingContainer: {
+    marginTop: Theme.spacing.xl,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    marginTop: Theme.spacing.md,
+    fontSize: 14,
+    fontFamily: "Inter-Regular",
+    color: Theme.colors.primary,
+    textAlign: "center",
   },
   footerText: {
     fontSize: 12,

@@ -12,6 +12,7 @@ interface RoleOptionProps {
   value: Role;
   selected: boolean;
   onPress: (role: Role) => void;
+  disabled?: boolean;
 }
 
 const RoleOption: React.FC<RoleOptionProps> = ({
@@ -21,11 +22,17 @@ const RoleOption: React.FC<RoleOptionProps> = ({
   value,
   selected,
   onPress,
+  disabled = false,
 }) => {
   return (
     <TouchableOpacity
-      style={[styles.card, selected && styles.selectedCard]}
-      onPress={() => onPress(value)}
+      style={[
+        styles.card,
+        selected && styles.selectedCard,
+        disabled && styles.disabledCard,
+      ]}
+      onPress={() => !disabled && onPress(value)}
+      disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={`${title}: ${subtitle}`}
     >
@@ -65,6 +72,9 @@ const styles = StyleSheet.create({
   },
   selectedCard: {
     backgroundColor: Theme.colors.primary,
+  },
+  disabledCard: {
+    opacity: 0.5,
   },
   iconContainer: {
     marginRight: Theme.spacing.md,
