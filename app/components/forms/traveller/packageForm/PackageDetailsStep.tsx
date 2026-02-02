@@ -24,8 +24,8 @@ const PackageDetailsStep: React.FC<PackageDetailsStepProps> = ({
 }) => {
   return (
     <>
-      {/* Consignment Type */}
-      <Text style={styles.sectionLabel}>Select Consignment Type</Text>
+      {/* Allowed Items */}
+      <Text style={[styles.sectionLabel, styles.firstSectionLabel]}>Select Allowed Items</Text>
       <CustomDropdown
         value={values.allowedCategories.length > 0 ? values.allowedCategories[0] : ""}
         options={consignmentOptions}
@@ -35,7 +35,7 @@ const PackageDetailsStep: React.FC<PackageDetailsStepProps> = ({
             : [...values.allowedCategories, value];
           setFieldValue("allowedCategories", updated);
         }}
-        placeholder="Select Consignment Type"
+        placeholder="Select Allowed Items"
       />
 
       {values.allowedCategories.length > 0 && (
@@ -152,6 +152,9 @@ const styles = StyleSheet.create({
     marginBottom: Theme.spacing.sm,
     marginTop: Theme.spacing.md,
   },
+  firstSectionLabel: {
+    marginTop: 0,
+  },
   inputContainer: {
     marginBottom: Theme.spacing.sm,
   },
@@ -206,7 +209,7 @@ const styles = StyleSheet.create({
   tagsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginTop: -Theme.spacing.sm,
+    marginTop: Theme.spacing.sm,
     marginBottom: Theme.spacing.sm,
     gap: 8,
   },

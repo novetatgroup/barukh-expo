@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Formik } from "formik";
 import React, { useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import CustomButton from "../../ui/CustomButton";
 import {
 	initialFormValues,
@@ -119,52 +119,74 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
         </View>
       </View>
 
-      <ScrollView
-        style={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        <Formik<PackageFormValues>
-          initialValues={{ ...initialFormValues, ...initialValues } as PackageFormValues}
-          validationSchema={currentStep === 1 ? Step1ValidationSchema : Step2ValidationSchema}
-          validateOnChange={false}
-          validateOnBlur={true}
-          onSubmit={handleFormSubmit}
+        <ScrollView
+          style={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          {({ values, handleChange, handleSubmit, setFieldValue, errors, touched }) => (
-            <View style={styles.formContainer}>
-              {currentStep === 1 ? (
-                <TravelDetailsStep
-                  values={values}
-                  errors={errors}
-                  touched={touched}
-                  setFieldValue={setFieldValue}
-                  handleChange={handleChange}
-                />
-              ) : (
-                <PackageDetailsStep
-                  values={values}
-                  errors={errors}
-                  touched={touched}
-                  setFieldValue={setFieldValue}
-                  handleChange={handleChange}
-                />
-              )}
+          <Formik<PackageFormValues>
+            initialValues={{ ...initialFormValues, ...initialValues } as PackageFormValues}
+            validationSchema={currentStep === 1 ? Step1ValidationSchema : Step2ValidationSchema}
+            validateOnChange={false}
+            validateOnBlur={true}
+            onSubmit={handleFormSubmit}
+          >
+            {({ values, handleChange, handleSubmit, setFieldValue, errors, touched }) => (
+              <View style={styles.formContainer}>
+                {currentStep === 1 ? (
+                  <TravelDetailsStep
+                    values={values}
+                    errors={errors}
+                    touched={touched}
+                    setFieldValue={setFieldValue}
+                    handleChange={handleChange}
+                  />
+                ) : (
+                  <PackageDetailsStep
+                    values={values}
+                    errors={errors}
+                    touched={touched}
+                    setFieldValue={setFieldValue}
+                    handleChange={handleChange}
+                  />
+                )}
 
-              {/* Submit/Next Button */}
-              <View style={styles.buttonContainer}>
-                <CustomButton
-                  title={currentStep === 1 ? "Next" : "Create Trip"}
-                  variant="primary"
-                  loading={loading}
-                  onPress={() => handleSubmit()}
-                  style={styles.submitButton}
-                />
+                {/* Navigation Buttons */}
+                <View style={styles.buttonContainer}>
+                  {currentStep === 1 ? (
+                    <TouchableOpacity
+                      style={styles.cancelButton}
+                      onPress={() => router.back()}
+                    >
+                      <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.previousButton}
+                      onPress={() => setCurrentStep(1)}
+                    >
+                      <Ionicons name="chevron-back" size={20} color={Theme.colors.primary} />
+                      <Text style={styles.previousButtonText}>Previous</Text>
+                    </TouchableOpacity>
+                  )}
+                  <CustomButton
+                    title={currentStep === 1 ? "Next" : "Create Trip"}
+                    variant="primary"
+                    loading={loading}
+                    onPress={() => handleSubmit()}
+                    style={styles.submitButton}
+                  />
+                </View>
               </View>
-            </View>
-          )}
-        </Formik>
-      </ScrollView>
+            )}
+          </Formik>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 };
@@ -232,6 +254,9 @@ const styles = StyleSheet.create({
     marginHorizontal: Theme.spacing.sm,
     marginBottom: Theme.spacing.lg,
   },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
   scrollContainer: {
     flex: 1,
   },
@@ -241,10 +266,48 @@ const styles = StyleSheet.create({
     paddingBottom: Theme.spacing.xxl,
   },
   buttonContainer: {
+    flexDirection: "row",
     marginTop: Theme.spacing.xl,
+    gap: 8,
+  },
+  cancelButton: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Theme.spacing.md,
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: Theme.colors.primary,
+    borderRadius: Theme.borderRadius.xl,
+    minHeight: Theme.components.button.height,
+  },
+  cancelButtonText: {
+    fontSize: Theme.typography.body.fontSize,
+    color: Theme.colors.primary,
+    fontWeight: "500",
+  },
+  previousButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Theme.spacing.md,
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: Theme.colors.primary,
+    borderRadius: Theme.borderRadius.xl,
+    minHeight: Theme.components.button.height,
+  },
+  previousButtonText: {
+    fontSize: Theme.typography.body.fontSize,
+    color: Theme.colors.primary,
+    fontWeight: "500",
+    marginLeft: Theme.spacing.xs,
   },
   submitButton: {
-    borderRadius: Theme.borderRadius.md,
+    flex: 1,
+    marginTop: 0,
+    marginBottom: 0,
   },
 });
 

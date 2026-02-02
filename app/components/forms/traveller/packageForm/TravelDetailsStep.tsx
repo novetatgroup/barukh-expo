@@ -121,24 +121,6 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
         <Text style={styles.errorText}>{errors.departureDate}</Text>
       )}
 
-      {/* Departure Time */}
-      <Text style={styles.sectionLabel}>Departure Time</Text>
-      <TouchableOpacity
-        style={styles.datePickerButton}
-        onPress={() => {
-          closeAllPickers();
-          setShowDepartureTimePicker(true);
-        }}
-      >
-        <Text style={[styles.datePickerText, !values.departureTime && styles.placeholderText]}>
-          {values.departureTime || "Select Time"}
-        </Text>
-        <Ionicons name="time-outline" size={20} color={Theme.colors.text.gray} />
-      </TouchableOpacity>
-      {touched.departureTime && errors.departureTime && (
-        <Text style={styles.errorText}>{errors.departureTime}</Text>
-      )}
-
       {showDepartureDatePicker && (
         Platform.OS === "ios" ? (
           <View style={styles.pickerContainer}>
@@ -178,6 +160,24 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
             minimumDate={new Date()}
           />
         )
+      )}
+
+      {/* Departure Time */}
+      <Text style={styles.sectionLabel}>Departure Time</Text>
+      <TouchableOpacity
+        style={styles.datePickerButton}
+        onPress={() => {
+          closeAllPickers();
+          setShowDepartureTimePicker(true);
+        }}
+      >
+        <Text style={[styles.datePickerText, !values.departureTime && styles.placeholderText]}>
+          {values.departureTime || "Select Time"}
+        </Text>
+        <Ionicons name="time-outline" size={20} color={Theme.colors.text.gray} />
+      </TouchableOpacity>
+      {touched.departureTime && errors.departureTime && (
+        <Text style={styles.errorText}>{errors.departureTime}</Text>
       )}
 
       {showDepartureTimePicker && (
@@ -245,24 +245,6 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
         <Text style={styles.errorText}>{errors.arrivalDate}</Text>
       )}
 
-      {/* Arrival Time */}
-      <Text style={styles.sectionLabel}>Arrival Time</Text>
-      <TouchableOpacity
-        style={styles.datePickerButton}
-        onPress={() => {
-          closeAllPickers();
-          setShowArrivalTimePicker(true);
-        }}
-      >
-        <Text style={[styles.datePickerText, !values.arrivalTime && styles.placeholderText]}>
-          {values.arrivalTime || "Select Time"}
-        </Text>
-        <Ionicons name="time-outline" size={20} color={Theme.colors.text.gray} />
-      </TouchableOpacity>
-      {touched.arrivalTime && errors.arrivalTime && (
-        <Text style={styles.errorText}>{errors.arrivalTime}</Text>
-      )}
-
       {showArrivalDatePicker && (
         Platform.OS === "ios" ? (
           <View style={styles.pickerContainer}>
@@ -302,6 +284,24 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
             minimumDate={values.departureDate ? new Date(values.departureDate) : new Date()}
           />
         )
+      )}
+
+      {/* Arrival Time */}
+      <Text style={styles.sectionLabel}>Arrival Time</Text>
+      <TouchableOpacity
+        style={styles.datePickerButton}
+        onPress={() => {
+          closeAllPickers();
+          setShowArrivalTimePicker(true);
+        }}
+      >
+        <Text style={[styles.datePickerText, !values.arrivalTime && styles.placeholderText]}>
+          {values.arrivalTime || "Select Time"}
+        </Text>
+        <Ionicons name="time-outline" size={20} color={Theme.colors.text.gray} />
+      </TouchableOpacity>
+      {touched.arrivalTime && errors.arrivalTime && (
+        <Text style={styles.errorText}>{errors.arrivalTime}</Text>
       )}
 
       {showArrivalTimePicker && (
@@ -441,8 +441,8 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 12,
     color: Theme.colors.error,
-    marginTop: -4,
-    marginBottom: 8,
+    marginTop: 4,
+    marginBottom: 4,
     marginLeft: Theme.spacing.xs,
   },
   pickerContainer: {
