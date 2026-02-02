@@ -17,7 +17,7 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({
 	length,
 }) => {
 	const [otp, setOtp] = useState("");
-	const [countdown, setCountdown] = useState(60);
+	const [countdown, setCountdown] = useState(120);
 	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
@@ -49,7 +49,7 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({
 
 	const handleResendCode = () => {
 		if (countdown === 0 && onResend) {
-			setCountdown(60);
+			setCountdown(120);
 			setOtp("");
 			onResend();
 		}
