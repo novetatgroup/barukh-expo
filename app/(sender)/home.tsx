@@ -4,13 +4,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 type Shipment = {
@@ -52,7 +52,7 @@ const shipments: Shipment[] = [
   },
 ];
 
-const TravellerHomeScreen = () => {
+const SenderHomeScreen = () => {
   const router = useRouter();
   const userName = "Sanyu";
 
@@ -77,13 +77,10 @@ const TravellerHomeScreen = () => {
   };
 
   const handleSendPackage = () => {
-    //route here if KYC has not yet been done
    // router.push("/(traveller)/packageUpload");
-   router.push("/(traveller)/packageDetails")
-
   };
 
-
+  const handleBookRide = () => {};
 
   return (
     <View style={styles.container}>
@@ -113,7 +110,7 @@ const TravellerHomeScreen = () => {
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.myShipmentsTitle}>My Trips</Text>
+            <Text style={styles.myShipmentsTitle}>My Shipments</Text>
 
             <View style={styles.searchContainer}>
               <Ionicons
@@ -141,15 +138,17 @@ const TravellerHomeScreen = () => {
             onPress={handleSendPackage}
           >
             <View style={styles.actionIconContainer}>
-              <Ionicons name="add" size={24}  />
+              <Ionicons name="add" size={24}/>
             </View>
-            <Text style={styles.actionButtonText}>Create a trip</Text>
+            <Text style={styles.actionButtonText}>Send Package</Text>
           </TouchableOpacity>
+
+          
         </View>
 
         {/* Shipments Section */}
         <View style={styles.shipmentHeader}>
-          <Text style={styles.shipmentTitle}>My Trips</Text>
+          <Text style={styles.shipmentTitle}>My Shipments</Text>
           <TouchableOpacity onPress={() => handleNavigateToShipments("All")}>
             <Text style={styles.seeAll}>See All</Text>
           </TouchableOpacity>
@@ -458,4 +457,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TravellerHomeScreen;
+export default SenderHomeScreen;

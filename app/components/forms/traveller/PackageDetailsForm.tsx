@@ -1,264 +1,251 @@
-import React, { useState } from "react";
 import Theme from "@/app/constants/Theme";
-import { Formik } from "formik";
-import * as Yup from "yup";
-import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
-import CustomButton from "../../ui/CustomButton";
-import CustomDropdown from "../../ui/Dropdown";
-import CustomTextInput from "../../ui/CustomTextInput";
 import { ShipmentData } from "@/app/context/ShipmentContext";
-import ProgressBar from "../../ui/ProgressBar";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { Formik } from "formik";
+import React, { useState } from "react";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import CustomButton from "../../ui/CustomButton";
+import {
+	initialFormValues,
+	PackageDetailsStep,
+	PackageFormValues,
+	PackageSubmitData,
+	Step1ValidationSchema,
+	Step2ValidationSchema,
+	TravelDetailsStep,
+} from "./packageForm";
 
 type PackageDetailsFormProps = {
-	initialValues?: Partial<ShipmentData>;
-	onSubmit: (data: {
-		allowedCategories: string[];
-		maxWeightKg: number;
-        maxHeightCm: number;
-        maxWidthCm: number;
-        maxLengthCm: number;
-	}) => void;
+  initialValues?: Partial<ShipmentData>;
+  onSubmit: (data: PackageSubmitData) => void;
 };
 
-const ValidationSchema = Yup.object().shape({
-	allowedCategories: Yup.array().min(1, "Select at least one category"),
-	maxWeightKg: Yup.number().required("Max weight is required").positive("Must be positive"),
-    maxHeightCm: Yup.number().required("Max height is required").positive("Must be positive"),
-    maxWidthCm: Yup.number().required("Max width is required").positive("Must be positive"),
-    maxLengthCm: Yup.number().required("Max length is required").positive("Must be positive"),
-});
-
-const initialValues = {
-	allowedCategories: [] as string[],
-	maxWeightKg: "",
-    maxHeightCm: "",
-    maxWidthCm: "",
-    maxLengthCm: "",
+const combineDateAndTime = (dateStr: string, timeStr: string): string => {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  if (timeStr) {
+    const [hours, minutes] = timeStr.split(":").map(Number);
+    date.setHours(hours || 0, minutes || 0, 0, 0);
+  }
+  return date.toISOString();
 };
-
-const allowedCategoriesOptions = [
-	"Electronics",
-	"Documents",
-	"Clothing",
-	"Food Items",
-	"Fragile Items",
-	"Books",
-];
 
 const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
-	onSubmit,
+  onSubmit,
+  initialValues,
 }) => {
-	const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
 
-	return (
-		<View style={styles.container}>
-			<Text style={styles.title}>Traveller Details</Text>
-			<ProgressBar
-				step={2}
-				labels={["Traveller Details", "Package Details"]}
-			/>
+  const validateStep1 = async (values: PackageFormValues) => {
+    try {
+      await Step1ValidationSchema.validate(values, { abortEarly: false });
+      return true;
+    } catch {
+      return false;
+    }
+  };
 
-			<Formik
-				initialValues={{ ...initialValues, ...initialValues }}
-				validationSchema={ValidationSchema}
-				onSubmit={async (values) => {
-					try {
-						setLoading(true);
-						const submitData = {
-							allowedCategories: values.allowedCategories,
-							maxWeightKg: Number(values.maxWeightKg),
-							maxHeightCm: Number(values.maxHeightCm),
-							maxWidthCm: Number(values.maxWidthCm),
-							maxLengthCm: Number(values.maxLengthCm),
-						}
-						await onSubmit(submitData);
-					} catch (error) {
-						console.error(
-							"Error Submitting package details:",
-							error
-						);
-					} finally {
-						setLoading(false);
-					}
-				}}>
-				{({ values, handleChange, handleSubmit, setFieldValue, errors,touched, }) => (
-					<View style={styles.formContainer}>
-						<Text style={styles.inputLabel}>
-							Allowed Categories
-						</Text>
-						<CustomDropdown
-							value=""
-							options={allowedCategoriesOptions.filter(
-								(opt) => !values.allowedCategories.includes(opt)
-							)}
-							onSelect={(value) => {
-								const updated = [
-									...values.allowedCategories,
-									value,
-								];
-								setFieldValue("allowedCategories", updated);
-							}}
-							placeholder="Select category"
-						/>
+  const handleFormSubmit = async (values: PackageFormValues) => {
+    if (currentStep === 1) {
+      const isValid = await validateStep1(values);
+      if (isValid) {
+        setCurrentStep(2);
+      }
+    } else {
+      try {
+        setLoading(true);
+        const submitData: PackageSubmitData = {
+          originCountry: values.originCountry,
+          originCity: values.originCity,
+          destinationCountry: values.destinationCountry,
+          destinationCity: values.destinationCity,
+          departureAt: combineDateAndTime(values.departureDate, values.departureTime),
+          arrivalAt: combineDateAndTime(values.arrivalDate, values.arrivalTime),
+          mode: values.mode,
+          ...(values.mode === "FLIGHT" && { flightNumber: values.flightNumber }),
+          ...(values.mode === "CAR" && { vehiclePlate: values.vehiclePlate }),
+          allowedCategories: values.allowedCategories,
+          maxWeightKg: Number(values.maxWeightKg),
+          maxHeightCm: Number(values.maxHeightCm),
+          maxWidthCm: Number(values.maxWidthCm),
+          maxLengthCm: Number(values.maxLengthCm),
+        };
+        await onSubmit(submitData);
+      } catch (error) {
+        console.error("Error submitting package details:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
 
-						<View style={styles.tagsContainer}>
-							{values.allowedCategories.map((category) => (
-								<View key={category} style={styles.tag}>
-									<Text style={styles.tagText}>
-										{category}
-									</Text>
-									<TouchableOpacity
-										onPress={() => {
-											const filtered =
-												values.allowedCategories.filter(
-													(c) => c !== category
-												);
-											setFieldValue(
-												"allowedCategories",
-												filtered
-											);
-										}}>
-										<Text style={styles.tagRemove}>×</Text>
-									</TouchableOpacity>
-								</View>
-							))}
-						</View>
+  const handleBack = () => {
+    if (currentStep === 2) {
+      setCurrentStep(1);
+    } else {
+      router.back();
+    }
+  };
 
-						
-						 <Text style={styles.sectionTitle}>Maximum Package Dimensions</Text>
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          <Ionicons name="chevron-back" size={24} color={Theme.colors.black} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>
+          {currentStep === 1 ? "Travel Details" : "Package Details"}
+        </Text>
+        <View style={styles.headerSpacer} />
+      </View>
 
-                            <Text style={styles.inputLabel}>Weight (kg)</Text>
-                            <CustomTextInput
-                                value={values.maxWeightKg}
-                                onChangeText={handleChange('maxWeightKg')}
-                                placeholder='Max weight in kg'
-                                keyboardType='numeric'
-                            />
-                            {touched.maxWeightKg && errors.maxWeightKg && (
-                                <Text style={styles.errorText}>{errors.maxWeightKg}</Text>
-                            )}
+      {/* Progress Indicator */}
+      <View style={styles.progressContainer}>
+        <View style={styles.progressStep}>
+          <View style={[styles.progressDot, currentStep >= 1 && styles.progressDotActive]}>
+            <Text style={styles.progressDotText}>1</Text>
+          </View>
+          <Text style={styles.progressLabel}>Trip Details</Text>
+        </View>
+        <View style={styles.progressLine} />
+        <View style={styles.progressStep}>
+          <View style={[styles.progressDot, currentStep >= 2 && styles.progressDotActive]}>
+            <Text style={styles.progressDotText}>2</Text>
+          </View>
+          <Text style={styles.progressLabel}>Package Details</Text>
+        </View>
+      </View>
 
-                            <View style={styles.rowContainer}>
-                                <View style={styles.dimensionInput}>
-                                    <Text style={styles.inputLabel}>Height (cm)</Text>
-                                    <CustomTextInput
-                                        value={values.maxHeightCm}
-                                        onChangeText={handleChange('maxHeightCm')}
-                                        placeholder='Height'
-                                        keyboardType='numeric'
-                                    />
-                                    {touched.maxHeightCm && errors.maxHeightCm && (
-                                        <Text style={styles.errorText}>{errors.maxHeightCm}</Text>
-                                    )}
-                                </View>
+      <ScrollView
+        style={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Formik<PackageFormValues>
+          initialValues={{ ...initialFormValues, ...initialValues } as PackageFormValues}
+          validationSchema={currentStep === 1 ? Step1ValidationSchema : Step2ValidationSchema}
+          validateOnChange={false}
+          validateOnBlur={true}
+          onSubmit={handleFormSubmit}
+        >
+          {({ values, handleChange, handleSubmit, setFieldValue, errors, touched }) => (
+            <View style={styles.formContainer}>
+              {currentStep === 1 ? (
+                <TravelDetailsStep
+                  values={values}
+                  errors={errors}
+                  touched={touched}
+                  setFieldValue={setFieldValue}
+                  handleChange={handleChange}
+                />
+              ) : (
+                <PackageDetailsStep
+                  values={values}
+                  errors={errors}
+                  touched={touched}
+                  setFieldValue={setFieldValue}
+                  handleChange={handleChange}
+                />
+              )}
 
-                                <View style={styles.dimensionInput}>
-                                    <Text style={styles.inputLabel}>Width (cm)</Text>
-                                    <CustomTextInput
-                                        value={values.maxWidthCm}
-                                        onChangeText={handleChange('maxWidthCm')}
-                                        placeholder='Width'
-                                        keyboardType='numeric'
-                                    />
-                                    {touched.maxWidthCm && errors.maxWidthCm && (
-                                        <Text style={styles.errorText}>{errors.maxWidthCm}</Text>
-                                    )}
-                                </View>
-                            </View>
-
-                            <Text style={styles.inputLabel}>Length (cm)</Text>
-                            <CustomTextInput
-                                value={values.maxLengthCm}
-                                onChangeText={handleChange('maxLengthCm')}
-                                placeholder='Max length in cm'
-                                keyboardType='numeric'
-                            />
-                            {touched.maxLengthCm && errors.maxLengthCm && (
-                                <Text style={styles.errorText}>{errors.maxLengthCm}</Text>
-                            )}
-
-						<CustomButton
-							title="Update Status"
-							variant="primary"
-							loading={loading}
-							onPress={() => handleSubmit()}
-						/>
-					</View>
-				)}
-			</Formik>
-		</View>
-	);
+              {/* Submit/Next Button */}
+              <View style={styles.buttonContainer}>
+                <CustomButton
+                  title={currentStep === 1 ? "Next" : "Create Trip"}
+                  variant="primary"
+                  loading={loading}
+                  onPress={() => handleSubmit()}
+                  style={styles.submitButton}
+                />
+              </View>
+            </View>
+          )}
+        </Formik>
+      </ScrollView>
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: Theme.colors.white,
-	},
-	title: {
-		...Theme.typography.h2,
-		color: Theme.colors.black,
-		textAlign: "center",
-		marginBottom: Theme.spacing.md,
-		marginTop: Theme.spacing.xxxl,
-	},
-	formContainer: {
-		flex: 1,
-		paddingTop: Theme.spacing.lg,
-		paddingHorizontal: Theme.spacing.lg,
-	},
-	inputLabel: {
-		...Theme.typography.caption,
-		padding: Theme.spacing.sm,
-		color: "#595959",
-		fontWeight: "600",
-	},
-	rowContainer: {
-		flexDirection: "row",
-		alignItems: "flex-start",
-		marginBottom: Theme.spacing.md,
-	},
-	tagsContainer: {
-		flexDirection: "row",
-		flexWrap: "wrap",
-		marginVertical: 8,
-		gap: 8,
-	},
-	tag: {
-		flexDirection: "row",
-		alignItems: "center",
-		backgroundColor: Theme.colors.green,
-		paddingHorizontal: 10,
-		paddingVertical: 5,
-		borderRadius: 20,
-	},
-	tagText: {
-		color: "#fff",
-		fontSize: 13,
-		marginRight: 6,
-	},
-	tagRemove: {
-		color: "#fff",
-		fontSize: 16,
-		fontWeight: "600",
-	},
-	sectionTitle: {
-        ...Theme.typography.h2,
-        color: Theme.colors.black,
-        marginTop: Theme.spacing.lg,
-        marginBottom: Theme.spacing.sm,
-        fontWeight: '700',
-    },
-	dimensionInput: {
-        flex: 1,
-    },
-	 errorText: {
-        fontSize: 12,
-        color: Theme.colors.error,
-        marginTop: -8,
-        marginBottom: 12,
-        marginLeft: Theme.spacing.xs,
-    },
+  container: {
+    flex: 1,
+    backgroundColor: "#F4F1F2",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: Theme.spacing.md,
+    paddingTop: Theme.spacing.xxxl,
+    paddingBottom: Theme.spacing.md,
+    backgroundColor: "#F4F1F2",
+  },
+  backButton: {
+    padding: Theme.spacing.xs,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Theme.colors.black,
+  },
+  headerSpacer: {
+    width: 32,
+  },
+  progressContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: Theme.spacing.xl,
+    paddingVertical: Theme.spacing.md,
+  },
+  progressStep: {
+    alignItems: "center",
+  },
+  progressDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Theme.colors.text.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  progressDotActive: {
+    backgroundColor: Theme.colors.green,
+  },
+  progressDotText: {
+    color: Theme.colors.white,
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  progressLabel: {
+    marginTop: Theme.spacing.xs,
+    fontSize: 12,
+    color: Theme.colors.text.gray,
+  },
+  progressLine: {
+    flex: 1,
+    height: 2,
+    backgroundColor: Theme.colors.text.border,
+    marginHorizontal: Theme.spacing.sm,
+    marginBottom: Theme.spacing.lg,
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  formContainer: {
+    paddingHorizontal: Theme.spacing.lg,
+    paddingTop: Theme.spacing.md,
+    paddingBottom: Theme.spacing.xxl,
+  },
+  buttonContainer: {
+    marginTop: Theme.spacing.xl,
+  },
+  submitButton: {
+    borderRadius: Theme.borderRadius.md,
+  },
 });
 
 export default PackageDetailsForm;

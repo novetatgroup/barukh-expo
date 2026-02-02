@@ -13,7 +13,7 @@ const RoleSelectionScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRoleUpdate = async (role: Role) => {
-    // Prevent duplicate submissions
+
     if (isLoading) return;
 
     setSelectedRole(role);
@@ -41,7 +41,7 @@ const RoleSelectionScreen = () => {
         if (role === "TRAVELLER") {
           router.push("/(traveller)/home");
         } else if (role === "SENDER") {
-          router.push("/(sender)/coming-soon");
+          router.push("/(sender)/home");
         } else {
           Toast.error("Invalid role selected");
           setSelectedRole(null);

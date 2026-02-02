@@ -1,10 +1,10 @@
 import { router } from "expo-router";
-import React, { useState , useContext} from "react";
-import { StyleSheet, View} from "react-native";
+import React, { useContext, useState } from "react";
+import { StyleSheet, View } from "react-native";
 import { Toast } from "toastify-react-native";
 import PackageDetailsForm from "../components/forms/traveller/PackageDetailsForm";
-import { useShipment } from "../context/ShipmentContext";
 import { AuthContext } from "../context/AuthContext";
+import { useShipment } from "../context/ShipmentContext";
 
 
 const PackageDetailsScreen = () => {
@@ -16,39 +16,43 @@ const PackageDetailsScreen = () => {
 
   const handleSubmit = async (packageData: {
     allowedCategories: string[];
-    maxWeightKg: Number;
-    maxHeightCm: Number;
-    maxWidthCm: Number;
-    maxLengthCm:Number;
+    maxWeightKg: number;
+    maxHeightCm: number;
+    maxWidthCm: number;
+    maxLengthCm: number;
+    originCountry: string;
+    originCity: string;
+    destinationCountry: string;
+    destinationCity: string;
+    departureAt: string;
+    arrivalAt: string;
+    mode: string;
+    flightNumber?: string;
+    vehiclePlate?: string;
   }) => {
     try {
       setIsSubmitting(true);
 
-      console.log("Current Shipment from Context:", currentShipment);
       console.log("Package Data from Form:", packageData);
-
-      if (!currentShipment.originCountry || !currentShipment.destinationCountry) {
-        throw new Error("Missing traveller details. Please go back and fill the form.");
-      }
 
       const apiPayload = {
         userId: userId,
         maxWeightKg: Number(packageData.maxWeightKg) || 0,
         maxHeightCm: Number(packageData.maxHeightCm) || 0,
         maxWidthCm: Number(packageData.maxWidthCm) || 0,
-        maxLengthCm: Number(packageData.maxLengthCm), 
-        originCountry: currentShipment.originCountry,
-        originCity: currentShipment.originCity,
-        destinationCountry: currentShipment.destinationCountry,
-        destinationCity: currentShipment.destinationCity,
-        departureAt: currentShipment.departureAt,
-        arrivalAt: currentShipment.arrivalAt,
-        mode: currentShipment.mode,
-        ...(currentShipment.mode === "FLIGHT" && currentShipment.flightNumber && { 
-          flightNumber: currentShipment.flightNumber 
+        maxLengthCm: Number(packageData.maxLengthCm),
+        originCountry: packageData.originCountry,
+        originCity: packageData.originCity,
+        destinationCountry: packageData.destinationCountry,
+        destinationCity: packageData.destinationCity,
+        departureAt: packageData.departureAt,
+        arrivalAt: packageData.arrivalAt,
+        mode: packageData.mode,
+        ...(packageData.mode === "FLIGHT" && packageData.flightNumber && {
+          flightNumber: packageData.flightNumber,
         }),
-        ...(currentShipment.mode === "CAR" && currentShipment.vehiclePlate && { 
-          vehiclePlate: currentShipment.vehiclePlate 
+        ...(packageData.mode === "CAR" && packageData.vehiclePlate && {
+          vehiclePlate: packageData.vehiclePlate,
         }),
       };
 
@@ -84,17 +88,26 @@ const PackageDetailsScreen = () => {
 
       setCurrentShipment(prev => ({
         ...prev,
+        originCountry: packageData.originCountry,
+        originCity: packageData.originCity,
+        destinationCountry: packageData.destinationCountry,
+        destinationCity: packageData.destinationCity,
+        departureAt: packageData.departureAt,
+        arrivalAt: packageData.arrivalAt,
+        mode: packageData.mode,
+        flightNumber: packageData.flightNumber,
+        vehiclePlate: packageData.vehiclePlate,
         allowedCategories: packageData.allowedCategories,
         maxWeightKg: Number(packageData.maxWeightKg),
         maxHeightCm: Number(packageData.maxHeightCm),
         maxWidthCm: Number(packageData.maxWidthCm),
-        maxLengthCm:Number(packageData.maxLengthCm)
+        maxLengthCm: Number(packageData.maxLengthCm),
       }));
 
       setIsTravelerActive(true);
 
       Toast.success(
-        "Trip created successfully! You will be notified when a match is found."
+        "Trip successfully created! You will be notified when a match is found."
       );
       setTimeout(() => {
         clearCurrentShipment();

@@ -114,8 +114,15 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({
 
 const styles = StyleSheet.create({
 	content: { alignItems: "center", paddingTop: Theme.spacing.xxl },
-	otpContainer: { marginBottom: Theme.spacing.xl, width: "100%" },
-	otpInnerContainer: { gap: 8 },
+	otpContainer: {
+		marginBottom: Theme.spacing.xl,
+		width: "100%",
+		alignItems: "center",
+	},
+	otpInnerContainer: {
+		gap: 8,
+		justifyContent: "center",
+	},
 	otpInput: {
 		width: 50,
 		height: 50,
