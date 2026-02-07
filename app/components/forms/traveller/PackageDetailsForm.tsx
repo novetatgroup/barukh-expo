@@ -7,13 +7,13 @@ import React, { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import CustomButton from "../../ui/CustomButton";
 import {
-	initialFormValues,
-	PackageDetailsStep,
-	PackageFormValues,
-	PackageSubmitData,
-	Step1ValidationSchema,
-	Step2ValidationSchema,
-	TravelDetailsStep,
+  initialFormValues,
+  PackageDetailsStep,
+  PackageFormValues,
+  PackageSubmitData,
+  Step1ValidationSchema,
+  Step2ValidationSchema,
+  TravelDetailsStep,
 } from "./packageForm";
 
 type PackageDetailsFormProps = {
@@ -61,6 +61,14 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
           originCity: values.originCity,
           destinationCountry: values.destinationCountry,
           destinationCity: values.destinationCity,
+          ...(values.originLatitude && {
+            originLatitude: values.originLatitude,
+            originLongitude: values.originLongitude ?? undefined,
+          }),
+          ...(values.destinationLatitude && {
+            destinationLatitude: values.destinationLatitude,
+            destinationLongitude: values.destinationLongitude ?? undefined,
+          }),
           departureAt: combineDateAndTime(values.departureDate, values.departureTime),
           arrivalAt: combineDateAndTime(values.arrivalDate, values.arrivalTime),
           mode: values.mode,
@@ -91,7 +99,7 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Ionicons name="chevron-back" size={24} color={Theme.colors.black} />
@@ -102,7 +110,7 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
         <View style={styles.headerSpacer} />
       </View>
 
-      {/* Progress Indicator */}
+   
       <View style={styles.progressContainer}>
         <View style={styles.progressStep}>
           <View style={[styles.progressDot, currentStep >= 1 && styles.progressDotActive]}>

@@ -8,18 +8,22 @@ export interface ShipmentData {
   modeOfTravel?: string;
   spaceType?: string;
   spaceNumber?: string;
-  
+
   userId?: number;
   originCountry?: string;
   originCity?: string;
   destinationCountry?: string;
   destinationCity?: string;
+  originLatitude?: number;
+  originLongitude?: number;
+  destinationLatitude?: number;
+  destinationLongitude?: number;
   departureAt?: string;
   arrivalAt?: string;
   mode?: string;
   flightNumber?: string;
   vehiclePlate?: string;
-  
+
   allowedCategories?: string[];
   weight?: string;
   height?: string;

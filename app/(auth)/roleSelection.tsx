@@ -5,9 +5,11 @@ import { Toast } from "toastify-react-native";
 import RoleSelectionForm from "../components/forms/auth/RoleSelectionForm";
 import { Role } from "../constants/roles";
 import { AuthContext } from "../context/AuthContext";
+import { useRole } from "../context/RoleContext";
 
 const RoleSelectionScreen = () => {
   const { authFetch, userId } = useContext(AuthContext);
+  const { setRole } = useRole();
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -38,15 +40,9 @@ const RoleSelectionScreen = () => {
       if (response.ok) {
         Toast.success("Role updated successfully!");
 
-        if (role === "TRAVELLER") {
-          router.push("/(traveller)/home");
-        } else if (role === "SENDER") {
-          router.push("/(sender)/home");
-        } else {
-          Toast.error("Invalid role selected");
-          setSelectedRole(null);
-          setIsLoading(false);
-        }
+        // Save role to context and navigate to tabs
+        await setRole(role);
+        router.replace("/(tabs)/home");
       } else {
         const data = await response.json();
         console.error("API Error:", data);

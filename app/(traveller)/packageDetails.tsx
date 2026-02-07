@@ -24,6 +24,10 @@ const PackageDetailsScreen = () => {
     originCity: string;
     destinationCountry: string;
     destinationCity: string;
+    originLatitude?: number;
+    originLongitude?: number;
+    destinationLatitude?: number;
+    destinationLongitude?: number;
     departureAt: string;
     arrivalAt: string;
     mode: string;
@@ -45,6 +49,14 @@ const PackageDetailsScreen = () => {
         originCity: packageData.originCity,
         destinationCountry: packageData.destinationCountry,
         destinationCity: packageData.destinationCity,
+        ...(packageData.originLatitude && {
+          originLatitude: packageData.originLatitude,
+          originLongitude: packageData.originLongitude,
+        }),
+        ...(packageData.destinationLatitude && {
+          destinationLatitude: packageData.destinationLatitude,
+          destinationLongitude: packageData.destinationLongitude,
+        }),
         departureAt: packageData.departureAt,
         arrivalAt: packageData.arrivalAt,
         mode: packageData.mode,
@@ -92,6 +104,10 @@ const PackageDetailsScreen = () => {
         originCity: packageData.originCity,
         destinationCountry: packageData.destinationCountry,
         destinationCity: packageData.destinationCity,
+        originLatitude: packageData.originLatitude,
+        originLongitude: packageData.originLongitude,
+        destinationLatitude: packageData.destinationLatitude,
+        destinationLongitude: packageData.destinationLongitude,
         departureAt: packageData.departureAt,
         arrivalAt: packageData.arrivalAt,
         mode: packageData.mode,

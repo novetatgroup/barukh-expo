@@ -5,14 +5,15 @@ import { FormikErrors, FormikTouched, FormikHandlers } from "formik";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Theme from "@/app/constants/Theme";
 import CustomDropdown from "../../../ui/Dropdown";
-import { PackageFormValues } from "./types";
-import { countryOptions, getCitiesByCountry, modeOptions } from "./constants";
+import LocationPicker from "../../../ui/LocationPicker";
+import { PackageFormValues, LocationData } from "./types";
+import { modeOptions } from "./constants";
 
 type TravelDetailsStepProps = {
   values: PackageFormValues;
   errors: FormikErrors<PackageFormValues>;
   touched: FormikTouched<PackageFormValues>;
-  setFieldValue: (field: string, value: string) => void;
+  setFieldValue: (field: string, value: any) => void;
   handleChange: FormikHandlers["handleChange"];
 };
 
@@ -52,56 +53,38 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
   return (
     <>
       {/* Origin */}
-      <Text style={styles.sectionLabel}>Origin</Text>
-      <CustomDropdown
-        value={values.originCountry}
-        options={countryOptions}
-        onSelect={(value) => {
-          setFieldValue("originCountry", value);
-          setFieldValue("originCity", "");
-        }}
-        placeholder="Select Country"
-      />
-      {touched.originCountry && errors.originCountry && (
-        <Text style={styles.errorText}>{errors.originCountry}</Text>
-      )}
-
-      <CustomDropdown
-        value={values.originCity}
-        options={getCitiesByCountry(values.originCountry)}
-        onSelect={(value) => setFieldValue("originCity", value)}
-        placeholder="Select City"
-        disabled={!values.originCountry}
-      />
-      {touched.originCity && errors.originCity && (
-        <Text style={styles.errorText}>{errors.originCity}</Text>
-      )}
+      <View style={{ zIndex: 2 }}>
+        <LocationPicker
+          label="Origin"
+          placeholder="Search origin city..."
+          value={values.origin}
+          onLocationSelect={(location: LocationData | null) => {
+            setFieldValue("origin", location);
+            setFieldValue("originCountry", location?.countryCode || "");
+            setFieldValue("originCity", location?.city || "");
+            setFieldValue("originLatitude", location?.latitude || null);
+            setFieldValue("originLongitude", location?.longitude || null);
+          }}
+          error={touched.origin && errors.origin ? String(errors.origin) : undefined}
+        />
+      </View>
 
       {/* Destination */}
-      <Text style={styles.sectionLabel}>Destination</Text>
-      <CustomDropdown
-        value={values.destinationCountry}
-        options={countryOptions}
-        onSelect={(value) => {
-          setFieldValue("destinationCountry", value);
-          setFieldValue("destinationCity", "");
-        }}
-        placeholder="Select Country"
-      />
-      {touched.destinationCountry && errors.destinationCountry && (
-        <Text style={styles.errorText}>{errors.destinationCountry}</Text>
-      )}
-
-      <CustomDropdown
-        value={values.destinationCity}
-        options={getCitiesByCountry(values.destinationCountry)}
-        onSelect={(value) => setFieldValue("destinationCity", value)}
-        placeholder="Select City"
-        disabled={!values.destinationCountry}
-      />
-      {touched.destinationCity && errors.destinationCity && (
-        <Text style={styles.errorText}>{errors.destinationCity}</Text>
-      )}
+      <View style={{ zIndex: 1 }}>
+        <LocationPicker
+          label="Destination"
+          placeholder="Search destination city..."
+          value={values.destination}
+          onLocationSelect={(location: LocationData | null) => {
+            setFieldValue("destination", location);
+            setFieldValue("destinationCountry", location?.countryCode || "");
+            setFieldValue("destinationCity", location?.city || "");
+            setFieldValue("destinationLatitude", location?.latitude || null);
+            setFieldValue("destinationLongitude", location?.longitude || null);
+          }}
+          error={touched.destination && errors.destination ? String(errors.destination) : undefined}
+        />
+      </View>
 
       {/* Departure Date */}
       <Text style={styles.sectionLabel}>Departure Date</Text>

@@ -4,13 +4,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 type Shipment = {
@@ -52,7 +52,7 @@ const shipments: Shipment[] = [
   },
 ];
 
-const SenderHomeScreen = () => {
+const SenderHomeContent = () => {
   const router = useRouter();
   const userName = "Sanyu";
 
@@ -71,166 +71,125 @@ const SenderHomeScreen = () => {
 
   const handleNavigateToShipments = (tab?: string) => {
     router.push({
-      pathname: "/(traveller)/myShipments",
-      params: { tab: tab || "Shipments" },
+      pathname: "/(tabs)/shipments",
+      params: { tab: tab || "All" },
     });
   };
 
   const handleSendPackage = () => {
-   // router.push("/(traveller)/packageUpload");
+    router.push("/(sender)/createShipment");
   };
 
-  const handleBookRide = () => {};
-
   return (
-    <View style={styles.container}>
-      <View style={styles.topSection}>
-        {/* Header Card */}
-        <View style={styles.headerCard}>
-          <View style={styles.patternOverlay}>
-            <PackagePattern />
-          </View>
+    <View style={styles.content}>
+      {/* Header Card */}
+      <View style={styles.headerCard}>
+        <View style={styles.patternOverlay}>
+          <PackagePattern />
+        </View>
 
-          <View style={styles.headerContent}>
-            <View style={styles.userRow}>
-              <Image
-                source={require("@/assets/images/avatar.png")}
-                style={styles.avatar}
-              />
-              <View>
-                <Text style={styles.welcomeText}>Welcome Back !</Text>
-                <Text style={styles.userName}>Hi {userName}</Text>
-              </View>
-              <TouchableOpacity style={styles.bellIcon}>
-                <Ionicons
-                  name="notifications-outline"
-                  size={22}
-                  color={Theme.colors.white}
-                />
-              </TouchableOpacity>
+        <View style={styles.headerContent}>
+          <View style={styles.userRow}>
+            <Image
+              source={require("@/assets/images/avatar.png")}
+              style={styles.avatar}
+            />
+            <View>
+              <Text style={styles.welcomeText}>Welcome Back !</Text>
+              <Text style={styles.userName}>Hi {userName}</Text>
             </View>
-
-            <Text style={styles.myShipmentsTitle}>My Shipments</Text>
-
-            <View style={styles.searchContainer}>
+            <TouchableOpacity style={styles.bellIcon}>
               <Ionicons
-                name="search-outline"
-                size={20}
-                color="#9CA3AF"
-                style={styles.searchIcon}
+                name="notifications-outline"
+                size={22}
+                color={Theme.colors.white}
               />
-              <TextInput
-                placeholder="Search shipment"
-                placeholderTextColor="#FFFFFF/50"
-                style={styles.searchInput}
-              />
-              <TouchableOpacity style={styles.qrButton}>
-                <Ionicons name="qr-code-outline" size={20} color="#9CA3AF" />
-              </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.myShipmentsTitle}>My Shipments</Text>
+
+          <View style={styles.searchContainer}>
+            <Ionicons
+              name="search-outline"
+              size={20}
+              color="#9CA3AF"
+              style={styles.searchIcon}
+            />
+            <TextInput
+              placeholder="Search shipments"
+              placeholderTextColor="#FFFFFF80"
+              style={styles.searchInput}
+            />
+            <TouchableOpacity style={styles.qrButton}>
+              <Ionicons name="qr-code-outline" size={20} color="#9CA3AF" />
+            </TouchableOpacity>
           </View>
         </View>
-
-        {/* Action Buttons */}
-        <View style={styles.actionButtonsRow}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.sendPackageButton]}
-            onPress={handleSendPackage}
-          >
-            <View style={styles.actionIconContainer}>
-              <Ionicons name="add" size={24}/>
-            </View>
-            <Text style={styles.actionButtonText}>Send Package</Text>
-          </TouchableOpacity>
-
-          
-        </View>
-
-        {/* Shipments Section */}
-        <View style={styles.shipmentHeader}>
-          <Text style={styles.shipmentTitle}>My Shipments</Text>
-          <TouchableOpacity onPress={() => handleNavigateToShipments("All")}>
-            <Text style={styles.seeAll}>See All</Text>
-          </TouchableOpacity>
-        </View>
-
-        {shipments.length > 0 ? (
-          <FlatList
-            data={shipments}
-            keyExtractor={(item) => item.id}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => {
-              const statusStyle = getStatusStyle(item.progress);
-              return (
-                <View style={styles.shipmentCard}>
-                  <View style={styles.packageIconContainer}>
-                    <Ionicons
-                      name="cube-outline"
-                      size={24}
-                      color={Theme.colors.primary}
-                    />
-                  </View>
-                  <View style={styles.shipmentInfo}>
-                    <Text style={styles.trackingNumber}>
-                      {item.trackingNumber}
-                    </Text>
-                    <Text style={styles.shipmentItem}>{item.item}</Text>
-                  </View>
-                  <View style={[styles.statusBadge, statusStyle.badge]}>
-                    <Text style={[styles.statusText, statusStyle.text]}>
-                      {item.progress}
-                    </Text>
-                  </View>
-                </View>
-              );
-            }}
-          />
-        ) : (
-          <Text style={styles.emptyText}>No shipments yet</Text>
-        )}
       </View>
 
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="home" size={24} color={Theme.colors.primary} />
-        </TouchableOpacity>
+      {/* Action Buttons */}
+      <View style={styles.actionButtonsRow}>
         <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => handleNavigateToShipments("All")}
+          style={[styles.actionButton, styles.sendPackageButton]}
+          onPress={handleSendPackage}
         >
-          <Ionicons
-            name="briefcase-outline"
-            size={24}
-            color={Theme.colors.text.gray}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons
-            name="chatbubbles-outline"
-            size={24}
-            color={Theme.colors.text.gray}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons
-            name="person-outline"
-            size={24}
-            color={Theme.colors.text.gray}
-          />
+          <View style={styles.actionIconContainer}>
+            <Ionicons name="add" size={24} />
+          </View>
+          <Text style={styles.actionButtonText}>Send Package</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Shipments Section */}
+      <View style={styles.shipmentHeader}>
+        <Text style={styles.shipmentTitle}>My Shipments</Text>
+        <TouchableOpacity onPress={() => handleNavigateToShipments("All")}>
+          <Text style={styles.seeAll}>See All</Text>
+        </TouchableOpacity>
+      </View>
+
+      {shipments.length > 0 ? (
+        <FlatList
+          data={shipments}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+          renderItem={({ item }) => {
+            const statusStyle = getStatusStyle(item.progress);
+            return (
+              <View style={styles.shipmentCard}>
+                <View style={styles.packageIconContainer}>
+                  <Ionicons
+                    name="cube-outline"
+                    size={24}
+                    color={Theme.colors.primary}
+                  />
+                </View>
+                <View style={styles.shipmentInfo}>
+                  <Text style={styles.trackingNumber}>
+                    {item.trackingNumber}
+                  </Text>
+                  <Text style={styles.shipmentItem}>{item.item}</Text>
+                </View>
+                <View style={[styles.statusBadge, statusStyle.badge]}>
+                  <Text style={[styles.statusText, statusStyle.text]}>
+                    {item.progress}
+                  </Text>
+                </View>
+              </View>
+            );
+          }}
+        />
+      ) : (
+        <Text style={styles.emptyText}>No shipments yet</Text>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Theme.colors.background.secondary,
-    paddingHorizontal: Theme.screenPadding.horizontal / 1.5,
-  },
-  topSection: {
+  content: {
     flex: 1,
   },
   headerCard: {
@@ -278,14 +237,13 @@ const styles = StyleSheet.create({
     color: "#CED1D8",
     fontSize: 12,
     fontFamily: "Inter-Regular",
- 
   },
   userName: {
     color: Theme.colors.white,
     fontSize: 21,
     fontFamily: "Inter-Regular",
     lineHeight: 24,
-    letterSpacing: -1
+    letterSpacing: -1,
   },
   myShipmentsTitle: {
     color: Theme.colors.white,
@@ -333,9 +291,6 @@ const styles = StyleSheet.create({
   sendPackageButton: {
     backgroundColor: "#C7F530",
   },
-  bookRideButton: {
-    backgroundColor: "#C7F530",
-  },
   actionIconContainer: {
     width: 40,
     height: 40,
@@ -350,9 +305,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Inter-Regular",
     lineHeight: 20,
-  },
-  bookRideText: {
-    color: "#1F2937",
   },
   shipmentHeader: {
     flexDirection: "row",
@@ -369,6 +321,9 @@ const styles = StyleSheet.create({
     color: Theme.colors.text.gray,
     fontSize: 14,
     fontFamily: "Inter-Regular",
+  },
+  listContent: {
+    paddingBottom: 100,
   },
   shipmentCard: {
     flexDirection: "row",
@@ -439,22 +394,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Inter-Regular",
   },
-  bottomNav: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    backgroundColor: Theme.colors.white,
-    borderRadius: Theme.borderRadius.xl,
-    paddingVertical: 14,
-    marginBottom: Theme.spacing.lg,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  navItem: {
-    padding: Theme.spacing.sm,
-  },
 });
 
-export default SenderHomeScreen;
+export default SenderHomeContent;

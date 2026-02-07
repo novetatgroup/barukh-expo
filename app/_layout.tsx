@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import ToastManager from "toastify-react-native";
 import { AuthProvider } from "./context/AuthContext";
 import { KYCProvider } from "./context/KYCContext";
+import { RoleProvider } from "./context/RoleContext";
 import { ShipmentProvider } from "./context/ShipmentContext";
 
 SplashScreen.preventAutoHideAsync();
@@ -30,12 +31,14 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <KYCProvider>
-        <ShipmentProvider>
-          <Slot />
-          <ToastManager />
-        </ShipmentProvider>
-      </KYCProvider>
+      <RoleProvider>
+        <KYCProvider>
+          <ShipmentProvider>
+            <Slot />
+            <ToastManager />
+          </ShipmentProvider>
+        </KYCProvider>
+      </RoleProvider>
     </AuthProvider>
   );
 }

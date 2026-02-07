@@ -1,11 +1,27 @@
 import * as Yup from "yup";
 
+export type LocationData = {
+  placeId: string;
+  description: string;
+  country: string;
+  countryCode: string;
+  city: string;
+  latitude: number;
+  longitude: number;
+};
+
 export type PackageFormValues = {
   // Step 1 - Travel Details
+  origin: LocationData | null;
+  destination: LocationData | null;
   originCountry: string;
   originCity: string;
   destinationCountry: string;
   destinationCity: string;
+  originLatitude: number | null;
+  originLongitude: number | null;
+  destinationLatitude: number | null;
+  destinationLongitude: number | null;
   departureDate: string;
   departureTime: string;
   arrivalDate: string;
@@ -31,6 +47,10 @@ export type PackageSubmitData = {
   originCity: string;
   destinationCountry: string;
   destinationCity: string;
+  originLatitude?: number;
+  originLongitude?: number;
+  destinationLatitude?: number;
+  destinationLongitude?: number;
   departureAt: string;
   arrivalAt: string;
   mode: string;
@@ -39,10 +59,16 @@ export type PackageSubmitData = {
 };
 
 export const initialFormValues: PackageFormValues = {
+  origin: null,
+  destination: null,
   originCountry: "",
   originCity: "",
   destinationCountry: "",
   destinationCity: "",
+  originLatitude: null,
+  originLongitude: null,
+  destinationLatitude: null,
+  destinationLongitude: null,
   departureDate: "",
   departureTime: "",
   arrivalDate: "",
@@ -58,10 +84,18 @@ export const initialFormValues: PackageFormValues = {
 };
 
 export const Step1ValidationSchema = Yup.object().shape({
-  originCountry: Yup.string().required("Origin country is required"),
-  originCity: Yup.string().required("Origin city is required"),
-  destinationCountry: Yup.string().required("Destination country is required"),
-  destinationCity: Yup.string().required("Destination city is required"),
+  origin: Yup.object()
+    .nullable()
+    .required("Origin location is required")
+    .test("has-city", "Please select a valid city", (value) =>
+      value !== null && (value as LocationData).city !== ""
+    ),
+  destination: Yup.object()
+    .nullable()
+    .required("Destination location is required")
+    .test("has-city", "Please select a valid city", (value) =>
+      value !== null && (value as LocationData).city !== ""
+    ),
   departureDate: Yup.string().required("Departure date is required"),
   departureTime: Yup.string().required("Departure time is required"),
   arrivalDate: Yup.string().required("Arrival date is required"),
