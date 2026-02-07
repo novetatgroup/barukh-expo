@@ -6,53 +6,35 @@ import RoleSelectionForm from "../components/forms/auth/RoleSelectionForm";
 import { Role } from "../constants/roles";
 import { AuthContext } from "../context/AuthContext";
 import { useRole } from "../context/RoleContext";
+import { userService } from "../services/userService";
 
 const RoleSelectionScreen = () => {
-  const { authFetch, userId } = useContext(AuthContext);
+  const { userId, accessToken } = useContext(AuthContext);
   const { setRole } = useRole();
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRoleUpdate = async (role: Role) => {
-
     if (isLoading) return;
 
     setSelectedRole(role);
     setIsLoading(true);
 
-    if (!userId) {
+    if (!userId || !accessToken) {
       Toast.error("Session error. Please log in again.");
       setSelectedRole(null);
       setIsLoading(false);
       return;
     }
 
-    try {
-      const response = await authFetch(`${apiUrl}/users/update/${userId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ role }),
-      });
+    const { error, ok } = await userService.updateRole(userId, role, accessToken);
 
-      if (response.ok) {
-        Toast.success("Role updated successfully!");
-
-        // Save role to context and navigate to tabs
-        await setRole(role);
-        router.replace("/(tabs)/home");
-      } else {
-        const data = await response.json();
-        console.error("API Error:", data);
-        Toast.error(data.message || "Update failed. Please try again.");
-        setSelectedRole(null);
-        setIsLoading(false);
-      }
-    } catch (error) {
-      console.error("Network Error:", error);
-      Toast.error("Network error. Try again later.");
+    if (ok) {
+      Toast.success("Role updated successfully!");
+      await setRole(role);
+      router.replace("/(tabs)/home");
+    } else {
+      Toast.error(error || "Update failed. Please try again.");
       setSelectedRole(null);
       setIsLoading(false);
     }

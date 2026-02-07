@@ -4,7 +4,7 @@ import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Toast } from "toastify-react-native";
 import RegisterForm from "../components/forms/auth/RegisterForm";
-import OtpResponse from "../Interfaces/auth";
+import { authService } from "../services/authService";
 
 interface RegisterScreenProps {
   activeTab: "login" | "register";
@@ -12,8 +12,6 @@ interface RegisterScreenProps {
 }
 
 const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-
   const handleRegister = async ({
     name,
     email,
@@ -21,63 +19,22 @@ const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
     name: string;
     email: string;
   }) => {
-    console.log("Register pressed:", name, email);
+    const { data, error, ok } = await authService.requestRegisterOtp({
+      email,
+      name,
+    });
 
-    try {
-      const response = await fetch(`${apiUrl}/users/register/request-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email }),
-      });
+    if (ok && data?.sessionId) {
+      await AsyncStorage.setItem("sessionId", data.sessionId);
+      await AsyncStorage.setItem("otpFlow", "register");
+      await AsyncStorage.setItem("email", email);
+      await AsyncStorage.setItem("attemptsLeft", data.attemptsLeft.toString());
+      await AsyncStorage.setItem("expiresAt", data.expiresAt);
 
-      const contentType = response.headers.get("content-type");
-      let data: OtpResponse | string;
-
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        data = await response.text();
-      }
-
-      if (response.ok) {
-        console.log("API response success");
-
-        const otpData = data as OtpResponse;
-
-        if (otpData.sessionId) {
-          await AsyncStorage.setItem("sessionId", otpData.sessionId);
-          await AsyncStorage.setItem("otpFlow", "register");
-          await AsyncStorage.setItem(
-            "attemptsLeft",
-            otpData.attemptsLeft.toString()
-          );
-          await AsyncStorage.setItem("expiresAt", otpData.expiresAt);
-          console.log("Session data saved");
-        }
-
-        setTimeout(() => {
-          Toast.success("OTP sent to your email!");
-
-          setTimeout(() => {
-            router.push("/(auth)/verifyOtpScreen");
-          }, 2500);
-        }, 300);
-      } else {
-        console.log("API error:", data);
-
-        let errorMessage =
-          typeof data === "string" ? data : data?.message || "Please try again";
-
-        if (errorMessage === "User already exists") {
-          console.log("Custom log: Email already exists");
-        }
-
-        Toast.error("Failed to send OTP. Please try again.");
-      }
-    } catch (error) {
-      console.error("Network error:", error);
-
-      Toast.error("Please check your connection.");
+      Toast.success("OTP sent to your email!");
+      setTimeout(() => router.push("/(auth)/verifyOtpScreen"), 2500);
+    } else {
+      Toast.error(error || "Failed to send OTP. Please try again.");
     }
   };
 
