@@ -1,8 +1,10 @@
+import { AuthContext } from "@/app/context/AuthContext";
 import Theme from "@/app/constants/Theme";
+import { userService, UserProfile } from "@/app/services/userService";
 import { PackagePattern } from "@/assets/svgs";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   FlatList,
   Image,
@@ -54,7 +56,21 @@ const shipments: Shipment[] = [
 
 const TravellerHomeContent = () => {
   const router = useRouter();
-  const userName = "Sanyu";
+  const { userId, accessToken } = useContext(AuthContext);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (!userId || !accessToken) return;
+      const { data, ok } = await userService.getUser(userId, accessToken);
+      if (ok && data) {
+        setUserProfile(data);
+      }
+    };
+    fetchUser();
+  }, [userId, accessToken]);
+
+  const userName = userProfile?.firstName || "User";
 
   const getStatusStyle = (progress: string) => {
     switch (progress) {

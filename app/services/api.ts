@@ -7,6 +7,7 @@ export const API_ENDPOINTS = {
 		verifyOtp: "/auth/verify-otp",
 	},
 	users: {
+		get: (userId: string) => `/users/${userId}`,
 		update: (userId: string) => `/users/update/${userId}`,
 	},
 } as const;

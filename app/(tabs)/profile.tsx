@@ -1,9 +1,10 @@
 import Theme from "@/app/constants/Theme";
 import { AuthContext } from "@/app/context/AuthContext";
 import { useRole } from "@/app/context/RoleContext";
+import { userService, UserProfile } from "@/app/services/userService";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -15,14 +16,29 @@ import {
 
 const ProfileScreen = () => {
   const router = useRouter();
-  const { logout } = useContext(AuthContext);
+  const { logout, userId, accessToken } = useContext(AuthContext);
   const { clearRole } = useRole();
-  const userName = "Sanyu";
-  const userEmail = "sanyu@example.com";
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (!userId || !accessToken) return;
+      const { data, ok } = await userService.getUser(userId, accessToken);
+      if (ok && data) {
+        setUserProfile(data);
+      }
+    };
+    fetchUser();
+  }, [userId, accessToken]);
+
+  const userName = userProfile
+    ? `${userProfile.firstName} ${userProfile.lastName}`
+    : "User";
+  const userEmail = userProfile?.email || "";
 
   const menuItems = [
      { icon: "swap-horizontal-outline", label: "Switch Barukh Mode", route: "/(auth)/roleSelection" },
-    { icon: "person-outline", label: "Edit Profile", route: null },
+    { icon: "person-outline", label: "Edit Profile", route: "/(profile)/editProfile" },
     { icon: "shield-checkmark-outline", label: "Verification", route: null },
     { icon: "card-outline", label: "Payment Methods", route: null },
    
@@ -31,8 +47,8 @@ const ProfileScreen = () => {
   ];
 
   const handleMenuPress = (route: string | null) => {
-    if (route === "/(auth)/roleSelection") {
-      router.push("/(auth)/roleSelection");
+    if (route) {
+      router.push(route as any);
     }
   };
 
