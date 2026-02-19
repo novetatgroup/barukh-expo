@@ -44,11 +44,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   compact: {
-    borderRadius: 7,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    //fontSize: 13,
-
+    borderRadius: 8,
+    height: 48,
+    paddingHorizontal: 12,
   },
 });
 

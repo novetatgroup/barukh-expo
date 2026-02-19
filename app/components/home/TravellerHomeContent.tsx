@@ -1,6 +1,6 @@
-import { AuthContext } from "@/app/context/AuthContext";
 import Theme from "@/app/constants/Theme";
-import { userService, UserProfile } from "@/app/services/userService";
+import { AuthContext } from "@/app/context/AuthContext";
+import { UserProfile, userService } from "@/app/services/userService";
 import { PackagePattern } from "@/assets/svgs";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -93,6 +93,10 @@ const TravellerHomeContent = () => {
   };
 
   const handleCreateTrip = () => {
+    if (!userProfile?.isActive) {
+      router.push("/(KYC)/KYCLanding");
+      return;
+    }
     router.push("/(traveller)/packageDetails");
   };
 

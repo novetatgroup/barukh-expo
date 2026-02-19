@@ -1,6 +1,7 @@
-import { AuthContext } from "@/app/context/AuthContext";
 import Theme from "@/app/constants/Theme";
-import { userService, UserProfile } from "@/app/services/userService";
+import { AuthContext } from "@/app/context/AuthContext";
+import { senderService } from "@/app/services/senderService";
+import { UserProfile, userService } from "@/app/services/userService";
 import { PackagePattern } from "@/assets/svgs";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -14,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Toast } from "toastify-react-native";
 
 type Shipment = {
   id: string;
@@ -92,8 +94,50 @@ const SenderHomeContent = () => {
     });
   };
 
-  const handleSendPackage = () => {
-    router.push("/(sender)/createShipment");
+  const [isSending, setIsSending] = useState(false);
+  const [senderId, setSenderId] = useState<string | null>(null);
+
+  const handleSendPackage = async () => {
+    /* if (!userProfile?.isActive) {
+      router.push("/(KYC)/KYCLanding");
+      return;
+    } */
+
+    if (!userId || !accessToken) {
+      Toast.error("You must be logged in to send a package.");
+      return;
+    }
+
+    if (senderId) {
+      router.push({
+        pathname: "/(sender)/createShipment",
+        params: { senderId },
+      });
+      return;
+    }
+
+    try {
+      setIsSending(true);
+      const result = await senderService.createSender({ userId }, accessToken);
+
+      if (!result.ok || !result.data?.senderId) {
+        console.error("Create sender failed:", result.error, result.data);
+        Toast.error(result.error || "Unable to create your sender profile. Please try again.");
+        return;
+      }
+
+      setSenderId(result.data.senderId);
+
+      router.push({
+        pathname: "/(sender)/createShipment",
+        params: { senderId: result.data.senderId },
+      });
+    } catch (error) {
+      Toast.error("Unable to create your sender profile. Please check your connection and try again.");
+      console.error("Error creating sender:", error);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -147,8 +191,9 @@ const SenderHomeContent = () => {
       {/* Action Buttons */}
       <View style={styles.actionButtonsRow}>
         <TouchableOpacity
-          style={[styles.actionButton, styles.sendPackageButton]}
+          style={[styles.actionButton, styles.sendPackageButton, isSending && styles.disabledButton]}
           onPress={handleSendPackage}
+          disabled={isSending}
         >
           <View style={styles.actionIconContainer}>
             <Ionicons name="add" size={24} />
@@ -306,6 +351,9 @@ const styles = StyleSheet.create({
   },
   sendPackageButton: {
     backgroundColor: "#C7F530",
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
   actionIconContainer: {
     width: 40,

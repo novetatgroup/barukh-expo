@@ -6,10 +6,12 @@ export interface UpdateUserParams {
 }
 
 export interface UpdateProfileParams {
-	firstName: string;
-	lastName: string;
-	phoneNumber: string;
-	emergencyContact: string;
+	firstName?: string;
+	lastName?: string;
+	phoneNumber?: string;
+	emergencyContact?: string;
+	city?: string;
+	country?: string;
 }
 
 export interface UpdateUserResponse {
@@ -30,6 +32,7 @@ export interface UserProfile {
 	postalCode: string;
 	city: string;
 	country: string;
+	isKycVerified: boolean;
 }
 
 export const userService = {

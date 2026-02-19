@@ -1,7 +1,7 @@
 import Theme from "@/app/constants/Theme";
 import { AuthContext } from "@/app/context/AuthContext";
 import { useRole } from "@/app/context/RoleContext";
-import { userService, UserProfile } from "@/app/services/userService";
+import { UserProfile, userService } from "@/app/services/userService";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useContext, useEffect, useState } from "react";
@@ -34,13 +34,12 @@ const ProfileScreen = () => {
   const userName = userProfile
     ? `${userProfile.firstName} ${userProfile.lastName}`
     : "User";
-  const userEmail = userProfile?.email || "";
 
   const menuItems = [
-     { icon: "swap-horizontal-outline", label: "Switch Barukh Mode", route: "/(auth)/roleSelection" },
-    { icon: "person-outline", label: "Edit Profile", route: "/(profile)/editProfile" },
-    { icon: "shield-checkmark-outline", label: "Verification", route: null },
-    { icon: "card-outline", label: "Payment Methods", route: null },
+     { icon: "swap-horizontal-outline", label: "Switch Barukh Mode", route: "/(profile)/switchProfile" },
+{ icon: "shield-checkmark-outline", label: "Verification", route: null },
+    { icon: "card-outline", label: "My Payments", route: null },
+    { icon: "cube-outline", label: "My Shipments", route: null },
    
     { icon: "help-circle-outline", label: "Help & Support", route: null },
     { icon: "settings-outline", label: "Settings", route: null },
@@ -72,8 +71,13 @@ const ProfileScreen = () => {
         />
         <View style={styles.profileInfo}>
           <Text style={styles.userName}>{userName}</Text>
-          <Text style={styles.userEmail}>{userEmail}</Text>
         </View>
+        <TouchableOpacity
+          style={styles.editIcon}
+          onPress={() => router.push("/(profile)/editProfile" as any)}
+        >
+          <Ionicons name="create-outline" size={22} color={Theme.colors.primary} />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.menuContainer}>
@@ -144,6 +148,7 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.primary,
   },
   profileInfo: {
+    flex: 1,
     marginLeft: Theme.spacing.md,
   },
   userName: {
@@ -151,11 +156,8 @@ const styles = StyleSheet.create({
     fontFamily: "Inter-Bold",
     color: Theme.colors.text.dark,
   },
-  userEmail: {
-    fontSize: 14,
-    fontFamily: "Inter-Regular",
-    color: Theme.colors.text.gray,
-    marginTop: 2,
+  editIcon: {
+    padding: Theme.spacing.xs,
   },
   menuContainer: {
     backgroundColor: Theme.colors.white,

@@ -5,12 +5,11 @@ import { Toast } from "toastify-react-native";
 import PackageDetailsForm from "../components/forms/traveller/PackageDetailsForm";
 import { AuthContext } from "../context/AuthContext";
 import { useShipment } from "../context/ShipmentContext";
+import { travellerService, CreateTripParams } from "../services/travellerService";
 
 
 const PackageDetailsScreen = () => {
-  const travellerApiUrl = process.env.EXPO_PUBLIC_API_URL_TRAVELLER;
-
-  const { authFetch, userId } = useContext(AuthContext);
+  const { accessToken, userId } = useContext(AuthContext);
   const { currentShipment, setIsTravelerActive, setCurrentShipment, clearCurrentShipment } = useShipment();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -34,13 +33,24 @@ const PackageDetailsScreen = () => {
     flightNumber?: string;
     vehiclePlate?: string;
   }) => {
+    if (!accessToken || !userId) {
+      Toast.error("You must be logged in to create a trip.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
-      console.log("Package Data from Form:", packageData);
+      // Ensure traveller profile exists before creating a trip
+      const travellerResult = await travellerService.createTraveller({ userId }, accessToken);
+      if (!travellerResult.ok) {
+        throw new Error(travellerResult.error || "Failed to create traveller profile");
+      }
+      console.log("Traveller profile ready:", travellerResult.data);
 
-      const apiPayload = {
-        userId: userId,
+      // Build trip payload
+      const tripPayload: CreateTripParams = {
+        userId,
         maxWeightKg: Number(packageData.maxWeightKg) || 0,
         maxHeightCm: Number(packageData.maxHeightCm) || 0,
         maxWidthCm: Number(packageData.maxWidthCm) || 0,
@@ -50,12 +60,12 @@ const PackageDetailsScreen = () => {
         destinationCountry: packageData.destinationCountry,
         destinationCity: packageData.destinationCity,
         ...(packageData.originLatitude && {
-          originLatitude: packageData.originLatitude,
-          originLongitude: packageData.originLongitude,
+          originLat: packageData.originLatitude,
+          originLon: packageData.originLongitude,
         }),
         ...(packageData.destinationLatitude && {
-          destinationLatitude: packageData.destinationLatitude,
-          destinationLongitude: packageData.destinationLongitude,
+          destinationLat: packageData.destinationLatitude,
+          destinationLon: packageData.destinationLongitude,
         }),
         departureAt: packageData.departureAt,
         arrivalAt: packageData.arrivalAt,
@@ -68,35 +78,14 @@ const PackageDetailsScreen = () => {
         }),
       };
 
-      console.log("API Payload:", JSON.stringify(apiPayload, null, 2));
+      console.log("API Payload:", JSON.stringify(tripPayload, null, 2));
 
-      const response = await authFetch(`${travellerApiUrl}/traveller/create-trip`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(apiPayload),
-      });
-
-      let responseData;
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        responseData = await response.json();
-      } else {
-        const text = await response.text();
-        console.log("Non-JSON Response:", text);
-        responseData = { message: text };
-      }
-      if (!response.ok) {
-        console.error("API Error Response:", responseData);
-        throw new Error(
-          responseData.message || 
-          responseData.error || 
-          `Failed to create trip (Status: ${response.status})`
-        );
+      const tripResult = await travellerService.createTrip(tripPayload, accessToken);
+      if (!tripResult.ok) {
+        throw new Error(tripResult.error || "Failed to create trip");
       }
 
-      console.log("Trip created successfully:", responseData);
+      console.log("Trip created successfully:", tripResult.data);
 
       setCurrentShipment(prev => ({
         ...prev,
@@ -127,16 +116,16 @@ const PackageDetailsScreen = () => {
       );
       setTimeout(() => {
         clearCurrentShipment();
-        router.push("/(traveller)/home");
+        router.push("/(tabs)/home");
       }, 600);
 
     } catch (error) {
       console.error("Error submitting trip:", error);
-      
-       const errorMessage = error instanceof Error 
-        ? error.message 
+
+       const errorMessage = error instanceof Error
+        ? error.message
         : "Failed to create trip. Please check your connection and try again.";
-      
+
       Toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);

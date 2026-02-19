@@ -4,7 +4,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
+  ScrollView,
   StyleSheet,
   Platform,
   ActivityIndicator,
@@ -221,14 +221,17 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
 
       {showSuggestions && suggestions.length > 0 && (
         <View style={styles.suggestionsContainer}>
-          <FlatList
-            data={suggestions}
-            keyExtractor={(item) => item.placeId}
-            renderItem={renderSuggestion}
+          <ScrollView
             keyboardShouldPersistTaps="handled"
             nestedScrollEnabled={true}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-          />
+          >
+            {suggestions.map((item, index) => (
+              <React.Fragment key={item.placeId}>
+                {index > 0 && <View style={styles.separator} />}
+                {renderSuggestion({ item })}
+              </React.Fragment>
+            ))}
+          </ScrollView>
         </View>
       )}
 
@@ -256,12 +259,11 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.background.primary,
     borderWidth: 1,
     borderColor: Theme.colors.text.border,
-    borderRadius: Theme.borderRadius.sm,
+    borderRadius: 8,
     paddingHorizontal: Theme.spacing.md,
-    paddingVertical: Theme.spacing.sm,
     fontSize: Theme.typography.body.fontSize,
     color: Theme.colors.text.dark,
-    minHeight: Theme.components.button.height,
+    height: 48,
   },
   textInputError: {
     borderColor: Theme.colors.error,

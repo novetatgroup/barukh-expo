@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     borderColor: Theme.colors.text.gray,
   },
   disabled: {
-    opacity: 1.0,
+    opacity: 0.5,
   },
   baseText: {
     fontSize: Theme.typography.body.fontSize,

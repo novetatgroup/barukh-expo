@@ -1,25 +1,31 @@
-import React from "react";
-import {View, StyleSheet} from "react-native";
-import AddDetailsForm from "../components/forms/KYC/AddDetailsForm";
+import { AuthContext } from "@/app/context/AuthContext";
+import { userService } from "@/app/services/userService";
 import { router } from "expo-router";
+import React, { useContext } from "react";
+import { StyleSheet, View } from "react-native";
+import { Toast } from "toastify-react-native";
+import AddDetailsForm from "../components/forms/KYC/AddDetailsForm";
 
 const AddDetailsScreen = () => {
-    //TODO: implement api call
+    const { userId, accessToken } = useContext(AuthContext);
 
     const handleSubmit = async (data: {
-        fullName: string;
-        address1: string;
-        address2: string;
-        country:string;
-        state:string;
-        city:string;
-        email: string;
-        emergencyContact: string
+        firstName: string;
+        lastName: string;
+        phoneNumber: string;
+        emergencyContact: string;
+        city: string;
+        country: string;
     }) => {
-        console.log("Traveller Details submitted:", data);
+        if (!userId || !accessToken) return;
 
-         router.push("/(KYC)/docuTypeScreen");
-       
+        const { ok, error } = await userService.updateProfile(userId, data, accessToken);
+        if (ok) {
+            Toast.success("Details saved successfully!");
+            router.push("/(KYC)/docuTypeScreen");
+        } else {
+            Toast.error(error || "Failed to save details.");
+        }
     };
 
     return (
@@ -27,11 +33,10 @@ const AddDetailsScreen = () => {
             <AddDetailsForm onSubmit={handleSubmit} />
         </View>
     );
-}
+};
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+    container: { flex: 1 },
 });
-
 
 export default AddDetailsScreen;

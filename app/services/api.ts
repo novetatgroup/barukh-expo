@@ -10,6 +10,14 @@ export const API_ENDPOINTS = {
 		get: (userId: string) => `/users/${userId}`,
 		update: (userId: string) => `/users/update/${userId}`,
 	},
+	traveller: {
+		createTraveller: "/traveller/create-traveller",
+		createTrip: "/traveller/create-trip",
+	},
+	sender: {
+		createSender: "/sender/create-sender",
+		createPackage: "/sender/create-package",
+	},
 } as const;
 
 interface ApiResponse<T> {
