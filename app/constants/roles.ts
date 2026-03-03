@@ -11,13 +11,13 @@ export const ROLE_OPTIONS = [
   {
     value: ROLES.SENDER,
     title: "Barukh Send",
-    subtitle: "Package Received by Traveller",
+    subtitle: "Ship packages with trusted travellers",
     icon: BarukhSendIcon,
   },
   {
     value: ROLES.TRAVELLER,
     title: "Barukh Go",
-    subtitle: "Transport items or people on your trip",
+    subtitle: "Earn by delivering packages on your trips",
     icon: BarukhGoIcon,
   },
 ];

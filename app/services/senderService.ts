@@ -10,7 +10,7 @@ export interface CreateSenderResponse {
 }
 
 export interface CreatePackageParams {
-	senderId: string;
+	userId: string;
 	name: string;
 	category: string;
 	weightKg: number;
@@ -51,7 +51,34 @@ export interface CreatePackageResponse {
 	updatedAt: string;
 }
 
+export interface AutoAssignParams {
+	packageId: string;
+}
+
+export interface AutoAssignResponse {
+	packageId: string;
+	tripId: string;
+	strategyUsed?: string;
+	reason?: string;
+	retryScheduled?: boolean;
+	processingTimeMs?: number;
+}
+
+export interface GetSenderResponse {
+	senderId: string;
+	userId: string;
+}
+
 export const senderService = {
+	async getSender(userId: string, accessToken: string) {
+		return apiRequest<GetSenderResponse>(API_ENDPOINTS.sender.getSender(userId), {
+			method: "GET",
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+			},
+		});
+	},
+
 	async createSender(params: CreateSenderParams, accessToken: string) {
 		return apiRequest<CreateSenderResponse>(API_ENDPOINTS.sender.createSender, {
 			method: "POST",
@@ -64,6 +91,16 @@ export const senderService = {
 
 	async createPackage(params: CreatePackageParams, accessToken: string) {
 		return apiRequest<CreatePackageResponse>(API_ENDPOINTS.sender.createPackage, {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+			},
+			body: params,
+		});
+	},
+
+	async autoAssign(params: AutoAssignParams, accessToken: string) {
+		return apiRequest<AutoAssignResponse>(API_ENDPOINTS.matching.autoAssign, {
 			method: "POST",
 			headers: {
 				Authorization: `Bearer ${accessToken}`,

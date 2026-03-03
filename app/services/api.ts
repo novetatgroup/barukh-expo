@@ -16,7 +16,11 @@ export const API_ENDPOINTS = {
 	},
 	sender: {
 		createSender: "/sender/create-sender",
+		getSender: (userId: string) => `/sender/${userId}`,
 		createPackage: "/sender/create-package",
+	},
+	matching: {
+		autoAssign: "/matching/auto-assign",
 	},
 } as const;
 

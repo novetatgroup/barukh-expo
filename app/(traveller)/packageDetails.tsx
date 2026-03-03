@@ -5,7 +5,7 @@ import { Toast } from "toastify-react-native";
 import PackageDetailsForm from "../components/forms/traveller/PackageDetailsForm";
 import { AuthContext } from "../context/AuthContext";
 import { useShipment } from "../context/ShipmentContext";
-import { travellerService, CreateTripParams } from "../services/travellerService";
+import { CreateTripParams, travellerService } from "../services/travellerService";
 
 
 const PackageDetailsScreen = () => {
@@ -44,9 +44,9 @@ const PackageDetailsScreen = () => {
       // Ensure traveller profile exists before creating a trip
       const travellerResult = await travellerService.createTraveller({ userId }, accessToken);
       if (!travellerResult.ok) {
-        throw new Error(travellerResult.error || "Failed to create traveller profile");
+        Toast.error(travellerResult.error || "Failed to create traveller profile");
+        return;
       }
-      console.log("Traveller profile ready:", travellerResult.data);
 
       // Build trip payload
       const tripPayload: CreateTripParams = {
@@ -78,14 +78,11 @@ const PackageDetailsScreen = () => {
         }),
       };
 
-      console.log("API Payload:", JSON.stringify(tripPayload, null, 2));
-
       const tripResult = await travellerService.createTrip(tripPayload, accessToken);
       if (!tripResult.ok) {
-        throw new Error(tripResult.error || "Failed to create trip");
+        Toast.error(tripResult.error || "Failed to create trip");
+        return;
       }
-
-      console.log("Trip created successfully:", tripResult.data);
 
       setCurrentShipment(prev => ({
         ...prev,
@@ -118,15 +115,9 @@ const PackageDetailsScreen = () => {
         clearCurrentShipment();
         router.push("/(tabs)/home");
       }, 600);
-
     } catch (error) {
       console.error("Error submitting trip:", error);
-
-       const errorMessage = error instanceof Error
-        ? error.message
-        : "Failed to create trip. Please check your connection and try again.";
-
-      Toast.error(errorMessage);
+      Toast.error("Failed to create trip. Please check your connection and try again.");
     } finally {
       setIsSubmitting(false);
     }

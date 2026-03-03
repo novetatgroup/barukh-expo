@@ -6,6 +6,7 @@ export default function SenderLayout() {
       <Stack.Screen name="coming-soon" />
       <Stack.Screen name="createShipment" />
       <Stack.Screen name="findingTraveller" />
+      <Stack.Screen name="matchedTraveller" />
     </Stack>
   );
 }

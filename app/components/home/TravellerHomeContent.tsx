@@ -93,10 +93,10 @@ const TravellerHomeContent = () => {
   };
 
   const handleCreateTrip = () => {
-    if (!userProfile?.isActive) {
+   /*  if (!userProfile?.isActive) {
       router.push("/(KYC)/KYCLanding");
       return;
-    }
+    } */
     router.push("/(traveller)/packageDetails");
   };
 
@@ -151,6 +151,7 @@ const TravellerHomeContent = () => {
       {/* Action Buttons */}
       <View style={styles.actionButtonsRow}>
         <TouchableOpacity
+          activeOpacity={1}
           style={[styles.actionButton, styles.sendPackageButton]}
           onPress={handleCreateTrip}
         >

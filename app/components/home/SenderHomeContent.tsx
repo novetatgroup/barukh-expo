@@ -7,6 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useContext, useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   StyleSheet,
@@ -120,17 +121,25 @@ const SenderHomeContent = () => {
       setIsSending(true);
       const result = await senderService.createSender({ userId }, accessToken);
 
-      if (!result.ok || !result.data?.senderId) {
-        console.error("Create sender failed:", result.error, result.data);
-        Toast.error(result.error || "Unable to create your sender profile. Please try again.");
-        return;
+      let resolvedSenderId = result.data?.senderId;
+
+      if (!result.ok || !resolvedSenderId) {
+        const getResult = await senderService.getSender(userId, accessToken);
+
+        if (!getResult.ok || !getResult.data?.senderId) {
+          Toast.error(getResult.error || "Unable to retrieve your sender profile. Please try again.");
+          return;
+        }
+
+        resolvedSenderId = getResult.data.senderId;
       }
 
-      setSenderId(result.data.senderId);
+      console.log("Resolved senderId:", resolvedSenderId);
+      setSenderId(resolvedSenderId);
 
       router.push({
         pathname: "/(sender)/createShipment",
-        params: { senderId: result.data.senderId },
+        params: { senderId: resolvedSenderId },
       });
     } catch (error) {
       Toast.error("Unable to create your sender profile. Please check your connection and try again.");
@@ -191,14 +200,21 @@ const SenderHomeContent = () => {
       {/* Action Buttons */}
       <View style={styles.actionButtonsRow}>
         <TouchableOpacity
+          activeOpacity={1}
           style={[styles.actionButton, styles.sendPackageButton, isSending && styles.disabledButton]}
           onPress={handleSendPackage}
           disabled={isSending}
         >
-          <View style={styles.actionIconContainer}>
-            <Ionicons name="add" size={24} />
-          </View>
-          <Text style={styles.actionButtonText}>Send Package</Text>
+          {isSending ? (
+            <ActivityIndicator size="small" color="#163330" style={{ marginRight: Theme.spacing.sm }} />
+          ) : (
+            <View style={styles.actionIconContainer}>
+              <Ionicons name="add" size={24} />
+            </View>
+          )}
+          <Text style={styles.actionButtonText}>
+            {isSending ? "Setting up..." : "Send Package"}
+          </Text>
         </TouchableOpacity>
       </View>
 
