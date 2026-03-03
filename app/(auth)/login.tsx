@@ -4,7 +4,7 @@ import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Toast } from "toastify-react-native";
 import LoginForm from "../components/forms/auth/LoginForm";
-import OtpResponse from "../Interfaces/auth";
+import { authService } from "../services/authService";
 
 interface LoginScreenProps {
   activeTab: "login" | "register";
@@ -12,56 +12,20 @@ interface LoginScreenProps {
 }
 
 const LoginScreen = ({ activeTab, onTabChange }: LoginScreenProps) => {
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-
   const handleLogin = async ({ email }: { email: string }) => {
-    console.log("Login pressed:", email);
+    const { data, error, ok } = await authService.requestLoginOtp(email);
 
-    try {
-      const response = await fetch(`${apiUrl}/auth/login/request-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+    if (ok && data?.sessionId) {
+      await AsyncStorage.setItem("sessionId", data.sessionId);
+      await AsyncStorage.setItem("otpFlow", "login");
+      await AsyncStorage.setItem("email", email);
+      await AsyncStorage.setItem("attemptsLeft", data.attemptsLeft.toString());
+      await AsyncStorage.setItem("expiresAt", data.expiresAt);
 
-      let data;
-      try {
-        data = await response.json();
-        console.log("API response data:", data);
-      } catch {
-        data = { message: "Unexpected server response" };
-      }
-
-      if (response.ok) {
-        console.log("API response success");
-
-        const otpData = data as OtpResponse;
-
-        if (otpData.sessionId) {
-          await AsyncStorage.setItem("sessionId", otpData.sessionId);
-          await AsyncStorage.setItem("otpFlow", "login");
-          await AsyncStorage.setItem(
-            "attemptsLeft",
-            otpData.attemptsLeft.toString()
-          );
-          await AsyncStorage.setItem("expiresAt", otpData.expiresAt);
-          console.log("Session data saved");
-        }
-
-        Toast.success("OTP sent to your email!");
-
-        setTimeout(() => {
-          router.push("/(auth)/verifyOtpScreen");
-        }, 2000);
-      } else {
-        console.log("API error:", data);
-
-        Toast.error("Failed to send OTP. Please try again.");
-      }
-    } catch (error) {
-      console.error("Network error:", error);
-
-      Toast.error("Please check your connection.");
+      Toast.success("OTP sent to your email!");
+      setTimeout(() => router.push("/(auth)/verifyOtpScreen"), 2000);
+    } else {
+      Toast.error(error || "Failed to send OTP. Please try again.");
     }
   };
 

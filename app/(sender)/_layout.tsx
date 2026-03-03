@@ -2,8 +2,10 @@ import { Stack } from "expo-router/stack";
 
 export default function SenderLayout() {
   return (
-    <Stack>
-      <Stack.Screen name="coming-soon" options={{ headerShown: false }} />
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="coming-soon" />
+      <Stack.Screen name="createShipment" />
+      <Stack.Screen name="findingTraveller" />
     </Stack>
   );
 }

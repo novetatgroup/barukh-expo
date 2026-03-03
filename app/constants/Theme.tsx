@@ -62,7 +62,7 @@ export const Theme = {
     },
   },
   screenPadding: {
-    horizontal: 30,
+    horizontal: 16,
     vertical: 20,
   },
   components: {

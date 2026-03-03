@@ -17,7 +17,7 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({
 	length,
 }) => {
 	const [otp, setOtp] = useState("");
-	const [countdown, setCountdown] = useState(60);
+	const [countdown, setCountdown] = useState(120);
 	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
@@ -49,7 +49,7 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({
 
 	const handleResendCode = () => {
 		if (countdown === 0 && onResend) {
-			setCountdown(60);
+			setCountdown(120);
 			setOtp("");
 			onResend();
 		}
@@ -114,8 +114,15 @@ const VerifyOtpForm: React.FC<VerifyOtpFormProps> = ({
 
 const styles = StyleSheet.create({
 	content: { alignItems: "center", paddingTop: Theme.spacing.xxl },
-	otpContainer: { marginBottom: Theme.spacing.xl, width: "100%" },
-	otpInnerContainer: { gap: 8 },
+	otpContainer: {
+		marginBottom: Theme.spacing.xl,
+		width: "100%",
+		alignItems: "center",
+	},
+	otpInnerContainer: {
+		gap: 8,
+		justifyContent: "center",
+	},
 	otpInput: {
 		width: 50,
 		height: 50,

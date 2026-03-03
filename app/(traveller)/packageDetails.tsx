@@ -1,113 +1,131 @@
 import { router } from "expo-router";
-import React, { useState , useContext} from "react";
-import { StyleSheet, View} from "react-native";
+import React, { useContext, useState } from "react";
+import { StyleSheet, View } from "react-native";
 import { Toast } from "toastify-react-native";
 import PackageDetailsForm from "../components/forms/traveller/PackageDetailsForm";
-import { useShipment } from "../context/ShipmentContext";
 import { AuthContext } from "../context/AuthContext";
+import { useShipment } from "../context/ShipmentContext";
+import { travellerService, CreateTripParams } from "../services/travellerService";
 
 
 const PackageDetailsScreen = () => {
-  const travellerApiUrl = process.env.EXPO_PUBLIC_API_URL_TRAVELLER;
-
-  const { authFetch, userId } = useContext(AuthContext);
+  const { accessToken, userId } = useContext(AuthContext);
   const { currentShipment, setIsTravelerActive, setCurrentShipment, clearCurrentShipment } = useShipment();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (packageData: {
     allowedCategories: string[];
-    maxWeightKg: Number;
-    maxHeightCm: Number;
-    maxWidthCm: Number;
-    maxLengthCm:Number;
+    maxWeightKg: number;
+    maxHeightCm: number;
+    maxWidthCm: number;
+    maxLengthCm: number;
+    originCountry: string;
+    originCity: string;
+    destinationCountry: string;
+    destinationCity: string;
+    originLatitude?: number;
+    originLongitude?: number;
+    destinationLatitude?: number;
+    destinationLongitude?: number;
+    departureAt: string;
+    arrivalAt: string;
+    mode: string;
+    flightNumber?: string;
+    vehiclePlate?: string;
   }) => {
+    if (!accessToken || !userId) {
+      Toast.error("You must be logged in to create a trip.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
-      console.log("Current Shipment from Context:", currentShipment);
-      console.log("Package Data from Form:", packageData);
-
-      if (!currentShipment.originCountry || !currentShipment.destinationCountry) {
-        throw new Error("Missing traveller details. Please go back and fill the form.");
+      // Ensure traveller profile exists before creating a trip
+      const travellerResult = await travellerService.createTraveller({ userId }, accessToken);
+      if (!travellerResult.ok) {
+        throw new Error(travellerResult.error || "Failed to create traveller profile");
       }
+      console.log("Traveller profile ready:", travellerResult.data);
 
-      const apiPayload = {
-        userId: userId,
+      // Build trip payload
+      const tripPayload: CreateTripParams = {
+        userId,
         maxWeightKg: Number(packageData.maxWeightKg) || 0,
         maxHeightCm: Number(packageData.maxHeightCm) || 0,
         maxWidthCm: Number(packageData.maxWidthCm) || 0,
-        maxLengthCm: Number(packageData.maxLengthCm), 
-        originCountry: currentShipment.originCountry,
-        originCity: currentShipment.originCity,
-        destinationCountry: currentShipment.destinationCountry,
-        destinationCity: currentShipment.destinationCity,
-        departureAt: currentShipment.departureAt,
-        arrivalAt: currentShipment.arrivalAt,
-        mode: currentShipment.mode,
-        ...(currentShipment.mode === "FLIGHT" && currentShipment.flightNumber && { 
-          flightNumber: currentShipment.flightNumber 
+        maxLengthCm: Number(packageData.maxLengthCm),
+        originCountry: packageData.originCountry,
+        originCity: packageData.originCity,
+        destinationCountry: packageData.destinationCountry,
+        destinationCity: packageData.destinationCity,
+        ...(packageData.originLatitude && {
+          originLat: packageData.originLatitude,
+          originLon: packageData.originLongitude,
         }),
-        ...(currentShipment.mode === "CAR" && currentShipment.vehiclePlate && { 
-          vehiclePlate: currentShipment.vehiclePlate 
+        ...(packageData.destinationLatitude && {
+          destinationLat: packageData.destinationLatitude,
+          destinationLon: packageData.destinationLongitude,
+        }),
+        departureAt: packageData.departureAt,
+        arrivalAt: packageData.arrivalAt,
+        mode: packageData.mode,
+        ...(packageData.mode === "FLIGHT" && packageData.flightNumber && {
+          flightNumber: packageData.flightNumber,
+        }),
+        ...(packageData.mode === "CAR" && packageData.vehiclePlate && {
+          vehiclePlate: packageData.vehiclePlate,
         }),
       };
 
-      console.log("API Payload:", JSON.stringify(apiPayload, null, 2));
+      console.log("API Payload:", JSON.stringify(tripPayload, null, 2));
 
-      const response = await authFetch(`${travellerApiUrl}/traveller/create-trip`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(apiPayload),
-      });
-
-      let responseData;
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        responseData = await response.json();
-      } else {
-        const text = await response.text();
-        console.log("Non-JSON Response:", text);
-        responseData = { message: text };
-      }
-      if (!response.ok) {
-        console.error("API Error Response:", responseData);
-        throw new Error(
-          responseData.message || 
-          responseData.error || 
-          `Failed to create trip (Status: ${response.status})`
-        );
+      const tripResult = await travellerService.createTrip(tripPayload, accessToken);
+      if (!tripResult.ok) {
+        throw new Error(tripResult.error || "Failed to create trip");
       }
 
-      console.log("Trip created successfully:", responseData);
+      console.log("Trip created successfully:", tripResult.data);
 
       setCurrentShipment(prev => ({
         ...prev,
+        originCountry: packageData.originCountry,
+        originCity: packageData.originCity,
+        destinationCountry: packageData.destinationCountry,
+        destinationCity: packageData.destinationCity,
+        originLatitude: packageData.originLatitude,
+        originLongitude: packageData.originLongitude,
+        destinationLatitude: packageData.destinationLatitude,
+        destinationLongitude: packageData.destinationLongitude,
+        departureAt: packageData.departureAt,
+        arrivalAt: packageData.arrivalAt,
+        mode: packageData.mode,
+        flightNumber: packageData.flightNumber,
+        vehiclePlate: packageData.vehiclePlate,
         allowedCategories: packageData.allowedCategories,
         maxWeightKg: Number(packageData.maxWeightKg),
         maxHeightCm: Number(packageData.maxHeightCm),
         maxWidthCm: Number(packageData.maxWidthCm),
-        maxLengthCm:Number(packageData.maxLengthCm)
+        maxLengthCm: Number(packageData.maxLengthCm),
       }));
 
       setIsTravelerActive(true);
 
       Toast.success(
-        "Trip created successfully! You will be notified when a match is found."
+        "Trip successfully created! You will be notified when a match is found."
       );
       setTimeout(() => {
         clearCurrentShipment();
-        router.push("/(traveller)/home");
+        router.push("/(tabs)/home");
       }, 600);
 
     } catch (error) {
       console.error("Error submitting trip:", error);
-      
-       const errorMessage = error instanceof Error 
-        ? error.message 
+
+       const errorMessage = error instanceof Error
+        ? error.message
         : "Failed to create trip. Please check your connection and try again.";
-      
+
       Toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);

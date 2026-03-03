@@ -162,7 +162,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: Theme.spacing.md,
+    marginBottom: Theme.spacing.xs,
   },
   label: {
     ...Theme.typography.caption,

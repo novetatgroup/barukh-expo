@@ -1,75 +1,63 @@
 import Theme from "@/app/constants/Theme";
 import { Formik } from "formik";
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import {
-    View,
-    Text,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
     StyleSheet,
-    TouchableOpacity,
-    ScrollView
+    Text,
+    View
 } from "react-native";
 import * as Yup from "yup";
-import CustomTextInput from "../../ui/CustomTextInput";
 import CustomButton from "../../ui/CustomButton";
-import CustomDropdown from "../../ui/Dropdown";
-import KYCContext from "@/app/context/KYCContext";
-
-const countries = [
-    { label: 'KENYA', value: 'KE' },
-    { label: 'UGANDA', value: 'UG' },
-    { label: 'TANZANIA', value: 'TZ' },
-];
+import CustomTextInput from "../../ui/CustomTextInput";
+import PhoneNumberInput, { DEFAULT_COUNTRY, Country } from "../../ui/PhoneNumberInput";
+import LocationPicker from "../../ui/LocationPicker";
+import { LocationData } from "../traveller/packageForm/types";
 
 type AddDetailsFormProps = {
     onSubmit: (data: {
-        fullName: string;
-        address1: string;
-        address2: string;
-        country: string;
-        state: string;
-        city: string;
-        email: string;
+        firstName: string;
+        lastName: string;
+        phoneNumber: string;
         emergencyContact: string;
+        city: string;
+        country: string;
     }) => void;
 };
 
 const ValidationSchema = Yup.object().shape({
-    fullName: Yup.string().required("Full Name is required"),
-    address1: Yup.string().required("Address is required"),
-    address2: Yup.string().optional(),
-    country: Yup.string().required("Country is required"),
-    state: Yup.string().optional(),
-    city: Yup.string().optional(),
-    email: Yup.string().email("Invalid email").required("Email is required"),
-    emergencyContact: Yup.string().required("Emergency Contact is required"),
+    firstName: Yup.string().required("First name is required"),
+    lastName: Yup.string().required("Last name is required"),
+    phoneNumber: Yup.string().required("Phone number is required"),
+    emergencyContact: Yup.string().optional(),
+    city: Yup.string().required("Location is required"),
+    country: Yup.string().required("Location is required"),
 });
 
 const initialValues = {
-    fullName: "",
-    address1: "",
-    address2: "",
-    country: "",
-    state: "",
-    city: "",
-    email: "",
+    firstName: "",
+    lastName: "",
+    phoneNumber: "",
     emergencyContact: "",
+    city: "",
+    country: "",
 };
 
 const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
     onSubmit
 }) => {
     const [loading, setLoading] = useState(false);
-    const {country, updateCountry} = useContext(KYCContext);
-
-    const handleCountryChange = (selectedCountry: string) => {
-    if (selectedCountry) {
-      updateCountry(selectedCountry);
-    }
-
-  };
+    const [phoneCountry, setPhoneCountry] = useState<Country>(DEFAULT_COUNTRY);
+    const [emergencyCountry, setEmergencyCountry] = useState<Country>(DEFAULT_COUNTRY);
+    const [location, setLocation] = useState<LocationData | null>(null);
 
     return (
-        <View style={styles.container}>
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
             <Text style={styles.title}>Add Your
                 <Text style={styles.titleBold}> Details</Text>
             </Text>
@@ -79,13 +67,20 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                 onSubmit={async (values) => {
                     try {
                         setLoading(true);
-                        await onSubmit(values);
+                        const fullPhoneNumber = `${phoneCountry.dialCode}${values.phoneNumber}`;
+                        const fullEmergencyContact = values.emergencyContact
+                            ? `${emergencyCountry.dialCode}${values.emergencyContact}`
+                            : "";
+                        await onSubmit({
+                            ...values,
+                            phoneNumber: fullPhoneNumber,
+                            emergencyContact: fullEmergencyContact,
+                        });
                     } catch (error) {
-                        console.error("Error Submitting traveller details:", error);
+                        console.error("Error submitting details:", error);
                     } finally {
                         setLoading(false);
                     }
-
                 }}>{({
                     touched,
                     errors,
@@ -94,112 +89,88 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                     handleSubmit,
                     setFieldValue
                 }) => (
-                    <View style={styles.formContainer}>
-                        <ScrollView showsVerticalScrollIndicator={false}>
-                            <Text style={styles.inputLabel}>Full Names</Text>
-                            <CustomTextInput
-                                value={values.fullName}
-                                onChangeText={handleChange('fullName')}
-                                variant="compact"
-                            />
-                            {errors.fullName && touched.fullName && (
-                                <Text style={{ color: 'red' }}>{errors.fullName}</Text>
-                            )}
-                            
+                    <>
+                    <ScrollView
+                        style={styles.formContainer}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        <Text style={styles.inputLabel}>First Name</Text>
+                        <CustomTextInput
+                            value={values.firstName}
+                            onChangeText={handleChange('firstName')}
+                            variant="compact"
+                            placeholder="Enter your first name"
+                        />
+                        {errors.firstName && touched.firstName && (
+                            <Text style={styles.errorText}>{errors.firstName}</Text>
+                        )}
 
-                            <Text style={styles.inputLabel}>Address</Text>
+                        <Text style={styles.inputLabel}>Last Name</Text>
+                        <CustomTextInput
+                            value={values.lastName}
+                            onChangeText={handleChange('lastName')}
+                            variant="compact"
+                            placeholder="Enter your last name"
+                        />
+                        {errors.lastName && touched.lastName && (
+                            <Text style={styles.errorText}>{errors.lastName}</Text>
+                        )}
 
-                            <Text style={styles.subInputLabel}>Nationality</Text>
-                            <CustomDropdown
-                                value={country || ""}
-                                options={countries}
-                                placeholder="Select a country..."
-                                onSelect={(value) => {
-                                    setFieldValue("country", value);
-                                    handleCountryChange(value)}}
-                                
-                            />
-                            {errors.country && touched.country && (
-                                <Text style={{ color: 'red' }}>{errors.country}</Text>
-                            )}
+                        <Text style={styles.inputLabel}>Location</Text>
+                        <LocationPicker
+                            placeholder="Search for your city..."
+                            value={location}
+                            onLocationSelect={(loc) => {
+                                setLocation(loc);
+                                if (loc) {
+                                    setFieldValue("city", loc.city);
+                                    setFieldValue("country", loc.country);
+                                } else {
+                                    setFieldValue("city", "");
+                                    setFieldValue("country", "");
+                                }
+                            }}
+                            error={
+                                (errors.city && touched.city) || (errors.country && touched.country)
+                                    ? "Please select a location"
+                                    : undefined
+                            }
+                        />
 
-                            <Text style={styles.subInputLabel}>Address 1</Text>
-                            <CustomTextInput
-                                value={values.address1}
-                                onChangeText={handleChange('address1')}
-                                variant="compact"
-                            />
-                            {errors.address1 && touched.address1 && (
-                                <Text style={{ color: 'red' }}>{errors.address1}</Text>
-                            )}
+                        <Text style={styles.inputLabel}>Phone Number</Text>
+                        <PhoneNumberInput
+                            value={values.phoneNumber}
+                            onChangePhoneNumber={(phone) => setFieldValue('phoneNumber', phone)}
+                            selectedCountry={phoneCountry}
+                            onChangeCountry={setPhoneCountry}
+                            placeholder="Enter your phone number"
+                        />
+                        {errors.phoneNumber && touched.phoneNumber && (
+                            <Text style={styles.errorText}>{errors.phoneNumber}</Text>
+                        )}
 
-
-                            <Text style={styles.subInputLabel}>Address 2</Text>
-                            <CustomTextInput
-                                value={values.address2}
-                                onChangeText={handleChange('address2')}
-                                variant="compact"
-                            />
-                            {errors.address2 && touched.address2 && (
-                                <Text style={{ color: 'red' }}>{errors.address2}</Text>
-                            )}
-
-                            <Text style={styles.subInputLabel}>State</Text>
-                            <CustomTextInput
-                                value={values.state}
-                                onChangeText={handleChange('state')}
-                                variant="compact"
-                            />
-                            {errors.state && touched.state && ( 
-                                <Text style={{ color: 'red' }}>{errors.state}</Text>
-                            )}
-
-                            <Text style={styles.subInputLabel}>City</Text>
-                            <CustomTextInput
-                                value={values.city}
-                                onChangeText={handleChange('city')}
-                                variant="compact"
-                            />
-                            {errors.city && touched.city && (
-                                <Text style={{ color: 'red' }}>{errors.city}</Text>
-                            )}
-
-
-                            <Text style={styles.inputLabel}>Emergency Contact</Text>
-                            <CustomTextInput
-                                value={values.emergencyContact}
-                                onChangeText={handleChange('emergencyContact')}
-                                variant="compact"
-                            />
-                            {errors.emergencyContact && touched.emergencyContact && (
-                                <Text style={{ color: 'red' }}>{errors.emergencyContact}</Text>
-                            )}
-
-                            <Text style={styles.inputLabel}>Email Address</Text>
-                            <CustomTextInput
-                                value={values.email}
-                                onChangeText={handleChange('email')}
-                                variant="compact"
-                            />
-                            {errors.email && touched.email && (
-                                <Text style={{ color: 'red' }}>{errors.email}</Text>
-                            )}
-
-                                <CustomButton
-                                    title="Add details"
-                                    variant="primary"
-                                    onPress={() => handleSubmit()}
-                                    style={styles.sendButton}
-                                    loading={loading}
-                                />
-                        </ScrollView>
-
+                        <Text style={styles.inputLabel}>Emergency Contact (Optional)</Text>
+                        <PhoneNumberInput
+                            value={values.emergencyContact}
+                            onChangePhoneNumber={(phone) => setFieldValue('emergencyContact', phone)}
+                            selectedCountry={emergencyCountry}
+                            onChangeCountry={setEmergencyCountry}
+                            placeholder="Emergency contact number"
+                        />
+                    </ScrollView>
+                    <View style={styles.buttonContainer}>
+                        <CustomButton
+                            title="Update Profile"
+                            variant="primary"
+                            onPress={() => handleSubmit()}
+                            loading={loading}
+                        />
                     </View>
-
-
+                    </>
                 )}
             </Formik>
-        </View>
+        </KeyboardAvoidingView>
     );
 };
 
@@ -208,11 +179,10 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: Theme.colors.background.secondary,
         paddingTop: Theme.spacing.xl,
-
     },
     formContainer: {
         flex: 1,
-        paddingHorizontal: Theme.spacing.xl,
+        paddingHorizontal: Theme.spacing.md,
     },
     title: {
         marginTop: Theme.spacing.lg,
@@ -222,7 +192,7 @@ const styles = StyleSheet.create({
         marginBottom: Theme.spacing.md,
         lineHeight: 36,
         textAlign: "left",
-        paddingHorizontal: Theme.spacing.xl,
+        paddingHorizontal: Theme.spacing.md,
     },
     titleBold: {
         fontWeight: "700",
@@ -231,33 +201,19 @@ const styles = StyleSheet.create({
         ...Theme.typography.caption,
         paddingTop: Theme.spacing.md,
         paddingBottom: Theme.spacing.xs,
-        paddingHorizontal: 0,
         fontWeight: '600',
     },
-    subInputLabel: {
-        ...Theme.typography.caption,
+    errorText: {
+        color: Theme.colors.error,
+        fontSize: 12,
+        marginTop: 4,
+        marginBottom: 4,
+    },
+    buttonContainer: {
+        paddingHorizontal: Theme.spacing.md,
         paddingTop: Theme.spacing.md,
-        paddingBottom: Theme.spacing.xs,
-        paddingHorizontal: 0,
-        fontWeight: '400',
+        paddingBottom: Theme.spacing.xxl,
+    },
+});
 
-    },
-    submitButton: {
-        backgroundColor: "#1A3A3A",
-        borderRadius: 25,
-        paddingVertical: Theme.spacing.md,
-        marginTop: Theme.spacing.xl,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    submitButtonText: {
-        color: Theme.colors.white,
-        fontSize: 16,
-        fontWeight: "600",
-    },
-    sendButton: {
-
-        marginTop: Theme.spacing.md,
-    },
-})
 export default AddDetailsForm;

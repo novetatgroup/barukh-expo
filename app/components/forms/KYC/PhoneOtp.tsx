@@ -1,11 +1,15 @@
 import Theme from "@/app/constants/Theme";
 import React, { useEffect, useState } from "react";
-import { 
-  StyleSheet, 
-  Text, 
-  TouchableOpacity, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import CustomButton from "../../ui/CustomButton";
-import AuthScreenLayout from "../auth/AuthScreenLayout";
 import { OtpInput } from "react-native-otp-entry";
 
 type VerifyPhoneOtpFormProps = {
@@ -15,7 +19,7 @@ type VerifyPhoneOtpFormProps = {
 
 const VerifyPhoneOtpForm: React.FC<VerifyPhoneOtpFormProps> = ({ onSubmit, length }) => {
   const [otp, setOtp] = useState("");
-  const [countdown, setCountdown] = useState(60);
+  const [countdown, setCountdown] = useState(120);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -38,7 +42,8 @@ const VerifyPhoneOtpForm: React.FC<VerifyPhoneOtpFormProps> = ({ onSubmit, lengt
   };
 
   const handleSubmit = async () => {
-    if (otp.length !== length) return;
+    // TODO: Re-enable when OTP API is integrated
+    // if (otp.length !== length) return;
 
     try {
       setLoading(true);
@@ -52,20 +57,32 @@ const VerifyPhoneOtpForm: React.FC<VerifyPhoneOtpFormProps> = ({ onSubmit, lengt
 
   const handleResendCode = () => {
     if (countdown === 0) {
-      setCountdown(50);
+      setCountdown(120);
       setOtp("");
-      console.log("Resending OTP...");
     }
   };
 
   const isOtpComplete = otp.length === length;
 
   return (
-    <AuthScreenLayout
-      title="Verify Your Code"
-      subtitle="We've sent a 6-digit code to your phone number"
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <View style={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.headerContainer}>
+          <Text style={styles.heading}>Verify</Text>
+          <Text style={styles.subHeading}>Your Code</Text>
+        </View>
+
+        <Text style={styles.subtitle}>
+          We've sent a 6-digit code to your phone number
+        </Text>
+
         <View style={styles.otpContainer}>
           <OtpInput
             numberOfDigits={length}
@@ -106,27 +123,48 @@ const VerifyPhoneOtpForm: React.FC<VerifyPhoneOtpFormProps> = ({ onSubmit, lengt
           variant="primary"
           onPress={handleSubmit}
           style={styles.button}
-          disabled={!isOtpComplete}
+          // TODO: Re-enable when OTP API is integrated
+          // disabled={!isOtpComplete}
           loading={loading}
         />
-      </View>
-    </AuthScreenLayout>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  content: {
-    alignItems: "center",
-    paddingTop: Theme.spacing.xxl,
+  container: {
+    flex: 1,
+    backgroundColor: Theme.colors.white,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingHorizontal: Theme.spacing.md,
+  },
+  headerContainer: {
+    marginBottom: Theme.spacing.lg,
+  },
+  heading: {
+    fontSize: 34,
+    color: Theme.colors.primary,
+    fontWeight: "400",
+  },
+  subHeading: {
+    fontSize: 36,
+    fontWeight: "bold",
+    color: Theme.colors.primary,
+  },
+  subtitle: {
+    color: Theme.colors.text.gray,
+    fontSize: 14,
+    marginBottom: 32,
   },
   otpContainer: {
     marginBottom: Theme.spacing.xl,
-    width: "100%",
-
   },
   otpInnerContainer: {
-    gap:8,
-    
+    gap: 8,
   },
   otpInput: {
     width: 50,
@@ -144,6 +182,7 @@ const styles = StyleSheet.create({
   },
   resendContainer: {
     marginBottom: Theme.spacing.xxl,
+    alignItems: "center",
   },
   resendText: {
     fontSize: 14,
@@ -160,7 +199,6 @@ const styles = StyleSheet.create({
   },
   button: {
     width: "100%",
-    marginTop: Theme.spacing.lg,
   },
 });
 

@@ -1,3 +1,4 @@
+import BottomNavBar from "@/app/components/ui/BottomNavBar";
 import Theme from "@/app/constants/Theme";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -96,7 +97,7 @@ const MyShipmentsForm: React.FC<MyShipmentsFormProps> = ({
   return (
     <View style={styles.container}>
       <Text style={styles.title}>
-        My <Text style={styles.highlight}>Shipments</Text>
+        My <Text style={styles.highlight}>Trips</Text>
       </Text>
 
       <View style={styles.tabContainer}>
@@ -132,38 +133,7 @@ const MyShipmentsForm: React.FC<MyShipmentsFormProps> = ({
         </Text>
       )}
 
-      <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => router.push("/(traveller)/home")}
-        >
-          <Ionicons name="home" size={24} color={Theme.colors.primary} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => router.push("/(traveller)/travellerDetails")}
-        >
-          <Ionicons
-            name="briefcase-outline"
-            size={24}
-            color={Theme.colors.text.gray}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons
-            name="chatbubble-outline"
-            size={24}
-            color={Theme.colors.text.gray}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons
-            name="person-outline"
-            size={24}
-            color={Theme.colors.text.gray}
-          />
-        </TouchableOpacity>
-      </View>
+      <BottomNavBar activeTab="shipments" />
     </View>
   );
 };
@@ -266,22 +236,6 @@ const styles = StyleSheet.create({
     marginTop: Theme.spacing.xxl,
     fontSize: 14,
     fontFamily: "Inter-Regular",
-  },
-  bottomNav: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    backgroundColor: Theme.colors.white,
-    borderRadius: Theme.borderRadius.xl,
-    paddingVertical: 12,
-    marginBottom: Theme.spacing.md,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  navItem: {
-    padding: Theme.spacing.sm,
   },
 });
 
