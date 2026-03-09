@@ -18,9 +18,13 @@ export const API_ENDPOINTS = {
 		createSender: "/sender/create-sender",
 		getSender: (userId: string) => `/sender/${userId}`,
 		createPackage: "/sender/create-package",
+		getPackages: (userId: string) => `/sender/${userId}/packages`,
 	},
 	matching: {
 		autoAssign: "/matching/auto-assign",
+	},
+	shipments: {
+		findOne: (shipmentId: string) => `/shipments/find-one/${shipmentId}`,
 	},
 } as const;
 

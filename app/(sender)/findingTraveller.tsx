@@ -2,6 +2,7 @@ import CustomButton from "@/app/components/ui/CustomButton";
 import Theme from "@/app/constants/Theme";
 import { AuthContext } from "@/app/context/AuthContext";
 import { senderService } from "@/app/services/senderService";
+import { userService } from "@/app/services/userService";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useContext, useEffect, useRef, useState } from "react";
@@ -88,38 +89,66 @@ const FindingTravellerScreen = () => {
       return;
     }
 
-    const { data, error, ok } = await senderService.autoAssign(
-      { packageId },
-      accessToken
-    );
+    // Step 1 — auto-assign
+    const assignResult = await senderService.autoAssign({ packageId }, accessToken);
 
     if (cancelledRef.current) return;
 
-    stopPulseAnimations();
-
-    if (!ok || !data) {
-      setFailureMessage(error || "Something went wrong. Please try again.");
+    if (!assignResult.ok || !assignResult.data) {
+      stopPulseAnimations();
+      setFailureMessage(assignResult.error || "Something went wrong. Please try again.");
       setSearchState("failure");
       return;
     }
 
-    if (data.tripId) {
-      router.replace({
-        pathname: "/(sender)/matchedTraveller",
-        params: { tripId: data.tripId, packageId },
-      });
-      return;
-    } else {
+    if (!assignResult.data.assigned || !assignResult.data.shipmentId) {
+      stopPulseAnimations();
       const reasonMessages: Record<string, string> = {
         no_compatible_trips: "No compatible travellers found at this time.",
         no_active_trips: "There are no active travellers right now.",
       };
       setFailureMessage(
-        reasonMessages[data.reason ?? ""] ||
+        reasonMessages[assignResult.data.reason ?? ""] ||
           "We couldn't find a traveller for your package right now."
       );
       setSearchState("failure");
+      return;
     }
+
+    // Step 2 — fetch shipment details to get traveller userId
+    const shipmentResult = await senderService.getShipment(assignResult.data.shipmentId, accessToken);
+
+    if (cancelledRef.current) return;
+
+    if (!shipmentResult.ok || !shipmentResult.data) {
+      stopPulseAnimations();
+      setFailureMessage("Could not load match details. Please try again.");
+      setSearchState("failure");
+      return;
+    }
+
+    const travellerUserId = shipmentResult.data.traveller.userId;
+
+    // Step 3 — fetch traveller's user profile for their name
+    const userResult = await userService.getUser(travellerUserId, accessToken);
+
+    if (cancelledRef.current) return;
+
+    stopPulseAnimations();
+
+    const travellerName = userResult.data
+      ? `${userResult.data.firstName} ${userResult.data.lastName}`.trim()
+      : "Your Traveller";
+
+    router.replace({
+      pathname: "/(sender)/matchedTraveller",
+      params: {
+        shipmentId: assignResult.data.shipmentId,
+        packageId,
+        travellerUserId,
+        travellerName,
+      },
+    });
   };
 
   useEffect(() => {

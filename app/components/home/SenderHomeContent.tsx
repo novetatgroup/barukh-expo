@@ -1,6 +1,6 @@
 import Theme from "@/app/constants/Theme";
 import { AuthContext } from "@/app/context/AuthContext";
-import { senderService } from "@/app/services/senderService";
+import { Package, senderService } from "@/app/services/senderService";
 import { UserProfile, userService } from "@/app/services/userService";
 import { PackagePattern } from "@/assets/svgs";
 import { Ionicons } from "@expo/vector-icons";
@@ -10,57 +10,28 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  LayoutAnimation,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  UIManager,
   View,
 } from "react-native";
 import { Toast } from "toastify-react-native";
 
-type Shipment = {
-  id: string;
-  item: string;
-  trackingNumber: string;
-  status: string;
-  progress: "Pending" | "In Transit" | "Delivered";
-};
+if (Platform.OS === "android") {
+  UIManager.setLayoutAnimationEnabledExperimental?.(true);
+}
 
-const shipments: Shipment[] = [
-  {
-    id: "1",
-    trackingNumber: "#BK1098",
-    item: "JBL Flip 6",
-    status: "Shipments",
-    progress: "Pending",
-  },
-  {
-    id: "2",
-    trackingNumber: "#BK1098",
-    item: "MacBook Pro",
-    status: "Shipments",
-    progress: "In Transit",
-  },
-  {
-    id: "3",
-    trackingNumber: "#BK1098",
-    item: "JBL Flip 6",
-    status: "Shipments",
-    progress: "Delivered",
-  },
-  {
-    id: "4",
-    trackingNumber: "#BK1098",
-    item: "JBL Flip 6",
-    status: "Shipments",
-    progress: "Delivered",
-  },
-];
 
 const SenderHomeContent = () => {
   const router = useRouter();
   const { userId, accessToken } = useContext(AuthContext);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [packagesLoading, setPackagesLoading] = useState(true);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -73,20 +44,20 @@ const SenderHomeContent = () => {
     fetchUser();
   }, [userId, accessToken]);
 
-  const userName = userProfile?.firstName || "User";
+  useEffect(() => {
+    const fetchPackages = async () => {
+      if (!userId || !accessToken) return;
+      setPackagesLoading(true);
+      const { data, ok } = await senderService.getPackages(userId, accessToken);
+      if (ok && data) {
+        setPackages(data.data);
+      }
+      setPackagesLoading(false);
+    };
+    fetchPackages();
+  }, [userId, accessToken]);
 
-  const getStatusStyle = (progress: string) => {
-    switch (progress) {
-      case "Pending":
-        return { badge: styles.pending, text: styles.pendingText };
-      case "In Transit":
-        return { badge: styles.inTransit, text: styles.inTransitText };
-      case "Delivered":
-        return { badge: styles.delivered, text: styles.deliveredText };
-      default:
-        return { badge: styles.pending, text: styles.pendingText };
-    }
-  };
+  const userName = userProfile?.firstName || "User";
 
   const handleNavigateToShipments = (tab?: string) => {
     router.push({
@@ -97,6 +68,7 @@ const SenderHomeContent = () => {
 
   const [isSending, setIsSending] = useState(false);
   const [senderId, setSenderId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const handleSendPackage = async () => {
     /* if (!userProfile?.isActive) {
@@ -149,8 +121,8 @@ const SenderHomeContent = () => {
     }
   };
 
-  return (
-    <View style={styles.content}>
+  const listHeader = (
+    <>
       {/* Header Card */}
       <View style={styles.headerCard}>
         <View style={styles.patternOverlay}>
@@ -218,49 +190,97 @@ const SenderHomeContent = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Shipments Section */}
+      {/* Shipments Section Header */}
       <View style={styles.shipmentHeader}>
         <Text style={styles.shipmentTitle}>My Shipments</Text>
         <TouchableOpacity onPress={() => handleNavigateToShipments("All")}>
           <Text style={styles.seeAll}>See All</Text>
         </TouchableOpacity>
       </View>
+    </>
+  );
 
-      {shipments.length > 0 ? (
-        <FlatList
-          data={shipments}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => {
-            const statusStyle = getStatusStyle(item.progress);
-            return (
-              <View style={styles.shipmentCard}>
+  return (
+    <View style={styles.content}>
+      <FlatList
+        data={packages}
+        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={
+          packagesLoading ? (
+            <ActivityIndicator size="large" color={Theme.colors.primary} style={{ marginTop: 32 }} />
+          ) : (
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIconContainer}>
+                <Ionicons name="cube-outline" size={48} color={Theme.colors.primary} />
+              </View>
+              <Text style={styles.emptyTitle}>No packages yet</Text>
+              <Text style={styles.emptySubtext}>
+                You haven't sent any packages. Tap the button above to get started.
+              </Text>
+             
+            </View>
+          )
+        }
+        renderItem={({ item }) => {
+          const trackingNumber = `#${item.id.substring(0, 8).toUpperCase()}`;
+          const from = `${item.originCity}, ${item.originCountry}`;
+          const to = `${item.destinationCity}, ${item.destinationCountry}`;
+          const isExpanded = expandedId === item.id;
+          return (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={styles.shipmentCard}
+              onPress={() => {
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                setExpandedId(isExpanded ? null : item.id);
+              }}
+            >
+              <View style={styles.shipmentCardRow}>
                 <View style={styles.packageIconContainer}>
-                  <Ionicons
-                    name="cube-outline"
-                    size={24}
-                    color={Theme.colors.primary}
-                  />
+                  <Ionicons name="cube-outline" size={24} color={Theme.colors.primary} />
                 </View>
                 <View style={styles.shipmentInfo}>
-                  <Text style={styles.trackingNumber}>
-                    {item.trackingNumber}
-                  </Text>
-                  <Text style={styles.shipmentItem}>{item.item}</Text>
+                  <Text style={styles.trackingNumber}>{trackingNumber}</Text>
+                  <Text style={styles.shipmentItem}>{item.name}</Text>
                 </View>
-                <View style={[styles.statusBadge, statusStyle.badge]}>
-                  <Text style={[styles.statusText, statusStyle.text]}>
-                    {item.progress}
-                  </Text>
+                <View style={[styles.statusBadge, styles.pending]}>
+                  <Text style={[styles.statusText, styles.pendingText]}>Pending</Text>
                 </View>
               </View>
-            );
-          }}
-        />
-      ) : (
-        <Text style={styles.emptyText}>No shipments yet</Text>
-      )}
+
+              {isExpanded && (
+                <>
+                  <View style={styles.accordionDivider} />
+                  <View style={styles.accordionGrid}>
+                    <View style={styles.accordionCell}>
+                      <Text style={styles.accordionLabel}>From :</Text>
+                      <Text style={styles.accordionValue}>{from}</Text>
+                    </View>
+                    <View style={styles.accordionCell}>
+                      <Text style={styles.accordionLabel}>To :</Text>
+                      <Text style={styles.accordionValue}>{to}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.accordionDivider} />
+                  <View style={styles.accordionGrid}>
+                    <View style={styles.accordionCell}>
+                      <Text style={styles.accordionLabel}>Weight :</Text>
+                      <Text style={styles.accordionValue}>{item.weightKg} kg</Text>
+                    </View>
+                    <View style={styles.accordionCell}>
+                      <Text style={styles.accordionLabel}>Quantity :</Text>
+                      <Text style={styles.accordionValue}>{item.quantity}</Text>
+                    </View>
+                  </View>
+                </>
+              )}
+            </TouchableOpacity>
+          );
+        }}
+      />
     </View>
   );
 };
@@ -406,8 +426,6 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   shipmentCard: {
-    flexDirection: "row",
-    alignItems: "center",
     backgroundColor: Theme.colors.white,
     borderRadius: Theme.borderRadius.md,
     padding: Theme.spacing.md,
@@ -416,6 +434,33 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+  },
+  shipmentCardRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  accordionDivider: {
+    height: 1,
+    backgroundColor: Theme.colors.background.border,
+    marginVertical: 14,
+  },
+  accordionGrid: {
+    flexDirection: "row",
+    paddingVertical: 4,
+  },
+  accordionCell: {
+    flex: 1,
+    gap: 6,
+  },
+  accordionLabel: {
+    fontSize: 13,
+    fontFamily: "Inter-Regular",
+    color: Theme.colors.text.gray,
+  },
+  accordionValue: {
+    fontSize: 16,
+    fontFamily: "Inter-Bold",
+    color: Theme.colors.text.dark,
   },
   packageIconContainer: {
     backgroundColor: "#C7F530",
@@ -473,6 +518,46 @@ const styles = StyleSheet.create({
     marginTop: Theme.spacing.xl,
     fontSize: 14,
     fontFamily: "Inter-Regular",
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingHorizontal: Theme.spacing.xl,
+    paddingTop: Theme.spacing.xl,
+  },
+  emptyIconContainer: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: "#EBF2F1",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: Theme.spacing.md,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontFamily: "Inter-Bold",
+    color: Theme.colors.text.dark,
+    marginBottom: Theme.spacing.sm,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    fontFamily: "Inter-Regular",
+    color: Theme.colors.text.gray,
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: Theme.spacing.lg,
+  },
+  emptyButton: {
+    borderWidth: 1.5,
+    borderColor: Theme.colors.primary,
+    borderRadius: Theme.borderRadius.lg,
+    paddingVertical: 12,
+    paddingHorizontal: Theme.spacing.lg,
+  },
+  emptyButtonText: {
+    fontSize: 14,
+    fontFamily: "Inter-Bold",
+    color: Theme.colors.primary,
   },
 });
 

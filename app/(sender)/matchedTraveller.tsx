@@ -1,58 +1,95 @@
 import CustomButton from "@/app/components/ui/CustomButton";
 import Theme from "@/app/constants/Theme";
-import { Ionicons } from "@expo/vector-icons";
+import { AuthContext } from "@/app/context/AuthContext";
 import { router, useLocalSearchParams } from "expo-router";
-import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useContext } from "react";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+
+
+const Avatar = ({ name }: { name: string }) => {
+  const initials = name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  return (
+    <View style={styles.avatarCircle}>
+      <Text style={styles.avatarInitials}>{initials}</Text>
+    </View>
+  );
+};
 
 const MatchedTravellerScreen = () => {
-  const { tripId, packageId } = useLocalSearchParams<{
-    tripId: string;
+  const { packageId, travellerUserId, travellerName } = useLocalSearchParams<{
     packageId: string;
+    travellerUserId: string;
+    travellerName: string;
   }>();
+  const { userId } = useContext(AuthContext);
 
-  const handleViewDetails = () => {
-    // TODO: call traveller/trip details API and show full info
-    router.replace("/(tabs)/home");
+  const displayName = travellerName ?? "Your Traveller";
+
+  const handleStartChat = () => {
+    const conversationId = [userId, travellerUserId].sort().join("_");
+    router.push({
+      pathname: "/(chat)/[conversationId]",
+      params: {
+        conversationId,
+        receiverId: travellerUserId,
+        receiverName: displayName,
+      },
+    });
   };
 
-  const handleGoHome = () => {
-    router.replace("/(tabs)/home");
+  const handleRejectMatch = () => {
+    Alert.alert(
+      "Reject this match?",
+      "We'll search for another traveller for your package.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Reject",
+          style: "destructive",
+          onPress: () =>
+            router.replace({
+              pathname: "/(sender)/findingTraveller",
+              params: { packageId },
+            }),
+        },
+      ]
+    );
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.centerContent}>
-        <View style={styles.successCircle}>
-          <Ionicons
-            name="checkmark-circle-outline"
-            size={48}
-            color={Theme.colors.green}
-          />
-        </View>
+        <Text style={styles.title}>You've been matched{"\n"}with a Traveller</Text>
 
-        <Text style={styles.title}>Traveller Found!</Text>
-       {/*  <Text style={styles.subtitle}>
-          We've found a traveller who can{"\n"}deliver your package.
-        </Text>
-        <Text style={styles.subtitle}>
-          This is a temporary screen until i finish the issues 
-        </Text> */}
+        <Avatar name={displayName} />
 
-        <View style={styles.buttons}>
-        {/*   <CustomButton
-            title="View Traveller Details"
-            variant="primary"
-            onPress={handleViewDetails}
-            style={styles.button}
-          /> */}
-          <CustomButton
-            title="Go Home"
-            variant="secondary"
-            onPress={handleGoHome}
-            style={styles.button}
-          />
+        <View style={styles.nameRow}>
+          <Text style={styles.nameText}>{displayName}</Text>
         </View>
+      </View>
+
+      <View style={styles.bottomButtons}>
+        <CustomButton
+          title="Message Traveller"
+          variant="primary"
+          onPress={handleStartChat}
+          style={styles.button}
+        />
+        <CustomButton
+          title="Reject Match"
+          variant="secondary"
+          onPress={handleRejectMatch}
+          style={styles.button}
+        />
+        <TouchableOpacity onPress={() => router.replace("/(tabs)/home")} style={styles.homeLink}>
+          <Text style={styles.homeLinkText}>Go Home</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -69,35 +106,66 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: Theme.spacing.xl,
   },
-  successCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "#E8F5E9",
+  title: {
+    fontSize: 28,
+    fontWeight: "500",
+    color: Theme.colors.primary,
+    fontFamily: 'Inter-Regular',
+    textAlign: "center",
+    lineHeight: 42,
+    marginBottom: Theme.spacing.xxxl,
+  },
+  avatarCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "#F5D6A8",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: Theme.spacing.lg,
   },
-  title: {
-    fontSize: 24,
+  avatarInitials: {
+    fontSize: 40,
     fontWeight: "700",
     color: Theme.colors.primary,
-    marginBottom: Theme.spacing.sm,
-    textAlign: "center",
   },
-  subtitle: {
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: Theme.spacing.sm,
+  },
+  nameText: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: Theme.colors.primary,
+  },
+  verifiedIcon: {
+    marginLeft: 6,
+  },
+  starsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  ratingText: {
     fontSize: 16,
     color: Theme.colors.text.gray,
-    textAlign: "center",
-    lineHeight: 24,
+    marginLeft: 4,
   },
-  buttons: {
-    width: "100%",
-    marginTop: Theme.spacing.xxl,
-    gap: 12,
+  bottomButtons: {
+    paddingHorizontal: Theme.spacing.xl,
+    paddingBottom: Theme.spacing.xxxl,
   },
   button: {
     width: "100%",
+  },
+  homeLink: {
+    alignItems: "center",
+    paddingVertical: Theme.spacing.sm,
+  },
+  homeLinkText: {
+    fontSize: 14,
+    color: Theme.colors.text.gray,
   },
 });
 

@@ -57,16 +57,81 @@ export interface AutoAssignParams {
 
 export interface AutoAssignResponse {
 	packageId: string;
+	assigned: boolean;
+	shipmentId: string;
 	tripId: string;
+	matchScore?: number;
 	strategyUsed?: string;
 	reason?: string;
-	retryScheduled?: boolean;
 	processingTimeMs?: number;
+}
+
+export interface ShipmentDetails {
+	id: string;
+	senderId: string;
+	travellerId: string;
+	packageId: string;
+	tripId: string;
+	status: string;
+	priceMinor: number;
+	currency: string;
+	requestedAt: string;
+	package: {
+		id: string;
+		name: string;
+		category: string;
+		weightKg: number;
+		originCity: string;
+		destinationCity: string;
+		photoUrl: string;
+	};
+	travel: {
+		id: string;
+		originCity: string;
+		destinationCity: string;
+		departureAt: string;
+		arrivalAt: string;
+		mode: string;
+	};
+	sender: { id: string; userId: string };
+	traveller: { id: string; userId: string };
 }
 
 export interface GetSenderResponse {
 	senderId: string;
 	userId: string;
+}
+
+export interface Package {
+	id: string;
+	senderId: string;
+	name: string;
+	category: number;
+	weightKg: number;
+	lengthCm: number;
+	widthCm: number;
+	heightCm: number;
+	fragile: boolean;
+	quantity: number;
+	originCountry: string;
+	originCity: string;
+	destinationCountry: string;
+	destinationCity: string;
+	photoUrl: string;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface GetPackagesResponse {
+	data: Package[];
+	meta: {
+		page: number;
+		limit: number;
+		total: number;
+		totalPages: number;
+		hasNextPage: boolean;
+		hasPreviousPage: boolean;
+	};
 }
 
 export const senderService = {
@@ -99,6 +164,15 @@ export const senderService = {
 		});
 	},
 
+	async getPackages(userId: string, accessToken: string) {
+		return apiRequest<GetPackagesResponse>(API_ENDPOINTS.sender.getPackages(userId), {
+			method: "GET",
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+			},
+		});
+	},
+
 	async autoAssign(params: AutoAssignParams, accessToken: string) {
 		return apiRequest<AutoAssignResponse>(API_ENDPOINTS.matching.autoAssign, {
 			method: "POST",
@@ -106,6 +180,15 @@ export const senderService = {
 				Authorization: `Bearer ${accessToken}`,
 			},
 			body: params,
+		});
+	},
+
+	async getShipment(shipmentId: string, accessToken: string) {
+		return apiRequest<ShipmentDetails>(API_ENDPOINTS.shipments.findOne(shipmentId), {
+			method: "GET",
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+			},
 		});
 	},
 };
