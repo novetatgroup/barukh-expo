@@ -92,14 +92,15 @@ const LoginForm: React.FC<LoginFormProps> = ({
               loading={loading}
             />
 
-            <Divider text="Or" />
+            {/* TODO: Re-enable when backend Google OAuth endpoint is ready */}
+            {/* <Divider text="Or" />
 
             <CustomButton
               title="Continue with Google"
               variant="google"
               onPress={onGooglePress}
               showGoogleIcon={true}
-            />
+            /> */}
 
             <FooterLink
               text="Don't have an account?"

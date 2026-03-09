@@ -38,3 +38,7 @@ yarn-error.*
 
 app-example
 .env
+
+# Claude
+.claude
+settings.local.json

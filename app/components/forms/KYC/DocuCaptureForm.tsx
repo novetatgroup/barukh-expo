@@ -158,14 +158,14 @@ const styles = StyleSheet.create({
 
 	container: {
 		flex: 1,
-		backgroundColor: Theme.colors.background.primary,
+		backgroundColor: "#f4f1f2",
 	},
 	header: {
 		paddingHorizontal: Theme.screenPadding.horizontal,
 		paddingTop: Theme.spacing.md,
 		paddingBottom: Theme.spacing.xs,
 		marginTop: Theme.spacing.lg + Theme.spacing.xs,
-		backgroundColor: Theme.colors.background.primary,
+		backgroundColor: "#f4f1f2",
 		borderBottomColor: Theme.colors.background.border,
 	},
 	content: {

@@ -71,10 +71,10 @@ const SenderHomeContent = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const handleSendPackage = async () => {
-    /* if (!userProfile?.isActive) {
+    if (!userProfile?.isActive) {
       router.push("/(KYC)/KYCLanding");
       return;
-    } */
+    }
 
     if (!userId || !accessToken) {
       Toast.error("You must be logged in to send a package.");

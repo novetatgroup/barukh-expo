@@ -109,14 +109,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
               loading={loading}
             />
 
-            <Divider text="Or" />
+            {/* TODO: Re-enable when backend Google OAuth endpoint is ready */}
+            {/* <Divider text="Or" />
 
             <CustomButton
               title="Continue with Google"
               variant="google"
               onPress={onGooglePress}
               showGoogleIcon={true}
-            />
+            /> */}
 
             <FooterLink
               text="Already have an account?"

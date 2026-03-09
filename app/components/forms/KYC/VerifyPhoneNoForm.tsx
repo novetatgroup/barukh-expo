@@ -59,7 +59,7 @@ const VerifyPhoneNoForm: React.FC<VerifyPhoneNoFormProps> = ({ onSubmit }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Theme.colors.white,
+    backgroundColor: "#f4f1f2",
   },
   scrollContent: {
     flexGrow: 1,

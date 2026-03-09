@@ -1,6 +1,8 @@
 import Theme from "@/app/constants/Theme";
+import { AuthContext } from "@/app/context/AuthContext";
+import { UserProfile, userService } from "@/app/services/userService";
 import { Formik } from "formik";
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect, useContext } from "react";
 import {
     KeyboardAvoidingView,
     Platform,
@@ -9,22 +11,17 @@ import {
     Text,
     View
 } from "react-native";
+import { Toast } from "toastify-react-native";
 import * as Yup from "yup";
 import CustomButton from "../../ui/CustomButton";
 import CustomTextInput from "../../ui/CustomTextInput";
-import PhoneNumberInput, { DEFAULT_COUNTRY, Country } from "../../ui/PhoneNumberInput";
+import PhoneNumberInput, { DEFAULT_COUNTRY, Country, COUNTRIES } from "../../ui/PhoneNumberInput";
 import LocationPicker from "../../ui/LocationPicker";
 import { LocationData } from "../traveller/packageForm/types";
 
 type AddDetailsFormProps = {
-    onSubmit: (data: {
-        firstName: string;
-        lastName: string;
-        phoneNumber: string;
-        emergencyContact: string;
-        city: string;
-        country: string;
-    }) => void;
+    onSuccess: () => void;
+    initialData?: UserProfile | null;
 };
 
 const ValidationSchema = Yup.object().shape({
@@ -36,22 +33,65 @@ const ValidationSchema = Yup.object().shape({
     country: Yup.string().required("Location is required"),
 });
 
-const initialValues = {
-    firstName: "",
-    lastName: "",
-    phoneNumber: "",
-    emergencyContact: "",
-    city: "",
-    country: "",
-};
+function parsePhone(fullPhone: string): { country: Country; number: string } {
+    if (!fullPhone) return { country: DEFAULT_COUNTRY, number: "" };
+    const sorted = [...COUNTRIES].sort((a, b) => b.dialCode.length - a.dialCode.length);
+    for (const country of sorted) {
+        if (fullPhone.startsWith(country.dialCode)) {
+            return { country, number: fullPhone.slice(country.dialCode.length) };
+        }
+    }
+    return { country: DEFAULT_COUNTRY, number: fullPhone };
+}
 
 const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
-    onSubmit
+    onSuccess,
+    initialData,
 }) => {
+    const { userId, accessToken } = useContext(AuthContext);
     const [loading, setLoading] = useState(false);
-    const [phoneCountry, setPhoneCountry] = useState<Country>(DEFAULT_COUNTRY);
-    const [emergencyCountry, setEmergencyCountry] = useState<Country>(DEFAULT_COUNTRY);
-    const [location, setLocation] = useState<LocationData | null>(null);
+
+    const parsedPhone = useMemo(() => parsePhone(initialData?.phoneNumber || ""), [initialData?.phoneNumber]);
+    const parsedEmergency = useMemo(() => parsePhone(initialData?.emergencyContact || ""), [initialData?.emergencyContact]);
+
+    const [phoneCountry, setPhoneCountry] = useState<Country>(parsedPhone.country);
+    const [emergencyCountry, setEmergencyCountry] = useState<Country>(parsedEmergency.country);
+
+    useEffect(() => {
+        setPhoneCountry(parsedPhone.country);
+    }, [parsedPhone.country]);
+
+    useEffect(() => {
+        setEmergencyCountry(parsedEmergency.country);
+    }, [parsedEmergency.country]);
+
+    const initialLocation = useMemo((): LocationData | null => {
+        if (!initialData?.city && !initialData?.country) return null;
+        return {
+            placeId: "",
+            description: [initialData.city, initialData.country].filter(Boolean).join(", "),
+            city: initialData.city || "",
+            country: initialData.country || "",
+            countryCode: "",
+            latitude: 0,
+            longitude: 0,
+        };
+    }, [initialData?.city, initialData?.country]);
+
+    const [location, setLocation] = useState<LocationData | null>(initialLocation);
+
+    useEffect(() => {
+        setLocation(initialLocation);
+    }, [initialLocation]);
+
+    const initialValues = useMemo(() => ({
+        firstName: initialData?.firstName || "",
+        lastName: initialData?.lastName || "",
+        phoneNumber: parsedPhone.number,
+        emergencyContact: parsedEmergency.number,
+        city: initialData?.city || "",
+        country: initialData?.country || "",
+    }), [initialData, parsedPhone.number, parsedEmergency.number]);
 
     return (
         <KeyboardAvoidingView
@@ -64,20 +104,32 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
             <Formik
                 initialValues={initialValues}
                 validationSchema={ValidationSchema}
+                enableReinitialize
                 onSubmit={async (values) => {
+                    if (!userId || !accessToken) return;
                     try {
                         setLoading(true);
                         const fullPhoneNumber = `${phoneCountry.dialCode}${values.phoneNumber}`;
                         const fullEmergencyContact = values.emergencyContact
                             ? `${emergencyCountry.dialCode}${values.emergencyContact}`
                             : "";
-                        await onSubmit({
+                        const payload = {
                             ...values,
                             phoneNumber: fullPhoneNumber,
                             emergencyContact: fullEmergencyContact,
-                        });
-                    } catch (error) {
-                        console.error("Error submitting details:", error);
+                        };
+                        console.log("[AddDetailsForm] updateProfile payload:", payload);
+                        const { ok, error } = await userService.updateProfile(userId, payload, accessToken);
+                        if (ok) {
+                            Toast.success("Details saved successfully!");
+                            onSuccess();
+                        } else {
+                            console.error("[AddDetailsForm] updateProfile failed:", error);
+                            Toast.error(error || "Failed to save details.");
+                        }
+                    } catch (err) {
+                        console.error("[AddDetailsForm] updateProfile threw an exception:", err);
+                        Toast.error("Something went wrong. Please try again.");
                     } finally {
                         setLoading(false);
                     }
@@ -177,7 +229,7 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Theme.colors.background.secondary,
+        backgroundColor: "#f4f1f2",
         paddingTop: Theme.spacing.xl,
     },
     formContainer: {

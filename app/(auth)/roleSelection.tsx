@@ -32,7 +32,13 @@ const RoleSelectionScreen = () => {
     if (ok) {
       Toast.success("Role updated successfully!");
       await setRole(role);
-      router.replace("/(tabs)/home");
+
+      const { data: userProfile } = await userService.getUser(userId, accessToken);
+      if (userProfile && !userProfile.isActive) {
+        router.replace("/(KYC)/KYCLanding");
+      } else {
+        router.replace("/(tabs)/home");
+      }
     } else {
       Toast.error(error || "Update failed. Please try again.");
       setSelectedRole(null);

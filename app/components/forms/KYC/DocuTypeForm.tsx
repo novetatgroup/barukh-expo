@@ -14,114 +14,69 @@ const DocumentTypeSelectionForm: React.FC<DocumentTypeSelectionFormProps> = ({ o
   const { id_type, updateIdType } = useContext(KYCContext);
 
   const handleDocumentTypeSelect = (selectedType: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENCE") => {
-
     updateIdType(selectedType);
-    onDocumentTypeSelect(selectedType)
+    onDocumentTypeSelect(selectedType);
   };
+
+  const options: { type: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENCE"; label: string }[] = [
+    { type: "IDENTITY_CARD", label: "National ID" },
+    { type: "DRIVING_LICENCE", label: "Driving License" },
+    { type: "PASSPORT", label: "Passport" },
+  ];
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.verifyText}>Verify</Text>
-        <Text style={styles.accountText}>Account</Text>
-        <Text style={styles.subText}>Choose Your Document Type</Text>
-      </View>
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <Text style={styles.verifyText}>Verify</Text>
+          <Text style={styles.accountText}>Account</Text>
+          <Text style={styles.subText}>Choose Your Document Type</Text>
+        </View>
 
-      <View style={styles.documentSection}>
-        <Text style={styles.sectionTitle}>Select Document Type</Text>
         <View style={styles.optionsContainer}>
-          <TouchableOpacity
-            activeOpacity={1}
-            style={[
-              styles.optionCard,
-              styles.option,
-              id_type === "PASSPORT" && styles.selectedOption,
-
-            ]}
-            onPress={() => handleDocumentTypeSelect("PASSPORT")}
-            
-          >
-            <View style={styles.iconContainer}>
-              <Ionicons
-                name="document-text"
-                size={25}
-                color={Theme.colors.primary}
-              />
-            </View>
-            <View style={styles.optionContent}>
-              <Text style={[styles.optionTitle]}>
-                Passport
-              </Text>
-            </View>
-            <View style={styles.arrowContainer}>
-              <Text style={styles.arrow}>›</Text>
-            </View>
-          </TouchableOpacity>
-
-					<TouchableOpacity
-						activeOpacity={1}
-						style={[
-							styles.optionCard,
-							styles.option,
-							id_type === "DRIVING_LICENCE" &&
-								styles.selectedOption,
-						]}
-						onPress={() =>
-							handleDocumentTypeSelect("DRIVING_LICENCE")
-						}>
-						<View style={styles.iconContainer}>
-							<Ionicons
-								name="card"
-								size={25}
-								color={Theme.colors.primary}
-							/>
-						</View>
-						<View style={styles.optionContent}>
-							<Text style={[styles.optionTitle]}>
-								Driving Licence
-							</Text>
-						</View>
-						<Text style={[styles.arrow]}>›</Text>
-					</TouchableOpacity>
-
-					<TouchableOpacity
-						activeOpacity={1}
-						style={[
-							styles.optionCard,
-							styles.option,
-							id_type === "IDENTITY_CARD" &&
-								styles.selectedOption,
-						]}
-						onPress={() =>
-							handleDocumentTypeSelect("IDENTITY_CARD")
-						}>
-						<View style={styles.iconContainer}>
-							<Ionicons
-								name="id-card"
-								size={25}
-								color={Theme.colors.primary}
-							/>
-						</View>
-						<View style={styles.optionContent}>
-							<Text style={[styles.optionTitle]}>
-								National ID
-							</Text>
-						</View>
-						<Text style={[styles.arrow]}>›</Text>
-					</TouchableOpacity>
-				</View>
-			</View>
-		</View>
-	);
+          {options.map(({ type, label }) => {
+            const selected = id_type === type;
+            return (
+              <TouchableOpacity
+                key={type}
+                activeOpacity={0.85}
+                style={[styles.optionCard, selected && styles.selectedCard]}
+                onPress={() => handleDocumentTypeSelect(type)}
+              >
+                <View style={[styles.iconCircle, selected && styles.selectedIconCircle]}>
+                  <Ionicons
+                    name="card"
+                    size={20}
+                    color={Theme.colors.yellow}
+                  />
+                </View>
+                <Text style={[styles.optionLabel, selected && styles.selectedLabel]}>
+                  {label}
+                </Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color={selected ? Theme.colors.yellow : Theme.colors.black}
+                />
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Theme.colors.white,
+    backgroundColor: "#f4f1f2",
     paddingHorizontal: Theme.screenPadding.horizontal,
-    paddingTop: Theme.spacing.xxxl + Theme.spacing.sm,
+    justifyContent: "center",
     paddingBottom: Theme.spacing.xxl,
+  },
+  content: {
+    // natural block, centered by parent's justifyContent
   },
   header: {
     marginBottom: Theme.spacing.xl,
@@ -129,8 +84,9 @@ const styles = StyleSheet.create({
   verifyText: {
     ...Theme.typography.h1,
     fontSize: 32,
-    fontWeight: "500",
+    fontWeight: "400",
     textAlign: "center",
+    color: Theme.colors.primary,
   },
   accountText: {
     ...Theme.typography.h1,
@@ -143,21 +99,7 @@ const styles = StyleSheet.create({
   subText: {
     ...Theme.typography.body,
     textAlign: "center",
-    color: Theme.colors.primary,
-  },
-  documentSection: {
-    flex: 1,
-  },
-  sectionTitle: {
-    ...Theme.typography.body,
-    color: Theme.colors.primary,
-    marginBottom: Theme.spacing.md,
-    fontWeight: "600",
-  },
-  dropdown: {
-    height: 50,
-    width: "100%",
-    color: Theme.colors.primary,
+    color: Theme.colors.black,
   },
   optionsContainer: {
     gap: Theme.spacing.md,
@@ -165,46 +107,40 @@ const styles = StyleSheet.create({
   optionCard: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Theme.spacing.lg,
-    borderRadius: Theme.borderRadius.md,
-    minHeight: Theme.components.button.height + Theme.spacing.lg,
-    shadowColor: Theme.colors.black,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  option: {
+    paddingHorizontal: Theme.spacing.md,
+    paddingVertical: Theme.spacing.md,
+    borderRadius: Theme.borderRadius.lg,
     backgroundColor: Theme.colors.white,
+    borderWidth: 1,
+    borderColor: "#e5e5ea",
+    minHeight: 66,
   },
-  selectedOption: {
-    borderWidth: 2,
-    borderColor: Theme.colors.primary,
+  selectedCard: {
+    backgroundColor: Theme.colors.primary,
+    borderWidth: 0,
   },
-  iconContainer: {
+  iconCircle: {
+    width: 37,
+    height: 37,
+    borderRadius: 19,
+    backgroundColor: Theme.colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: Theme.spacing.md,
   },
-  optionContent: {
+  selectedIconCircle: {
+    backgroundColor: Theme.colors.white,
+  },
+  optionLabel: {
     flex: 1,
-  },
-  optionTitle: {
     ...Theme.typography.body,
-    fontSize: 16,
-    fontWeight: "600",
-    color: Theme.colors.primary,
-    marginBottom: Theme.spacing.xs,
-  },
-  arrowContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  arrow: {
-    fontSize: 28,
+    fontSize: 15,
+    fontWeight: "500",
     color: Theme.colors.black,
-    fontWeight: "300",
+  },
+  selectedLabel: {
+    color: Theme.colors.yellow,
+    fontWeight: "600",
   },
 });
 

@@ -93,10 +93,10 @@ const TravellerHomeContent = () => {
   };
 
   const handleCreateTrip = () => {
-   /*  if (!userProfile?.isActive) {
+    if (!userProfile?.isActive) {
       router.push("/(KYC)/KYCLanding");
       return;
-    } */
+    }
     router.push("/(traveller)/packageDetails");
   };
 

@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import VerifyPhoneNoForm from '@/app/components/forms/KYC/VerifyPhoneNoForm';
-import Theme from '@/app/constants/Theme';
 import { router } from 'expo-router';
 import { Country } from '@/app/components/ui/PhoneNumberInput';
 
@@ -23,7 +22,7 @@ const VerifyPhoneNoScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Theme.colors.white,
+    backgroundColor: "#f4f1f2",
   },
   wrapper: {
     flex: 1,
