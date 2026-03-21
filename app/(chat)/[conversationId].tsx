@@ -1,6 +1,6 @@
-import Theme from "@/app/constants/Theme";
-import { ChatContext, ChatMessage } from "@/app/context/ChatContext";
-import { AuthContext } from "@/app/context/AuthContext";
+import Theme from "@/constants/Theme";
+import { ChatContext, ChatMessage } from "@/context/ChatContext";
+import { AuthContext } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
@@ -33,21 +33,39 @@ const ChatScreen = () => {
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── Fetch history on mount ───────────────────────────────────────────────
+  // ── Fetch history on mount + reconnect ──────────────────────────────────
   useEffect(() => {
     if (!socket || !conversationId) return;
 
-    socket.emit("messages:fetch", { conversationId, limit: 50 });
-
     const handleHistory = (data: { messages: ChatMessage[]; count: number }) => {
-      // API returns newest first — reverse for display (oldest at top)
-      setMessages([...data.messages].reverse());
+      const ordered = [...data.messages].reverse();
+      setMessages(ordered);
       setHistoryLoaded(true);
+      // Mark any received messages in history as seen (after delivery delay)
+      ordered.forEach((msg) => {
+        if (msg.receiverId === userId) {
+          setTimeout(() => socket.emit("message:seen", { messageId: msg.messageId }), 100);
+        }
+      });
     };
 
+    const fetchMessages = () => {
+      socket.emit("messages:fetch", { conversationId, limit: 50 });
+    };
+
+    // Fallback: if server doesn't respond (e.g. conversation doesn't exist yet), unblock UI
+    const fallback = setTimeout(() => setHistoryLoaded(true), 3000);
+
     socket.on("messages:history", handleHistory);
-    return () => { socket.off("messages:history", handleHistory); };
-  }, [socket, conversationId]);
+    socket.on("connect", fetchMessages);
+    fetchMessages();
+
+    return () => {
+      clearTimeout(fallback);
+      socket.off("messages:history", handleHistory);
+      socket.off("connect", fetchMessages);
+    };
+  }, [socket, conversationId, userId]);
 
   // ── Incoming messages ────────────────────────────────────────────────────
   useEffect(() => {
@@ -59,7 +77,8 @@ const ChatScreen = () => {
 
       setMessages((prev) => [...prev, msg]);
       socket.emit("message:delivered", { messageId: msg.messageId });
-      socket.emit("message:seen", { messageId: msg.messageId });
+      // Delay message:seen so the server has time to process message:delivered first
+      setTimeout(() => socket.emit("message:seen", { messageId: msg.messageId }), 100);
     };
 
     socket.on("message:new", handleNewMessage);

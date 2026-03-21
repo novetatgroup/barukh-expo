@@ -1,8 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Theme from "@/app/constants/Theme";
-import CustomButton from "../components/ui/CustomButton";
+import Theme from "@/constants/Theme";
+import CustomButton from "@/components/ui/CustomButton";
 import { router } from "expo-router";
 
 type StartTripScreenProps = {

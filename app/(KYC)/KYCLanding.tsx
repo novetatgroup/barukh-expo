@@ -1,4 +1,4 @@
-import Theme from "@/app/constants/Theme";
+import Theme from "@/constants/Theme";
 import { router } from "expo-router";
 import React from "react";
 import { 
@@ -6,7 +6,7 @@ import {
   Text, 
   View 
 } from "react-native";
-import CustomButton from "@/app/components/ui/CustomButton";
+import CustomButton from "@/components/ui/CustomButton";
 
 interface KYCVerificationScreenProps {
   onBeginKYC?: () => void;

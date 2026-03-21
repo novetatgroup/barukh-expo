@@ -1,9 +1,9 @@
-import { AuthContext } from "@/app/context/AuthContext";
-import { UserProfile, userService } from "@/app/services/userService";
+import { AuthContext } from "@/context/AuthContext";
+import { UserProfile, userService } from "@/services/userService";
 import { router } from "expo-router";
 import React, { useContext, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import AddDetailsForm from "../components/forms/KYC/AddDetailsForm";
+import AddDetailsForm from "@/components/forms/KYC/AddDetailsForm";
 
 const AddDetailsScreen = () => {
     const { userId, accessToken } = useContext(AuthContext);

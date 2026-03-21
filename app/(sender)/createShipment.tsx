@@ -2,10 +2,10 @@ import { router, useLocalSearchParams } from "expo-router";
 import React, { useContext } from "react";
 import { StyleSheet, View } from "react-native";
 import { Toast } from "toastify-react-native";
-import CreateShipmentForm from "../components/forms/sender/CreateShipmentForm";
-import { ShipmentSubmitData } from "../components/forms/sender/shipmentForm";
-import { AuthContext } from "../context/AuthContext";
-import { senderService } from "../services/senderService";
+import CreateShipmentForm from "@/components/forms/sender/CreateShipmentForm";
+import { ShipmentSubmitData } from "@/components/forms/sender/shipmentForm";
+import { AuthContext } from "@/context/AuthContext";
+import { senderService } from "@/services/senderService";
 
 const CreateShipmentScreen = () => {
   const { senderId } = useLocalSearchParams<{ senderId: string }>();

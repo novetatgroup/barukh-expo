@@ -11,7 +11,7 @@ import {
   ViewToken,
 } from "react-native";
 import { Logo } from "../../assets/svgs/index";
-import styles from "../styles/onboardingStyles";
+import styles from "@/styles/onboardingStyles";
 
 const { width } = Dimensions.get("window");
 

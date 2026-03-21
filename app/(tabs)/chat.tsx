@@ -1,6 +1,6 @@
-import Theme from "@/app/constants/Theme";
-import { ChatContext, Conversation } from "@/app/context/ChatContext";
-import { AuthContext } from "@/app/context/AuthContext";
+import Theme from "@/constants/Theme";
+import { ChatContext, Conversation } from "@/context/ChatContext";
+import { AuthContext } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useContext } from "react";

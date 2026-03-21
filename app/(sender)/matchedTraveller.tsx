@@ -1,6 +1,6 @@
-import CustomButton from "@/app/components/ui/CustomButton";
-import Theme from "@/app/constants/Theme";
-import { AuthContext } from "@/app/context/AuthContext";
+import CustomButton from "@/components/ui/CustomButton";
+import Theme from "@/constants/Theme";
+import { AuthContext } from "@/context/AuthContext";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useContext } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";

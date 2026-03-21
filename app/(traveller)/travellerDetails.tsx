@@ -1,9 +1,9 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { router } from "expo-router";
-import TravellerDetailsForm from "../components/forms/traveller/TravellerDetails";
-import { useShipment } from "../context/ShipmentContext";
-import AuthContext from "../context/AuthContext";
+import TravellerDetailsForm from "@/components/forms/traveller/TravellerDetails";
+import { useShipment } from "@/context/ShipmentContext";
+import AuthContext from "@/context/AuthContext";
 
 const TravellerDetailsScreen = () => {
 	const { setCurrentShipment } = useShipment();

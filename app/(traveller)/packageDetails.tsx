@@ -2,10 +2,10 @@ import { router } from "expo-router";
 import React, { useContext, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Toast } from "toastify-react-native";
-import PackageDetailsForm from "../components/forms/traveller/PackageDetailsForm";
-import { AuthContext } from "../context/AuthContext";
-import { useShipment } from "../context/ShipmentContext";
-import { CreateTripParams, travellerService } from "../services/travellerService";
+import PackageDetailsForm from "@/components/forms/traveller/PackageDetailsForm";
+import { AuthContext } from "@/context/AuthContext";
+import { useShipment } from "@/context/ShipmentContext";
+import { CreateTripParams, travellerService } from "@/services/travellerService";
 
 
 const PackageDetailsScreen = () => {
@@ -43,9 +43,15 @@ const PackageDetailsScreen = () => {
 
       // Ensure traveller profile exists before creating a trip
       const travellerResult = await travellerService.createTraveller({ userId }, accessToken);
-      if (!travellerResult.ok) {
-        Toast.error(travellerResult.error || "Failed to create traveller profile");
-        return;
+      let resolvedTravellerId = travellerResult.data?.travellerId;
+
+      if (!travellerResult.ok || !resolvedTravellerId) {
+        const getResult = await travellerService.getTraveller(userId, accessToken);
+        if (!getResult.ok || !getResult.data?.travellerId) {
+          Toast.error(getResult.error || "Unable to retrieve your traveller profile. Please try again.");
+          return;
+        }
+        resolvedTravellerId = getResult.data.travellerId;
       }
 
       // Build trip payload
@@ -128,6 +134,7 @@ const PackageDetailsScreen = () => {
       <PackageDetailsForm
         onSubmit={handleSubmit}
         initialValues={currentShipment}
+        isSubmitting={isSubmitting}
       />
     </View>
   );

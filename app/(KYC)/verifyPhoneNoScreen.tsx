@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import VerifyPhoneNoForm from '@/app/components/forms/KYC/VerifyPhoneNoForm';
+import VerifyPhoneNoForm from '@/components/forms/KYC/VerifyPhoneNoForm';
 import { router } from 'expo-router';
-import { Country } from '@/app/components/ui/PhoneNumberInput';
+import { Country } from '@/components/ui/PhoneNumberInput';
 
 const VerifyPhoneNoScreen = () => {
   const handleSubmit = (phoneNumber: string, country: Country) => {

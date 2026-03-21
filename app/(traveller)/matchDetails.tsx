@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import MatchDetailsForm from '../components/forms/traveller/MatchDetailsForm';
+import MatchDetailsForm from '@/components/forms/traveller/MatchDetailsForm';
 
 const MatchDetailsScreen = () => {
   const router = useRouter();

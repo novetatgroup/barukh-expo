@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import ShipmentDetailsForm from "../components/forms/traveller/ShipmentDetailsForm";
+import ShipmentDetailsForm from "@/components/forms/traveller/ShipmentDetailsForm";
 
 const ShipmentDetailsScreen = () => {
   const router = useRouter();

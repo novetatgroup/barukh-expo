@@ -1,8 +1,8 @@
-import CustomButton from "@/app/components/ui/CustomButton";
-import Theme from "@/app/constants/Theme";
-import { AuthContext } from "@/app/context/AuthContext";
-import { senderService } from "@/app/services/senderService";
-import { userService } from "@/app/services/userService";
+import CustomButton from "@/components/ui/CustomButton";
+import Theme from "@/constants/Theme";
+import { AuthContext } from "@/context/AuthContext";
+import { senderService } from "@/services/senderService";
+import { userService } from "@/services/userService";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useContext, useEffect, useRef, useState } from "react";

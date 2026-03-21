@@ -1,8 +1,8 @@
-import Theme from "@/app/constants/Theme";
-import { ROLES, Role } from "@/app/constants/roles";
-import { AuthContext } from "@/app/context/AuthContext";
-import { useRole } from "@/app/context/RoleContext";
-import { userService } from "@/app/services/userService";
+import Theme from "@/constants/Theme";
+import { ROLES, Role } from "@/constants/roles";
+import { AuthContext } from "@/context/AuthContext";
+import { useRole } from "@/context/RoleContext";
+import { userService } from "@/services/userService";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useContext, useState } from "react";
