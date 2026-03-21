@@ -1,11 +1,11 @@
-import AuthContext from "@/app/context/AuthContext";
-import KYCContext from "@/app/context/KYCContext";
+import AuthContext from "@/context/AuthContext";
+import KYCContext from "@/context/KYCContext";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import React, { useContext, useState } from "react";
 import { Alert, StyleSheet, View } from "react-native";
 import { Toast } from "toastify-react-native";
-import SelfieCaptureForm from "../components/forms/KYC/SelfieInterfaceForm";
+import SelfieCaptureForm from "@/components/forms/KYC/SelfieInterfaceForm";
 
 export default function SelfieCaptureScreen() {
   const [isLoading, setIsLoading] = useState(false);

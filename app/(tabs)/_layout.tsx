@@ -1,4 +1,4 @@
-import Theme from "@/app/constants/Theme";
+import Theme from "@/constants/Theme";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Tabs } from "expo-router";

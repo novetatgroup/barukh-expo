@@ -1,7 +1,7 @@
-import Theme from "@/app/constants/Theme";
-import { AuthContext } from "@/app/context/AuthContext";
-import { useRole } from "@/app/context/RoleContext";
-import { UserProfile, userService } from "@/app/services/userService";
+import Theme from "@/constants/Theme";
+import { AuthContext } from "@/context/AuthContext";
+import { useRole } from "@/context/RoleContext";
+import { UserProfile, userService } from "@/services/userService";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useContext, useEffect, useState } from "react";

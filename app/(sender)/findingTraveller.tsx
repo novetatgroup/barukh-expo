@@ -1,14 +1,20 @@
-import Theme from "@/app/constants/Theme";
-import CustomButton from "@/app/components/ui/CustomButton";
+import CustomButton from "@/components/ui/CustomButton";
+import Theme from "@/constants/Theme";
+import { AuthContext } from "@/context/AuthContext";
+import { senderService } from "@/services/senderService";
+import { userService } from "@/services/userService";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 
 type SearchState = "searching" | "success" | "failure";
 
 const FindingTravellerScreen = () => {
+  const { senderId, packageId } = useLocalSearchParams<{ senderId: string; packageId: string }>();
+  const { accessToken } = useContext(AuthContext);
   const [searchState, setSearchState] = useState<SearchState>("searching");
+  const [failureMessage, setFailureMessage] = useState("");
 
   const pulseAnim1 = useRef(new Animated.Value(0)).current;
   const pulseAnim2 = useRef(new Animated.Value(0)).current;
@@ -69,41 +75,101 @@ const FindingTravellerScreen = () => {
     bounce.start();
   };
 
-  const simulateSearch = () => {
+  const cancelledRef = useRef(false);
+
+  const searchForTraveller = async () => {
     setSearchState("searching");
+    setFailureMessage("");
     startPulseAnimation();
 
-    // Simulate API call — replace with real API later
-    const timeout = setTimeout(() => {
+    if (!packageId || !accessToken) {
       stopPulseAnimations();
-      const succeeded = Math.random() > 0.5;
-      setSearchState(succeeded ? "success" : "failure");
-    }, 4000);
+      setFailureMessage("Missing package or authentication info.");
+      setSearchState("failure");
+      return;
+    }
 
-    return () => {
-      clearTimeout(timeout);
+    // Step 1 — auto-assign
+    const assignResult = await senderService.autoAssign({ packageId }, accessToken);
+
+    if (cancelledRef.current) return;
+
+    if (!assignResult.ok || !assignResult.data) {
       stopPulseAnimations();
-    };
+      setFailureMessage(assignResult.error || "Something went wrong. Please try again.");
+      setSearchState("failure");
+      return;
+    }
+
+    if (!assignResult.data.assigned || !assignResult.data.shipmentId) {
+      stopPulseAnimations();
+      const reasonMessages: Record<string, string> = {
+        no_compatible_trips: "No compatible travellers found at this time.",
+        no_active_trips: "There are no active travellers right now.",
+      };
+      setFailureMessage(
+        reasonMessages[assignResult.data.reason ?? ""] ||
+          "We couldn't find a traveller for your package right now."
+      );
+      setSearchState("failure");
+      return;
+    }
+
+    // Step 2 — fetch shipment details to get traveller userId
+    const shipmentResult = await senderService.getShipment(assignResult.data.shipmentId, accessToken);
+
+    if (cancelledRef.current) return;
+
+    if (!shipmentResult.ok || !shipmentResult.data) {
+      stopPulseAnimations();
+      setFailureMessage("Could not load match details. Please try again.");
+      setSearchState("failure");
+      return;
+    }
+
+    const travellerUserId = shipmentResult.data.traveller.userId;
+
+    // Step 3 — fetch traveller's user profile for their name
+    const userResult = await userService.getUser(travellerUserId, accessToken);
+
+    if (cancelledRef.current) return;
+
+    stopPulseAnimations();
+
+    const travellerName = userResult.data
+      ? `${userResult.data.firstName} ${userResult.data.lastName}`.trim()
+      : "Your Traveller";
+
+    router.replace({
+      pathname: "/(sender)/matchedTraveller",
+      params: {
+        shipmentId: assignResult.data.shipmentId,
+        packageId,
+        travellerUserId,
+        travellerName,
+      },
+    });
   };
 
   useEffect(() => {
-    const cleanup = simulateSearch();
-    return cleanup;
+    cancelledRef.current = false;
+    searchForTraveller();
+    return () => {
+      cancelledRef.current = true;
+      stopPulseAnimations();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleTryAgain = () => {
-    simulateSearch();
+    cancelledRef.current = false;
+    searchForTraveller();
   };
 
   const handleGoHome = () => {
     router.replace("/(tabs)/home");
   };
 
-  const handleViewTraveller = () => {
-    // Placeholder — navigate to traveller details when API is wired
-    router.replace("/(tabs)/home");
-  };
 
   const renderPulseRing = (anim: Animated.Value, size: number) => {
     const scale = anim.interpolate({
@@ -169,7 +235,7 @@ const FindingTravellerScreen = () => {
 
           <Text style={styles.resultTitle}>Oops!</Text>
           <Text style={styles.resultSubtitle}>
-            We couldn't find a traveller for{"\n"}your package at this time.
+            {failureMessage}
           </Text>
 
           <View style={styles.resultButtons}>
@@ -191,36 +257,7 @@ const FindingTravellerScreen = () => {
     );
   }
 
-  // Success state
-  return (
-    <View style={styles.container}>
-      <View style={styles.centerContent}>
-        <View style={[styles.resultIconCircle, styles.successCircle]}>
-          <Ionicons name="checkmark-circle-outline" size={48} color={Theme.colors.green} />
-        </View>
-
-        <Text style={styles.resultTitle}>Traveller Found!</Text>
-        <Text style={styles.resultSubtitle}>
-          We've found a traveller who can{"\n"}deliver your package.
-        </Text>
-
-        <View style={styles.resultButtons}>
-          <CustomButton
-            title="View Traveller Details"
-            variant="primary"
-            onPress={handleViewTraveller}
-            style={styles.resultButton}
-          />
-          <CustomButton
-            title="Go Home"
-            variant="secondary"
-            onPress={handleGoHome}
-            style={styles.resultButton}
-          />
-        </View>
-      </View>
-    </View>
-  );
+  return null;
 };
 
 const LoadingDots = () => {
@@ -355,13 +392,10 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: "#FFF0F0",
+ 
     justifyContent: "center",
     alignItems: "center",
     marginBottom: Theme.spacing.lg,
-  },
-  successCircle: {
-    backgroundColor: "#E8F5E9",
   },
   resultTitle: {
     fontSize: 24,

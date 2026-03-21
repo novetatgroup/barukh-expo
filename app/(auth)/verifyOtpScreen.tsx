@@ -4,9 +4,9 @@ import { jwtDecode } from "jwt-decode";
 import React, { useContext } from "react";
 import { StyleSheet, View } from "react-native";
 import { Toast } from "toastify-react-native";
-import VerifyOtpForm from "../components/forms/auth/VerifyOtpForm";
-import { AuthContext } from "../context/AuthContext";
-import { authService } from "../services/authService";
+import VerifyOtpForm from "@/components/forms/auth/VerifyOtpForm";
+import { AuthContext } from "@/context/AuthContext";
+import { authService } from "@/services/authService";
 
 const VerifyOtpScreen = () => {
 	const { setAuthState } = useContext(AuthContext);

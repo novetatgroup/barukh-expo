@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { Alert } from "react-native";
 import { router } from "expo-router";
-import UploadPackageForm from "../components/forms/traveller/UploadPackageForm";
+import UploadPackageForm from "@/components/forms/traveller/UploadPackageForm";
 
 const DeliveryUploadScreen = () => {
     const [selectedImage, setSelectedImage] = useState<string | null>(null);

@@ -10,8 +10,8 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useRole } from "@/app/context/RoleContext";
-import Theme from "@/app/constants/Theme";
+import { useRole } from "@/context/RoleContext";
+import Theme from "@/constants/Theme";
 
 type ShipmentItem = {
   id: string;

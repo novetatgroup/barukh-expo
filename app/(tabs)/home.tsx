@@ -1,9 +1,9 @@
 import React from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
-import { useRole } from "@/app/context/RoleContext";
-import TravellerHomeContent from "@/app/components/home/TravellerHomeContent";
-import SenderHomeContent from "@/app/components/home/SenderHomeContent";
-import Theme from "@/app/constants/Theme";
+import { useRole } from "@/context/RoleContext";
+import TravellerHomeContent from "@/components/home/TravellerHomeContent";
+import SenderHomeContent from "@/components/home/SenderHomeContent";
+import Theme from "@/constants/Theme";
 
 const HomeScreen = () => {
   const { role, loading } = useRole();

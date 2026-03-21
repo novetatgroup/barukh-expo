@@ -2,11 +2,12 @@ import { router } from "expo-router";
 import React, { useContext, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Toast } from "toastify-react-native";
-import RoleSelectionForm from "../components/forms/auth/RoleSelectionForm";
-import { Role } from "../constants/roles";
-import { AuthContext } from "../context/AuthContext";
-import { useRole } from "../context/RoleContext";
-import { userService } from "../services/userService";
+import RoleSelectionForm from "@/components/forms/auth/RoleSelectionForm";
+import { Role } from "@/constants/roles";
+import { AuthContext } from "@/context/AuthContext";
+import { useRole } from "@/context/RoleContext";
+import { userService } from "@/services/userService";
+import { kycService } from "@/services/kycService";
 
 const RoleSelectionScreen = () => {
   const { userId, accessToken } = useContext(AuthContext);
@@ -32,7 +33,20 @@ const RoleSelectionScreen = () => {
     if (ok) {
       Toast.success("Role updated successfully!");
       await setRole(role);
-      router.replace("/(tabs)/home");
+
+      const { data: userProfile } = await userService.getUser(userId, accessToken);
+      if (userProfile && !userProfile.isActive) {
+        const { data: jobStatus } = await kycService.getJobStatus(userId, accessToken);
+        if (jobStatus?.status === "SUCCESS") {
+          router.replace("/(tabs)/home");
+        } else if (jobStatus?.status === "PROCESSING" || jobStatus?.status === "FAILED") {
+          router.replace("/(KYC)/verificationPendingScreen");
+        } else {
+          router.replace("/(KYC)/KYCLanding");
+        }
+      } else {
+        router.replace("/(tabs)/home");
+      }
     } else {
       Toast.error(error || "Update failed. Please try again.");
       setSelectedRole(null);

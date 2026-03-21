@@ -3,8 +3,8 @@ import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Toast } from "toastify-react-native";
-import RegisterForm from "../components/forms/auth/RegisterForm";
-import { authService } from "../services/authService";
+import RegisterForm from "@/components/forms/auth/RegisterForm";
+import { authService } from "@/services/authService";
 
 interface RegisterScreenProps {
   activeTab: "login" | "register";

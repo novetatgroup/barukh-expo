@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(find:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(ls -la /c/Users/kronn/Documents/GitHub/barukh-expo/app/\\\\\\(auth\\\\\\)/)",
+      "mcp__claude_ai_Figma__get_design_context",
+      "Bash(xargs grep:*)",
+      "Bash(xargs sed:*)"
     ]
   }
 }

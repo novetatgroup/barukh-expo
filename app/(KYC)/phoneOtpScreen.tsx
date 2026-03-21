@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import VerifyPhoneOtpForm from "../components/forms/KYC/PhoneOtp";
+import VerifyPhoneOtpForm from "@/components/forms/KYC/PhoneOtp";
 import { router } from "expo-router";
 
 const PhoneOtpScreen = () => {
