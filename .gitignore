@@ -42,3 +42,4 @@ app-example
 # Claude
 .claude
 settings.local.json
+.codex
