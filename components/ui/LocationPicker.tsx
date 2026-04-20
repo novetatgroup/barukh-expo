@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import Theme from "@/constants/Theme";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Keyboard,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  Platform,
-  ActivityIndicator,
-  Keyboard,
+  View,
 } from "react-native";
-import Theme from "@/constants/Theme";
 import { LocationData } from "../forms/traveller/packageForm/types";
 
 export interface LocationPickerProps {
@@ -18,6 +18,8 @@ export interface LocationPickerProps {
   placeholder?: string;
   value: LocationData | null;
   onLocationSelect: (location: LocationData | null) => void;
+  onInputChange?: (text: string) => void;
+  zIndex?: number;
   error?: string;
   disabled?: boolean;
 }
@@ -36,6 +38,8 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
   placeholder = "Search for a city...",
   value,
   onLocationSelect,
+  onInputChange,
+  zIndex = 1,
   error,
   disabled = false,
 }) => {
@@ -62,39 +66,45 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
     setIsLoading(true);
 
     try {
+      const params = new URLSearchParams({
+        input,
+        types: "(regions)",
+        language: "en",
+        key: GOOGLE_API_KEY
+      });
+
+      
       const response = await fetch(
-        "https://places.googleapis.com/v1/places:autocomplete",
+        `https://maps.googleapis.com/maps/api/place/autocomplete/json?${params.toString()}`,
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Goog-Api-Key": GOOGLE_API_KEY,
+          method: "GET", headers: {
+            "Content-Type": "application/json"
           },
-          body: JSON.stringify({
-            input,
-            includedPrimaryTypes: ["locality", "administrative_area_level_1", "administrative_area_level_2"],
-            languageCode: "en",
-          }),
         }
       );
+      const { predictions = [], status, error_message } = (await response.json()) as {
+        predictions?: any[];
+        status?: string;
+        error_message?: string;
+      };
 
-      const data = await response.json();
+      if (!response.ok || (status && status !== "OK" && status !== "ZERO_RESULTS")) {
+        throw new Error(error_message || status || "Autocomplete request failed");
+      }
 
-      if (data.suggestions) {
-        const formattedSuggestions: AutocompleteSuggestion[] = data.suggestions
-          .filter((s: any) => s.placePrediction)
-          .map((s: any) => ({
-            placeId: s.placePrediction.placeId,
-            mainText: s.placePrediction.structuredFormat?.mainText?.text || "",
-            secondaryText: s.placePrediction.structuredFormat?.secondaryText?.text || "",
-            fullText: s.placePrediction.text?.text || "",
-          }));
+      if (predictions.length > 0) {
+        const formattedSuggestions: AutocompleteSuggestion[] = predictions.map((prediction: any) => ({
+          placeId: prediction.place_id,
+          mainText: prediction.structured_formatting?.main_text || "",
+          secondaryText: prediction.structured_formatting?.secondary_text || "",
+          fullText: prediction.description || "",
+        }));
         setSuggestions(formattedSuggestions);
       } else {
         setSuggestions([]);
       }
     } catch (err) {
-      console.log("Autocomplete Error:", err);
+      console.error("Autocomplete Error:", err);
       setSuggestions([]);
     } finally {
       setIsLoading(false);
@@ -148,6 +158,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
   const handleInputChange = (text: string) => {
     setInputValue(text);
     setShowSuggestions(true);
+    onInputChange?.(text);
 
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
@@ -192,7 +203,19 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
   );
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        {
+          zIndex,
+          ...Platform.select({
+            android: {
+              elevation: zIndex,
+            },
+          }),
+        },
+      ]}
+    >
       {label && <Text style={styles.label}>{label}</Text>}
 
       <View style={styles.inputContainer}>
@@ -220,7 +243,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
       </View>
 
       {showSuggestions && suggestions.length > 0 && (
-        <View style={styles.suggestionsContainer}>
+        <View style={[styles.suggestionsContainer, { zIndex }]}>
           <ScrollView
             keyboardShouldPersistTaps="handled"
             nestedScrollEnabled={true}
