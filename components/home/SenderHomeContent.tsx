@@ -239,9 +239,17 @@ const SenderHomeContent = () => {
               }}
             >
               <View style={styles.shipmentCardRow}>
-                <View style={styles.packageIconContainer}>
+                <TouchableOpacity
+                  style={styles.packageIconContainer}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(sender)/matchedTraveller",
+                      params: { packageId: item.id },
+                    })
+                  }
+                >
                   <Ionicons name="cube-outline" size={24} color={Theme.colors.primary} />
-                </View>
+                </TouchableOpacity>
                 <View style={styles.shipmentInfo}>
                   <Text style={styles.trackingNumber}>{trackingNumber}</Text>
                   <Text style={styles.shipmentItem}>{item.name}</Text>

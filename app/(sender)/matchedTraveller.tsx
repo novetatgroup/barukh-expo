@@ -1,25 +1,9 @@
-import CustomButton from "@/components/ui/CustomButton";
 import Theme from "@/constants/Theme";
 import { AuthContext } from "@/context/AuthContext";
+import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useContext } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
-
-const Avatar = ({ name }: { name: string }) => {
-  const initials = name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-
-  return (
-    <View style={styles.avatarCircle}>
-      <Text style={styles.avatarInitials}>{initials}</Text>
-    </View>
-  );
-};
 
 const MatchedTravellerScreen = () => {
   const { packageId, travellerUserId, travellerName } = useLocalSearchParams<{
@@ -30,6 +14,12 @@ const MatchedTravellerScreen = () => {
   const { userId } = useContext(AuthContext);
 
   const displayName = travellerName ?? "Your Traveller";
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   const handleStartChat = () => {
     const conversationId = [userId, travellerUserId].sort().join("_");
@@ -64,32 +54,52 @@ const MatchedTravellerScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.centerContent}>
+      {/* Title */}
+      <View style={styles.titleContainer}>
         <Text style={styles.title}>You've been matched{"\n"}with a Traveller</Text>
-
-        <Avatar name={displayName} />
-
-        <View style={styles.nameRow}>
-          <Text style={styles.nameText}>{displayName}</Text>
-        </View>
       </View>
 
-      <View style={styles.bottomButtons}>
-        <CustomButton
-          title="Message Traveller"
-          variant="primary"
-          onPress={handleStartChat}
-          style={styles.button}
-        />
-        <CustomButton
-          title="Reject Match"
-          variant="secondary"
-          onPress={handleRejectMatch}
-          style={styles.button}
-        />
-        <TouchableOpacity onPress={() => router.replace("/(tabs)/home")} style={styles.homeLink}>
-          <Text style={styles.homeLinkText}>Go Home</Text>
-        </TouchableOpacity>
+      {/* Avatar */}
+      <View style={styles.avatarCircle}>
+        <Text style={styles.avatarInitials}>{initials}</Text>
+      </View>
+
+      {/* Name + verified */}
+      <View style={styles.nameRow}>
+        <Text style={styles.nameText}>{displayName}</Text>
+        <Ionicons name="checkmark-circle" size={20} color="#32BF5B" style={styles.verifiedIcon} />
+      </View>
+
+      {/* Stars */}
+      <View style={styles.starsRow}>
+        {[1, 2, 3, 4, 5].map((i) => (
+          <Ionicons key={i} name="star" size={14} color="#FFCB45" />
+        ))}
+        <Text style={styles.ratingText}>5.0</Text>
+      </View>
+
+      {/* Icon action buttons */}
+      <View style={styles.iconActions}>
+        <View style={styles.iconAction}>
+          <TouchableOpacity style={styles.iconBtn} onPress={handleStartChat}>
+            <Ionicons name="chatbubble-ellipses" size={26} color={Theme.colors.white} />
+          </TouchableOpacity>
+          <Text style={styles.iconLabel}>Message</Text>
+        </View>
+
+        <View style={styles.iconAction}>
+          <TouchableOpacity style={[styles.iconBtn, styles.iconBtnDanger]} onPress={handleRejectMatch}>
+            <Ionicons name="close" size={26} color={Theme.colors.white} />
+          </TouchableOpacity>
+          <Text style={styles.iconLabel}>Reject</Text>
+        </View>
+
+        <View style={styles.iconAction}>
+          <TouchableOpacity style={[styles.iconBtn, styles.iconBtnSecondary]} onPress={() => router.replace("/(tabs)/home")}>
+            <Ionicons name="home" size={26} color={Theme.colors.primary} />
+          </TouchableOpacity>
+          <Text style={styles.iconLabel}>Home</Text>
+        </View>
       </View>
     </View>
   );
@@ -99,45 +109,44 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F4F1F2",
-  },
-  centerContent: {
-    flex: 1,
-    justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: Theme.spacing.xl,
+    justifyContent: "center",
+    paddingHorizontal: 40,
+  },
+  titleContainer: {
+    marginBottom: 40,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "500",
+    fontSize: 31,
+    fontFamily: "Inter-Regular",
     color: Theme.colors.primary,
-    fontFamily: 'Inter-Regular',
     textAlign: "center",
-    lineHeight: 42,
-    marginBottom: Theme.spacing.xxxl,
+    lineHeight: 38,
+    letterSpacing: -1.2,
   },
   avatarCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
     backgroundColor: "#F5D6A8",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: Theme.spacing.lg,
+    marginBottom: 20,
   },
   avatarInitials: {
-    fontSize: 40,
-    fontWeight: "700",
+    fontSize: 44,
+    fontFamily: "Inter-Bold",
     color: Theme.colors.primary,
   },
   nameRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: Theme.spacing.sm,
+    marginBottom: 6,
   },
   nameText: {
     fontSize: 20,
-    fontWeight: "700",
-    color: Theme.colors.primary,
+    fontFamily: "Inter-SemiBold",
+    color: "#111",
   },
   verifiedIcon: {
     marginLeft: 6,
@@ -145,27 +154,43 @@ const styles = StyleSheet.create({
   starsRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 3,
+    marginBottom: 56,
   },
   ratingText: {
-    fontSize: 16,
-    color: Theme.colors.text.gray,
-    marginLeft: 4,
+    fontSize: 13,
+    fontFamily: "Inter-Regular",
+    color: "#6B7280",
+    marginLeft: 6,
   },
-  bottomButtons: {
-    paddingHorizontal: Theme.spacing.xl,
-    paddingBottom: Theme.spacing.xxxl,
+  iconActions: {
+    flexDirection: "row",
+    gap: 32,
   },
-  button: {
-    width: "100%",
-  },
-  homeLink: {
+  iconAction: {
     alignItems: "center",
-    paddingVertical: Theme.spacing.sm,
+    gap: 8,
   },
-  homeLinkText: {
-    fontSize: 14,
-    color: Theme.colors.text.gray,
+  iconBtn: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Theme.colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  iconBtnDanger: {
+    backgroundColor: "#EF4444",
+  },
+  iconBtnSecondary: {
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: Theme.colors.primary,
+  },
+  iconLabel: {
+    fontSize: 12,
+    fontFamily: "Inter-Regular",
+    color: "#6B7280",
   },
 });
 
