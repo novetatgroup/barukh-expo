@@ -44,3 +44,4 @@ app-example
 settings.local.json
 .codex
 testapis
+.claude

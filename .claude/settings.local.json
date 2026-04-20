@@ -6,7 +6,8 @@
       "Bash(ls -la /c/Users/kronn/Documents/GitHub/barukh-expo/app/\\\\\\(auth\\\\\\)/)",
       "mcp__claude_ai_Figma__get_design_context",
       "Bash(xargs grep:*)",
-      "Bash(xargs sed:*)"
+      "Bash(xargs sed:*)",
+      "Bash(ip -4 addr show)"
     ]
   }
 }
