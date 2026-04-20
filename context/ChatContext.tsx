@@ -43,7 +43,7 @@ export const ChatContext = createContext<ChatContextType>({
 });
 
 export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
-  const { accessToken, isAuthenticated } = useContext(AuthContext);
+  const { accessToken, isAuthenticated, logout } = useContext(AuthContext);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -64,7 +64,11 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
 
     setSocket(newSocket);
 
-    newSocket.on("connect", () => { console.log("[Chat] socket connected"); setConnected(true); });
+    newSocket.on("connect", () => {
+      console.log("[Chat] socket connected");
+      setConnected(true);
+      newSocket.emit("conversations:fetch");
+    });
     newSocket.on("disconnect", () => {
       console.log("[Chat] socket disconnected");
       setConnected(false);
@@ -73,6 +77,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
 
     newSocket.on("connected", (data: unknown) => {
       console.log("[Chat] server connected event:", JSON.stringify(data));
+      console.log("[Chat] emitting conversations:fetch");
       newSocket.emit("conversations:fetch");
       heartbeatRef.current = setInterval(
         () => newSocket.emit("heartbeat"),
@@ -85,12 +90,16 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       (data: unknown) => {
         console.log("[Chat] conversations:list raw:", JSON.stringify(data));
         const payload = data as { conversations?: Conversation[] };
-        setConversations(payload.conversations ?? []);
+        const convos = payload.conversations ?? [];
+        console.log("[Chat] conversations count:", convos.length);
+        setConversations(convos);
       }
     );
 
-    // Refresh conversation list when a message is sent or received
-    newSocket.on("message:new", () => {
+    // Acknowledge delivery immediately when a message arrives (required by the API
+    // regardless of which screen is active), then refresh the conversation list.
+    newSocket.on("message:new", (msg: { messageId: string }) => {
+      newSocket.emit("message:delivered", { messageId: msg.messageId });
       newSocket.emit("conversations:fetch");
     });
     newSocket.on("message:sent", () => {
@@ -99,6 +108,9 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
 
     newSocket.on("connect_error", (err) => {
       console.warn("[Chat] connect_error:", err.message);
+      if (err.message === "Invalid token") {
+        logout();
+      }
     });
 
     return () => {

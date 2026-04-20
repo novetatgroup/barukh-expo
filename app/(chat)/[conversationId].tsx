@@ -32,24 +32,36 @@ const ChatScreen = () => {
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isTypingActiveRef = useRef(false);
+  const pendingIdCounter = useRef(0);
 
   // ── Fetch history on mount + reconnect ──────────────────────────────────
   useEffect(() => {
+    console.log("[Chat] fetch effect — socket:", !!socket, "| conversationId:", conversationId);
     if (!socket || !conversationId) return;
 
     const handleHistory = (data: { messages: ChatMessage[]; count: number }) => {
+      console.log("[Chat] messages:history received — count:", data.messages.length);
       const ordered = [...data.messages].reverse();
       setMessages(ordered);
       setHistoryLoaded(true);
-      // Mark any received messages in history as seen (after delivery delay)
+      // Mark received messages as seen, respecting the required status transition:
+      // sent → delivered → read  (skipping a step causes a server NotFoundException)
       ordered.forEach((msg) => {
-        if (msg.receiverId === userId) {
+        if (msg.receiverId !== userId) return;
+        if (msg.status === "read") return;
+        if (msg.status === "sent") {
+          socket.emit("message:delivered", { messageId: msg.messageId });
+          setTimeout(() => socket.emit("message:seen", { messageId: msg.messageId }), 100);
+        } else {
+          // status === "delivered"
           setTimeout(() => socket.emit("message:seen", { messageId: msg.messageId }), 100);
         }
       });
     };
 
     const fetchMessages = () => {
+      console.log("[Chat] emitting messages:fetch for:", conversationId);
       socket.emit("messages:fetch", { conversationId, limit: 50 });
     };
 
@@ -76,9 +88,10 @@ const ChatScreen = () => {
       if (msg.receiverId !== userId && msg.receiverId !== receiverId) return;
 
       setMessages((prev) => [...prev, msg]);
-      socket.emit("message:delivered", { messageId: msg.messageId });
-      // Delay message:seen so the server has time to process message:delivered first
-      setTimeout(() => socket.emit("message:seen", { messageId: msg.messageId }), 100);
+      // message:delivered is emitted by ChatContext immediately on message:new.
+      // Here we only need to mark the message as seen since the user is viewing it.
+      // Delay to ensure the server has processed message:delivered first.
+      setTimeout(() => socket.emit("message:seen", { messageId: msg.messageId }), 150);
     };
 
     socket.on("message:new", handleNewMessage);
@@ -90,11 +103,16 @@ const ChatScreen = () => {
     if (!socket) return;
 
     const handleSent = (data: { messageId: string; status: string; timestamp: string }) => {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.messageId === "pending" ? { ...m, messageId: data.messageId, status: "sent" } : m
-        )
-      );
+      setMessages((prev) => {
+        let replaced = false;
+        return prev.map((m) => {
+          if (!replaced && m.messageId.startsWith("pending-")) {
+            replaced = true;
+            return { ...m, messageId: data.messageId, status: "sent" as const };
+          }
+          return m;
+        });
+      });
     };
 
     socket.on("message:sent", handleSent);
@@ -139,11 +157,16 @@ const ChatScreen = () => {
   // ── Sending ──────────────────────────────────────────────────────────────
   const handleSend = useCallback(() => {
     const trimmed = text.trim();
-    if (!trimmed || !socket || !receiverId) return;
+    console.log("[handleSend] trimmed:", trimmed, "| socket:", !!socket, "| receiverId:", receiverId);
+    if (!trimmed || !socket || !receiverId) {
+      console.log("[handleSend] blocked — trimmed:", !!trimmed, "socket:", !!socket, "receiverId:", receiverId);
+      return;
+    }
 
-    // Optimistic message
+    // Optimistic message — use a unique local ID so rapid sends don't collide
+    const pendingId = `pending-${++pendingIdCounter.current}`;
     const optimistic: ChatMessage = {
-      messageId: "pending",
+      messageId: pendingId,
       senderId: userId ?? "",
       receiverId,
       content: trimmed,
@@ -153,8 +176,9 @@ const ChatScreen = () => {
     setMessages((prev) => [...prev, optimistic]);
     setText("");
 
-    socket.emit("message:send", { recieverId: receiverId, content: trimmed });
+    socket.emit("message:send", { receiverId, content: trimmed });
     socket.emit("typing:stop", { receiverId });
+    isTypingActiveRef.current = false;
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
@@ -164,10 +188,14 @@ const ChatScreen = () => {
     setText(val);
     if (!socket || !receiverId) return;
 
-    socket.emit("typing:start", { receiverId });
+    if (!isTypingActiveRef.current) {
+      socket.emit("typing:start", { receiverId });
+      isTypingActiveRef.current = true;
+    }
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit("typing:stop", { receiverId });
+      isTypingActiveRef.current = false;
     }, 2000);
   };
 

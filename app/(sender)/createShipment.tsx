@@ -21,7 +21,7 @@ const CreateShipmentScreen = () => {
       const { photoUri, ...packageFields } = shipmentData;
 
       const result = await senderService.createPackage(
-        { userId, ...packageFields },
+        { userId, imageKey: "", ...packageFields }, // TODO: replace with real S3 key once upload flow is implemented
         accessToken
       );
 
