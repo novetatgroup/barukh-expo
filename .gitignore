@@ -42,3 +42,6 @@ app-example
 # Claude
 .claude
 settings.local.json
+testapis
+.codex
+.claude
