@@ -29,6 +29,7 @@ export interface CreatePackageParams {
 	destinationLon?: number;
 	urgencyLevel: number;
 	requiredByDate: string;
+	imageKey?: string;
 }
 
 export interface CreatePackageResponse {
