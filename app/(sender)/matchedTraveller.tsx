@@ -89,7 +89,7 @@ const MatchedTravellerScreen = () => {
 
         <View style={styles.iconAction}>
           <TouchableOpacity style={[styles.iconBtn, styles.iconBtnDanger]} onPress={handleRejectMatch}>
-            <Ionicons name="close" size={26} color={Theme.colors.white} />
+            <Ionicons name="close" size={26} color={Theme.colors.primary} />
           </TouchableOpacity>
           <Text style={styles.iconLabel}>Reject</Text>
         </View>
@@ -180,10 +180,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   iconBtnDanger: {
-    backgroundColor: "#EF4444",
+    backgroundColor: "#F4F1F2",
+    borderWidth: 1.5,
+    borderColor: Theme.colors.primary,
   },
   iconBtnSecondary: {
-    backgroundColor: "#fff",
+    backgroundColor: "#F4F1F2",
     borderWidth: 1.5,
     borderColor: Theme.colors.primary,
   },
