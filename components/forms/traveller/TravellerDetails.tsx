@@ -1,4 +1,4 @@
-import Theme from '@/constants/Theme';
+import AppTheme from '@/constants/Theme';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Formik } from 'formik';
 import React, { useState } from 'react';
@@ -49,13 +49,13 @@ const ValidationSchema = Yup.object().shape({
     mode: Yup.string().required("Mode of travel is required"),
     spaceType: Yup.string().required("Required"),
     spaceNumber: Yup.string().required("Enter the number of spaces available"),
-    flightNumber: Yup.string().when('modeOfTravel', {
-        is: 'Flight',
+    flightNumber: Yup.string().when('mode', {
+        is: 'FLIGHT',
         then: (schema) => schema.required('Flight number is required for flights'),
         otherwise: (schema) => schema.notRequired(),
     }),
-    vehiclePlate: Yup.string().when('modeOfTravel', {
-        is: 'Car',
+    vehiclePlate: Yup.string().when('mode', {
+        is: 'CAR',
         then: (schema) => schema.required('Vehicle plate is required for car travel'),
         otherwise: (schema) => schema.notRequired(),
     }),
@@ -164,15 +164,27 @@ const TravellerDetailsForm: React.FC<TravellerDetailsFormProps> = ({
                         handleChange,
                         handleSubmit,
                         setFieldValue,
-                    }) => (
-                        <View style={styles.formContainer}>
+                        setFieldTouched,
+                    }) => {
+                        const updateField = async (
+                            field: keyof typeof initialValues,
+                            value: string,
+                        ) => {
+                            await setFieldValue(field, value, false);
+                            await setFieldTouched(field, true, true);
+                        };
+
+                        return (
+                            <View style={styles.formContainer}>
                             <Text style={styles.sectionTitle}>Departure</Text>
 
                             <Text style={styles.inputLabel}>Country</Text>
                             <CustomDropdown
                                 value={values.originCountry}
                                 options={countries}
-                                onSelect={(value) => setFieldValue('originCountry', value)}
+                                onSelect={(value) => {
+                                    void updateField('originCountry', value);
+                                }}
                                 showLabel={false}
                             />
                             {touched.originCountry && errors.originCountry && (
@@ -183,7 +195,9 @@ const TravellerDetailsForm: React.FC<TravellerDetailsFormProps> = ({
                             <CustomDropdown
                                 value={values.originCity}
                                 options={cities}
-                                onSelect={(value) => setFieldValue('originCity', value)}
+                                onSelect={(value) => {
+                                    void updateField('originCity', value);
+                                }}
                                 showLabel={false}
                             />
                             {touched.originCity && errors.originCity && (
@@ -227,7 +241,9 @@ const TravellerDetailsForm: React.FC<TravellerDetailsFormProps> = ({
                             <CustomDropdown
                                 value={values.destinationCountry}
                                 options={countries}
-                                onSelect={(value) => setFieldValue('destinationCountry', value)}
+                                onSelect={(value) => {
+                                    void updateField('destinationCountry', value);
+                                }}
                                 showLabel={false}
                             />
                             {touched.destinationCountry && errors.destinationCountry && (
@@ -238,7 +254,9 @@ const TravellerDetailsForm: React.FC<TravellerDetailsFormProps> = ({
                             <CustomDropdown
                                 value={values.destinationCity}
                                 options={cities}
-                                onSelect={(value) => setFieldValue('destinationCity', value)}
+                                onSelect={(value) => {
+                                    void updateField('destinationCity', value);
+                                }}
                                 showLabel={false}
                             />
                             {touched.destinationCity && errors.destinationCity && (
@@ -286,7 +304,7 @@ const TravellerDetailsForm: React.FC<TravellerDetailsFormProps> = ({
                                         if (event.type === 'set' && selectedDate) {
                                             const formatted = selectedDate.toISOString().split('T')[0];
                                             setTempDate(selectedDate);
-                                            setFieldValue('departureDate', formatted);
+                                            void updateField('departureDate', formatted);
                                         }
                                     }}
                                     minimumDate={new Date()}
@@ -307,7 +325,7 @@ const TravellerDetailsForm: React.FC<TravellerDetailsFormProps> = ({
                                                 hour12: true,
                                             });
                                             setTempTime(selectedTime);
-                                            setFieldValue('departureAt', formatted);
+                                            void updateField('departureAt', formatted);
                                         }
                                     }}
                                 />
@@ -323,7 +341,7 @@ const TravellerDetailsForm: React.FC<TravellerDetailsFormProps> = ({
                                         if (event.type === 'set' && selectedDate) {
                                             const formatted = selectedDate.toISOString().split('T')[0];
                                             setTempArrivalDate(selectedDate);
-                                            setFieldValue('arrivalDate', formatted);
+                                            void updateField('arrivalDate', formatted);
                                         }
                                     }}
                                     minimumDate={new Date()}
@@ -344,7 +362,7 @@ const TravellerDetailsForm: React.FC<TravellerDetailsFormProps> = ({
                                                 hour12: true,
                                             });
                                             setTempArrivalTime(selectedTime);
-                                            setFieldValue('arrivalAt', formatted);
+                                            void updateField('arrivalAt', formatted);
                                         }
                                     }}
                                 />
@@ -356,7 +374,9 @@ const TravellerDetailsForm: React.FC<TravellerDetailsFormProps> = ({
                             <CustomDropdown
                                 value={values.mode}
                                 options={modes}
-                                onSelect={(value) => setFieldValue('mode', value)}
+                                onSelect={(value) => {
+                                    void updateField('mode', value);
+                                }}
                                 showLabel={false}
                             />
                             {touched.mode && errors.mode && (
@@ -396,7 +416,9 @@ const TravellerDetailsForm: React.FC<TravellerDetailsFormProps> = ({
                                 <CustomDropdown
                                     value={values.spaceType}
                                     options={spaceTypes}
-                                    onSelect={(value) => setFieldValue('spaceType', value)}
+                                    onSelect={(value) => {
+                                        void updateField('spaceType', value);
+                                    }}
                                     placeholder="Select space type"
                                     showLabel={false}
                                 />
@@ -420,8 +442,9 @@ const TravellerDetailsForm: React.FC<TravellerDetailsFormProps> = ({
                                 loading={loading}
                                 onPress={() => handleSubmit()}
                             />
-                        </View>
-                    )}
+                            </View>
+                        );
+                    }}
                 </Formik>
             </ScrollView>
         </View>
@@ -431,45 +454,45 @@ const TravellerDetailsForm: React.FC<TravellerDetailsFormProps> = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Theme.colors.white,
+        backgroundColor: AppTheme.colors.white,
     },
     formContainer: {
         flex: 1,
-        paddingTop: Theme.spacing.lg,
-        paddingHorizontal: Theme.spacing.xl,
+        paddingTop: AppTheme.spacing.lg,
+        paddingHorizontal: AppTheme.spacing.xl,
     },
     title: {
-        ...Theme.typography.h2,
-        color: Theme.colors.black,
+        ...AppTheme.typography.h2,
+        color: AppTheme.colors.black,
         textAlign: 'center',
-        marginBottom: Theme.spacing.md,
-        marginTop: Theme.spacing.xxxl,
+        marginBottom: AppTheme.spacing.md,
+        marginTop: AppTheme.spacing.xxxl,
     },
     sectionTitle: {
-        ...Theme.typography.body,
-        color: Theme.colors.black,
-        marginTop: Theme.spacing.xs,
-        marginBottom: Theme.spacing.sm,
+        ...AppTheme.typography.body,
+        color: AppTheme.colors.black,
+        marginTop: AppTheme.spacing.xs,
+        marginBottom: AppTheme.spacing.sm,
         fontWeight: '500',
     },
     caption: {
-        ...Theme.typography.caption,
+        ...AppTheme.typography.caption,
     },
     inputLabel: {
-        ...Theme.typography.caption,
-        padding: Theme.spacing.sm,
+        ...AppTheme.typography.caption,
+        padding: AppTheme.spacing.sm,
         color: "#595959",
         fontWeight: '600',
     },
     rowContainer: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        marginBottom: Theme.spacing.md,
+        marginBottom: AppTheme.spacing.md,
         gap: 10,
     },
     inputWrapper: {
         flex: 1,
-        borderColor: Theme.colors.black,
+        borderColor: AppTheme.colors.black,
     },
     dimensionInput: {
         flex: 1,
@@ -481,26 +504,26 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         paddingHorizontal: 14,
         borderWidth: 1.2,
-        borderColor: Theme.colors.text.light,
+        borderColor: AppTheme.colors.text.light,
         borderRadius: 10,
-        backgroundColor: Theme.colors.white,
+        backgroundColor: AppTheme.colors.white,
     },
     dateText: {
-        color: Theme.colors.text.dark,
+        color: AppTheme.colors.text.dark,
         fontSize: 14,
     },
     placeholderText: {
-        color: Theme.colors.text.gray,
+        color: AppTheme.colors.text.gray,
     },
     dateIcon: {
         fontSize: 18,
     },
     errorText: {
         fontSize: 12,
-        color: Theme.colors.error,
+        color: AppTheme.colors.error,
         marginTop: -8,
         marginBottom: 12,
-        marginLeft: Theme.spacing.xs,
+        marginLeft: AppTheme.spacing.xs,
     },
 })
 
