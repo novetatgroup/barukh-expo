@@ -1,18 +1,14 @@
-import React from "react";
-import { useLocalSearchParams, useRouter } from "expo-router";
 import ShipmentDetailsForm from "@/components/forms/shipments/ShipmentDetailsForm";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React from "react";
 
-const ShipmentDetailsScreen = () => {
+const SenderShipmentDetailsScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
 
-  const handleBack = () => {
-    router.back();
-  };
-
   return (
     <ShipmentDetailsForm
-      role="traveller"
+      role="sender"
       orderId={(params.orderId as string) || "#01-BK1624"}
       itemId={(params.itemId as string) || "#BK1624"}
       itemName={(params.itemName as string) || "MacBook Pro"}
@@ -21,9 +17,9 @@ const ShipmentDetailsScreen = () => {
       shipmentCost={(params.shipmentCost as string) || "$10.00"}
       insuranceFee={(params.insuranceFee as string) || "$3.20"}
       serviceFee={(params.serviceFee as string) || "$1.50"}
-      onBack={handleBack}
+      onBack={() => router.back()}
     />
   );
 };
 
-export default ShipmentDetailsScreen;
+export default SenderShipmentDetailsScreen;

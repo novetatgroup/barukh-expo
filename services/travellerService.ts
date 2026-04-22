@@ -1,4 +1,4 @@
-import { apiRequest, API_ENDPOINTS } from "./api";
+import { API_ENDPOINTS, apiRequest } from "./api";
 
 export interface CreateTravellerParams {
 	userId: string;
