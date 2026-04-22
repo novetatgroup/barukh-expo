@@ -67,6 +67,9 @@ const toTimeField = (value?: string): string => {
   });
 };
 
+const isFiniteNumber = (value: number | null | undefined): value is number =>
+  typeof value === "number" && Number.isFinite(value);
+
 const toLocationValue = (
   city?: string,
   country?: string,
@@ -149,13 +152,13 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
           originCity: values.originCity,
           destinationCountry: values.destinationCountry,
           destinationCity: values.destinationCity,
-          ...(values.originLatitude && {
+          ...(isFiniteNumber(values.originLatitude) && isFiniteNumber(values.originLongitude) && {
             originLatitude: values.originLatitude,
-            originLongitude: values.originLongitude ?? undefined,
+            originLongitude: values.originLongitude,
           }),
-          ...(values.destinationLatitude && {
+          ...(isFiniteNumber(values.destinationLatitude) && isFiniteNumber(values.destinationLongitude) && {
             destinationLatitude: values.destinationLatitude,
-            destinationLongitude: values.destinationLongitude ?? undefined,
+            destinationLongitude: values.destinationLongitude,
           }),
           departureAt: combineDateAndTime(values.departureDate, values.departureTime),
           arrivalAt: combineDateAndTime(values.arrivalDate, values.arrivalTime),

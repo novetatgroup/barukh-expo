@@ -155,6 +155,22 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
     }
   };
 
+  const buildFallbackLocation = (suggestion: AutocompleteSuggestion): LocationData => {
+    const locationParts = suggestion.fullText.split(",").map((part) => part.trim()).filter(Boolean);
+    const city = suggestion.mainText || locationParts[0] || suggestion.fullText;
+    const country = locationParts[locationParts.length - 1] || suggestion.secondaryText || "";
+
+    return {
+      placeId: suggestion.placeId,
+      description: suggestion.fullText,
+      city,
+      country,
+      countryCode: country,
+      latitude: 0,
+      longitude: 0,
+    };
+  };
+
   const handleInputChange = (text: string) => {
     setInputValue(text);
     setShowSuggestions(true);
@@ -179,9 +195,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
     const locationData = await fetchPlaceDetails(suggestion.placeId, suggestion.fullText);
     setIsLoading(false);
 
-    if (locationData) {
-      onLocationSelect(locationData);
-    }
+    onLocationSelect(locationData ?? buildFallbackLocation(suggestion));
   };
 
   const handleBlur = () => {

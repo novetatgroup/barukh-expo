@@ -1,13 +1,13 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Platform, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { FormikErrors, FormikTouched, FormikHandlers } from "formik";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import AppTheme from "@/constants/Theme";
+import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { FormikErrors, FormikHandlers, FormikTouched } from "formik";
+import React, { useState } from "react";
+import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import CustomDropdown from "../../../ui/Dropdown";
 import LocationPicker from "../../../ui/LocationPicker";
-import { PackageFormValues, LocationData } from "./types";
 import { modeOptions } from "./constants";
+import { LocationData, PackageFormValues } from "./types";
 
 type TravelDetailsStepProps = {
   values: PackageFormValues;
@@ -56,8 +56,8 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
     field: keyof PackageFormValues,
     value: PackageFormValues[keyof PackageFormValues],
   ) => {
-    await setFieldValue(field, value, false);
-    await setFieldTouched(field, true, true);
+    await setFieldValue(field, value, true);
+    await setFieldTouched(field, true, false);
   };
 
   const updateLocation = async (
@@ -69,12 +69,12 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
     const latitudeField = field === "origin" ? "originLatitude" : "destinationLatitude";
     const longitudeField = field === "origin" ? "originLongitude" : "destinationLongitude";
 
-    await setFieldValue(field, location, false);
     await setFieldValue(countryField, location?.countryCode || location?.country || "", false);
     await setFieldValue(cityField, location?.city || "", false);
     await setFieldValue(latitudeField, location?.latitude ?? null, false);
     await setFieldValue(longitudeField, location?.longitude ?? null, false);
-    await setFieldTouched(field, true, true);
+    await setFieldValue(field, location, true);
+    await setFieldTouched(field, true, false);
   };
 
   return (
@@ -360,10 +360,10 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
         options={modeOptions}
         onSelect={(value) => {
           void (async () => {
-            await setFieldValue("mode", value, false);
             await setFieldValue("flightNumber", "", false);
             await setFieldValue("vehiclePlate", "", false);
-            await setFieldTouched("mode", true, true);
+            await setFieldValue("mode", value, true);
+            await setFieldTouched("mode", true, false);
           })();
         }}
         placeholder="Select Mode of Transport"
