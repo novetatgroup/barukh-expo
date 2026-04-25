@@ -1,10 +1,19 @@
 import React, { useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { Alert } from "react-native";
-import { router } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import UploadPackageForm from "@/components/forms/traveller/UploadPackageForm";
 
 const DeliveryUploadScreen = () => {
+    const router = useRouter();
+    const params = useLocalSearchParams<{
+        itemId?: string;
+        itemName?: string;
+        progress?: string;
+        packageUploaded?: string;
+        tripStarted?: string;
+        verificationCompleted?: string;
+    }>();
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
     const pickImage = async () => {
@@ -33,7 +42,18 @@ const DeliveryUploadScreen = () => {
             return;
         }
 
-        router.push("/(traveller)/home");
+        router.push({
+            pathname: "/(traveller)/trackingDetails",
+            params: {
+                itemId: params.itemId || "#BK1624",
+                itemName: params.itemName || "MacBook Pro",
+                progress: params.progress || "In Transit",
+                packageUploaded: params.packageUploaded || "false",
+                tripStarted: params.tripStarted || "false",
+                verificationCompleted: params.verificationCompleted || "false",
+                deliveryPhotoUploaded: "true",
+            },
+        });
     };
 
     return (
@@ -43,6 +63,8 @@ const DeliveryUploadScreen = () => {
             onTakePhoto={takePhoto}
             onUpload={handleUpload}
             selectedImage={selectedImage}
+            title="Upload Delivery Photo"
+            instructionText="Upload a clear delivery photo to justify the handoff and confirm the package reached the recipient safely."
         />
     );
 };

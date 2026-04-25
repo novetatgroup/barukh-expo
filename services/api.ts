@@ -21,7 +21,7 @@ export const API_ENDPOINTS = {
 		createSender: "/sender/create-sender",
 		getSender: (userId: string) => `/sender/${userId}`,
 		createPackage: "/sender/create-package",
-		getPackages: (userId: string) => `/sender/${userId}/packages`,
+		getPackages: (userId: string) => `/sender/${userId}/packages/all`,
 	},
 	matching: {
 		autoAssign: "/matching/auto-assign",
@@ -33,6 +33,8 @@ export const API_ENDPOINTS = {
 	},
 	shipments: {
 		findOne: (shipmentId: string) => `/shipments/find-one/${shipmentId}`,
+		listByRole: (actorId: string, role: "SENDER" | "TRAVELLER") =>
+			`/shipments/${actorId}/?role=${role}`,
 	},
 } as const;
 

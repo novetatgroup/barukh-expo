@@ -10,82 +10,84 @@ import {
   View,
 } from "react-native";
 
-type Step = {
+type TravellerStep = {
   key:
-    | "receiptUploaded"
-    | "trackingEntered"
-    | "orderConfirmed"
+    | "packageUploaded"
+    | "tripStarted"
     | "verificationCompleted"
-    | "deliveryStatus";
+    | "deliveryPhotoUploaded";
   title: string;
-  route?:
-    | "/(sender)/uploadReceipt"
-    | "/(sender)/enterTrackingNumber"
-    | "/(sender)/confirmOrder"
-    | "/(sender)/verificationScreen";
+  route:
+    | "/(traveller)/packageUpload"
+    | "/(traveller)/startTrip"
+    | "/(traveller)/verificationScreen"
+    | "/(traveller)/deliveryUpload";
 };
 
-const checklistSteps: Step[] = [
-  { key: "receiptUploaded", title: "Upload Receipt", route: "/(sender)/uploadReceipt" },
-  { key: "trackingEntered", title: "Enter Tracking Number", route: "/(sender)/enterTrackingNumber" },
-  { key: "orderConfirmed", title: "Confirm Order", route: "/(sender)/confirmOrder" },
-  { key: "verificationCompleted", title: "Verify Traveller Code", route: "/(sender)/verificationScreen" },
-  { key: "deliveryStatus", title: "Delivery Status" },
-];
-
-const completedSteps = [
-  { date: "Mon, 21 July 2025", title: "Receipt Uploaded" },
-  { date: "Mon, 21 July 2025", title: "Package Expected by Traveler" },
-  { date: "Thur, 27 July 2025", title: "Traveler has item" },
-  { date: "Sat, 29 July 2025", title: "Package in Transit" },
-  { date: "Sat, 29 July 2025", title: "Package Delivered" },
+const travellerSteps: TravellerStep[] = [
+  {
+    key: "packageUploaded",
+    title: "Upload Package",
+    route: "/(traveller)/packageUpload",
+  },
+  {
+    key: "tripStarted",
+    title: "Start Trip",
+    route: "/(traveller)/startTrip",
+  },
+  {
+    key: "verificationCompleted",
+    title: "Verify Sender Code",
+    route: "/(traveller)/verificationScreen",
+  },
+  {
+    key: "deliveryPhotoUploaded",
+    title: "Upload Delivery Photo",
+    route: "/(traveller)/deliveryUpload",
+  },
 ];
 
 const isComplete = (value?: string) => value === "true";
 
-const TrackingDetailsScreen = () => {
+const TravellerTrackingDetailsScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams<{
-    orderId?: string;
     itemId?: string;
     itemName?: string;
-    receiptUploaded?: string;
-    trackingEntered?: string;
-    orderConfirmed?: string;
+    progress?: string;
+    packageUploaded?: string;
+    tripStarted?: string;
     verificationCompleted?: string;
+    deliveryPhotoUploaded?: string;
   }>();
 
   const itemId = params.itemId || "#BK1624";
   const itemName = params.itemName || "MacBook Pro";
-  const receiptUploaded = isComplete(params.receiptUploaded);
-  const trackingEntered = isComplete(params.trackingEntered);
-  const orderConfirmed = isComplete(params.orderConfirmed);
-  const verificationCompleted = isComplete(params.verificationCompleted);
-  const allComplete =
-    receiptUploaded && trackingEntered && orderConfirmed && verificationCompleted;
 
-  const completionByKey: Record<Step["key"], boolean> = {
-    receiptUploaded,
-    trackingEntered,
-    orderConfirmed,
-    verificationCompleted,
-    deliveryStatus: allComplete,
+  const completionByKey: Record<TravellerStep["key"], boolean> = {
+    packageUploaded: isComplete(params.packageUploaded),
+    tripStarted: isComplete(params.tripStarted),
+    verificationCompleted: isComplete(params.verificationCompleted),
+    deliveryPhotoUploaded: isComplete(params.deliveryPhotoUploaded),
   };
 
   const baseParams = {
-    orderId: params.orderId || "#01-BK1624",
     itemId,
     itemName,
-    receiptUploaded: String(receiptUploaded),
-    trackingEntered: String(trackingEntered),
-    orderConfirmed: String(orderConfirmed),
-    verificationCompleted: String(verificationCompleted),
+    progress: params.progress || "In Transit",
+    packageUploaded: String(completionByKey.packageUploaded),
+    tripStarted: String(completionByKey.tripStarted),
+    verificationCompleted: String(completionByKey.verificationCompleted),
+    deliveryPhotoUploaded: String(completionByKey.deliveryPhotoUploaded),
   };
 
-  const handleStepPress = (step: Step) => {
-    if (!step.route) return;
-    router.replace({
-      pathname: step.route,
+  const handleStepPress = (step: TravellerStep) => {
+    router.push({
+      pathname:
+        step.key === "deliveryPhotoUploaded" &&
+        !completionByKey.verificationCompleted
+          ? "/(traveller)/verificationScreen"
+          : step.route,
       params: baseParams,
     });
   };
@@ -120,7 +122,7 @@ const TrackingDetailsScreen = () => {
                 color={Theme.colors.primary}
               />
             </View>
-            <View>
+            <View style={styles.packageText}>
               <Text style={styles.itemId}>{itemId}</Text>
               <Text style={styles.itemName}>{itemName}</Text>
             </View>
@@ -128,52 +130,35 @@ const TrackingDetailsScreen = () => {
 
           <Text style={styles.sectionTitle}>Order Status</Text>
 
-          {allComplete ? (
-            <View style={styles.timeline}>
-              {completedSteps.map((step, index) => (
-                <View key={step.title} style={styles.timelineRow}>
-                  <View style={styles.markerColumn}>
-                    <View style={[styles.marker, styles.completedMarker]}>
-                      <Ionicons name="checkmark" size={14} color={Theme.colors.white} />
-                    </View>
-                    {index < completedSteps.length - 1 ? (
-                      <View style={[styles.timelineLine, styles.completedLine]} />
-                    ) : null}
-                  </View>
-                  <View style={styles.timelineText}>
-                    <Text style={styles.stepDate}>{step.date}</Text>
-                    <Text style={styles.completedTitle}>{step.title}</Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <View style={styles.timeline}>
-              {checklistSteps.map((step, index) => {
-                const checked = completionByKey[step.key];
-                return (
-                  <TouchableOpacity
-                    key={step.key}
-                    activeOpacity={step.route ? 0.75 : 1}
-                    style={styles.timelineRow}
-                    onPress={() => handleStepPress(step)}
-                    disabled={!step.route}
+          <View style={styles.timeline}>
+            {travellerSteps.map((step, index) => (
+              <TouchableOpacity
+                key={step.key}
+                activeOpacity={0.75}
+                style={styles.timelineRow}
+                onPress={() => handleStepPress(step)}
+              >
+                <View style={styles.markerColumn}>
+                  <View
+                    style={[
+                      styles.marker,
+                      completionByKey[step.key] && styles.completedMarker,
+                    ]}
                   >
-                    <View style={styles.markerColumn}>
-                      <View style={[styles.marker, checked && styles.completedMarker]}>
-                        <Ionicons name="checkmark" size={14} color={Theme.colors.white} />
-                      </View>
-                      {index < checklistSteps.length - 1 ? <View style={styles.timelineLine} /> : null}
-                    </View>
-                    <View style={styles.timelineText}>
-                      <Text style={styles.stepLabel}>STEP {index + 1}</Text>
-                      <Text style={styles.checklistTitle}>{step.title}</Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          )}
+                    <Ionicons name="checkmark" size={14} color={Theme.colors.white} />
+                  </View>
+                  {index < travellerSteps.length - 1 ? (
+                    <View style={styles.timelineLine} />
+                  ) : null}
+                </View>
+
+                <View style={styles.timelineText}>
+                  <Text style={styles.stepLabel}>STEP {index + 1}</Text>
+                  <Text style={styles.stepTitle}>{step.title}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         <TouchableOpacity
@@ -191,7 +176,7 @@ const TrackingDetailsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F4F1F2",
+    backgroundColor: Theme.colors.background.secondary,
   },
   header: {
     flexDirection: "row",
@@ -225,7 +210,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: Theme.spacing.xl,
     paddingTop: Theme.spacing.xl,
-    paddingBottom: Theme.spacing.xl,
+    paddingBottom: Theme.spacing.xxl,
+    shadowColor: Theme.colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   packageRow: {
     flexDirection: "row",
@@ -241,6 +231,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: Theme.spacing.sm,
   },
+  packageText: {
+    flex: 1,
+  },
   itemId: {
     fontSize: 17,
     fontFamily: "Inter-Bold",
@@ -253,17 +246,17 @@ const styles = StyleSheet.create({
     color: Theme.colors.text.gray,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: "Inter-SemiBold",
     color: Theme.colors.text.dark,
-    marginBottom: Theme.spacing.md,
+    marginBottom: Theme.spacing.lg,
   },
   timeline: {
     paddingLeft: 2,
   },
   timelineRow: {
     flexDirection: "row",
-    minHeight: 66,
+    minHeight: 72,
   },
   markerColumn: {
     width: 28,
@@ -287,13 +280,10 @@ const styles = StyleSheet.create({
     borderColor: "#6B7280",
     marginTop: 4,
   },
-  completedLine: {
-    borderColor: Theme.colors.green,
-  },
   timelineText: {
     flex: 1,
     paddingLeft: Theme.spacing.sm,
-    paddingBottom: Theme.spacing.md,
+    paddingBottom: Theme.spacing.lg,
   },
   stepLabel: {
     fontSize: 9,
@@ -301,25 +291,14 @@ const styles = StyleSheet.create({
     color: Theme.colors.text.lightGray,
     marginBottom: 2,
   },
-  stepDate: {
-    fontSize: 8,
-    fontFamily: "Inter-Regular",
-    color: Theme.colors.text.lightGray,
-    marginBottom: 1,
-  },
-  checklistTitle: {
-    fontSize: 15,
-    fontFamily: "Inter-SemiBold",
-    color: Theme.colors.text.dark,
-  },
-  completedTitle: {
+  stepTitle: {
     fontSize: 15,
     fontFamily: "Inter-SemiBold",
     color: Theme.colors.text.dark,
   },
   closeButton: {
-    height: 50,
-    borderRadius: 25,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: Theme.colors.primary,
     alignItems: "center",
     justifyContent: "center",
@@ -332,4 +311,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TrackingDetailsScreen;
+export default TravellerTrackingDetailsScreen;

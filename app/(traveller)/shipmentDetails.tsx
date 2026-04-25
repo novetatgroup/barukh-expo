@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import ShipmentDetailsForm from "@/components/forms/shipments/ShipmentDetailsForm";
+import ShipmentDetailsForm from "@/components/forms/traveller/ShipmentDetailsForm";
 
 const ShipmentDetailsScreen = () => {
   const router = useRouter();
@@ -12,15 +12,14 @@ const ShipmentDetailsScreen = () => {
 
   return (
     <ShipmentDetailsForm
-      role="traveller"
-      orderId={(params.orderId as string) || "#01-BK1624"}
       itemId={(params.itemId as string) || "#BK1624"}
+      shipperName={(params.shipperName as string) || "James Lutalo"}
+      receiverName={(params.receiverName as string) || "Sanyu Twine"}
       itemName={(params.itemName as string) || "MacBook Pro"}
+      fromLocation={(params.fromLocation as string) || "Ontario, Canada"}
+      toLocation={(params.toLocation as string) || "Kampala, Uganda"}
+      status={(params.status as string) || "Assigned"}
       progress={(params.progress as string) || "Delivered"}
-      expectedDelivery={(params.expectedDelivery as string) || "Jul 30"}
-      shipmentCost={(params.shipmentCost as string) || "$10.00"}
-      insuranceFee={(params.insuranceFee as string) || "$3.20"}
-      serviceFee={(params.serviceFee as string) || "$1.50"}
       onBack={handleBack}
     />
   );

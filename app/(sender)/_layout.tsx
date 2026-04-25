@@ -13,6 +13,7 @@ export default function SenderLayout() {
       <Stack.Screen name="payScreen" />
       <Stack.Screen name="shipmentDetails" />
       <Stack.Screen name="trackingDetails" />
+      <Stack.Screen name="verificationScreen" />
       <Stack.Screen name="travellerMatchCategoryDetails" />
       <Stack.Screen name="travellerMatchDetails" />
       <Stack.Screen name="travellerRequestDetails" />

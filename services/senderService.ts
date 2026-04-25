@@ -98,6 +98,18 @@ export interface ShipmentDetails {
 	traveller: { id: string; userId: string };
 }
 
+export interface GetShipmentsResponse {
+	data: ShipmentDetails[];
+	meta: {
+		page: number;
+		limit: number;
+		total: number;
+		totalPages: number;
+		hasNextPage: boolean;
+		hasPreviousPage: boolean;
+	};
+}
+
 export interface GetSenderResponse {
 	senderId: string;
 	userId: string;
@@ -166,6 +178,7 @@ export const senderService = {
 	},
 
 	async getPackages(userId: string, accessToken: string) {
+		console.log({userId,accessToken, getPackages:API_ENDPOINTS.sender.getPackages(userId) })
 		return apiRequest<GetPackagesResponse>(API_ENDPOINTS.sender.getPackages(userId), {
 			method: "GET",
 			headers: {
@@ -191,5 +204,17 @@ export const senderService = {
 				Authorization: `Bearer ${accessToken}`,
 			},
 		});
+	},
+
+	async getSenderShipments(senderId: string, accessToken: string) {
+		return apiRequest<GetShipmentsResponse>(
+			API_ENDPOINTS.shipments.listByRole(senderId, "SENDER"),
+			{
+				method: "GET",
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			}
+		);
 	},
 };

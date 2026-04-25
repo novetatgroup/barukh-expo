@@ -23,6 +23,7 @@ const UploadReceiptScreen = () => {
     receiptUploaded?: string;
     trackingEntered?: string;
     orderConfirmed?: string;
+    verificationCompleted?: string;
   }>();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -33,17 +34,7 @@ const UploadReceiptScreen = () => {
     receiptUploaded: params.receiptUploaded || "false",
     trackingEntered: params.trackingEntered || "false",
     orderConfirmed: params.orderConfirmed || "false",
-  };
-
-  const markReceiptUploaded = (imageUri: string) => {
-    setSelectedImage(imageUri);
-    router.replace({
-      pathname: "/(sender)/trackingDetails",
-      params: {
-        ...trackingParams,
-        receiptUploaded: "true",
-      },
-    });
+    verificationCompleted: params.verificationCompleted || "false",
   };
 
   const handleBack = () => {
@@ -58,11 +49,12 @@ const UploadReceiptScreen = () => {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
         allowsEditing: true,
+        aspect: [3, 4],
         quality: 0.8,
       });
 
       if (!result.canceled && result.assets[0]) {
-        markReceiptUploaded(result.assets[0].uri);
+        setSelectedImage(result.assets[0].uri);
       }
     } catch (error) {
       console.error("Receipt picker error:", error);
@@ -87,13 +79,13 @@ const UploadReceiptScreen = () => {
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ["images"],
         allowsEditing: true,
+        aspect: [3, 4],
         quality: 0.8,
       });
 
       if (!result.canceled && result.assets[0]) {
-        markReceiptUploaded(result.assets[0].uri);
+        setSelectedImage(result.assets[0].uri);
       }
     } catch (error) {
       console.error("Receipt camera error:", error);
@@ -101,14 +93,35 @@ const UploadReceiptScreen = () => {
     }
   };
 
+  const handleUpload = () => {
+    if (!selectedImage) {
+      Alert.alert("No image selected", "Please choose an image first.");
+      return;
+    }
+
+    router.replace({
+      pathname: "/(sender)/trackingDetails",
+      params: {
+        ...trackingParams,
+        receiptUploaded: "true",
+      },
+    });
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.headerButton}>
-          <Ionicons name="chevron-back" size={26} color={Theme.colors.black} />
+          <Ionicons name="chevron-back" size={24} color={Theme.colors.black} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Upload Receipt</Text>
-        <View style={styles.headerButton} />
+
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Upload Receipt</Text>
+        </View>
+
+        <TouchableOpacity style={styles.headerButton}>
+          <Ionicons name="ellipsis-vertical" size={24} color={Theme.colors.black} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -116,40 +129,51 @@ const UploadReceiptScreen = () => {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.instructions}>
-          Upload receipt shared by the recipient to continue tracking.
+        <Text style={styles.instructionText}>
+          Upload the receipt image first so the sender flow follows the same photo
+          review step as the traveller flow.
         </Text>
 
         <TouchableOpacity
-          activeOpacity={0.8}
-          style={styles.uploadBox}
+          style={styles.uploadArea}
           onPress={pickImage}
+          activeOpacity={0.75}
         >
           {selectedImage ? (
             <Image source={{ uri: selectedImage }} style={styles.previewImage} />
           ) : (
-            <>
-              <View style={styles.uploadIcon}>
-                <Ionicons name="image-outline" size={30} color={Theme.colors.green} />
-              </View>
-              <Text style={styles.selectText}>Select file</Text>
-            </>
+            <View style={styles.placeholderContainer}>
+              <Ionicons
+                name="image-outline"
+                size={48}
+                color={Theme.colors.text.lightGray}
+              />
+              <Text style={styles.uploadText}>Select file</Text>
+            </View>
           )}
         </TouchableOpacity>
 
-        <View style={styles.orRow}>
-          <View style={styles.orLine} />
-          <Text style={styles.orText}>or</Text>
-          <View style={styles.orLine} />
-        </View>
+        <Text style={styles.orText}>or</Text>
 
         <TouchableOpacity
-          activeOpacity={0.85}
           style={styles.cameraButton}
           onPress={takePhoto}
+          activeOpacity={0.85}
         >
-          <Ionicons name="camera-outline" size={20} color={Theme.colors.white} />
+          <Ionicons name="camera" size={20} color={Theme.colors.white} />
           <Text style={styles.cameraButtonText}>Open Camera & Take Photo</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.primaryButton,
+            !selectedImage && styles.disabledButton,
+          ]}
+          onPress={handleUpload}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="cloud-upload" size={20} color={Theme.colors.white} />
+          <Text style={styles.primaryButtonText}>Upload Receipt</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -159,107 +183,112 @@ const UploadReceiptScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F4F1F2",
+    backgroundColor: Theme.colors.background.secondary,
+    paddingTop: Theme.spacing.xxl,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 96,
-    paddingHorizontal: Theme.spacing.lg,
-    paddingBottom: Theme.spacing.xl,
+    paddingHorizontal: Theme.spacing.md,
+    paddingVertical: Theme.spacing.md,
   },
   headerButton: {
-    width: 32,
-    height: 32,
+    width: 40,
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
   },
+  headerCenter: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    alignItems: "center",
+  },
   headerTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontFamily: "Inter-SemiBold",
-    color: Theme.colors.text.dark,
+    color: Theme.colors.black,
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    paddingHorizontal: Theme.spacing.lg,
-    paddingTop: Theme.spacing.md,
-    paddingBottom: Theme.spacing.xl,
-    alignItems: "center",
+    padding: Theme.spacing.lg,
   },
-  instructions: {
-    maxWidth: 250,
-    textAlign: "center",
+  instructionText: {
     fontSize: 14,
-    lineHeight: 22,
     fontFamily: "Inter-Regular",
     color: Theme.colors.text.gray,
+    textAlign: "center",
     marginBottom: Theme.spacing.xl,
+    lineHeight: 20,
   },
-  uploadBox: {
+  uploadArea: {
     width: "100%",
-    minHeight: 220,
-    borderRadius: 18,
-    borderWidth: 1.5,
+    height: 280,
+    borderWidth: 3,
+    borderColor: Theme.colors.text.border,
+    borderRadius: Theme.borderRadius.md,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Theme.colors.background.secondary,
     borderStyle: "dashed",
-    borderColor: Theme.colors.green,
-    backgroundColor: Theme.colors.white,
-    alignItems: "center",
-    justifyContent: "center",
     overflow: "hidden",
-  },
-  uploadIcon: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: "#EAF8EE",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: Theme.spacing.sm,
-  },
-  selectText: {
-    fontSize: 14,
-    fontFamily: "Inter-SemiBold",
-    color: Theme.colors.text.dark,
   },
   previewImage: {
     width: "100%",
     height: "100%",
+    borderRadius: Theme.borderRadius.md,
     resizeMode: "cover",
   },
-  orRow: {
-    width: "100%",
-    flexDirection: "row",
+  placeholderContainer: {
     alignItems: "center",
-    marginVertical: Theme.spacing.xl,
   },
-  orLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#D8D8D8",
+  uploadText: {
+    fontSize: 14,
+    fontFamily: "Inter-Regular",
+    color: Theme.colors.text.lightGray,
+    marginTop: Theme.spacing.sm,
   },
   orText: {
-    marginHorizontal: Theme.spacing.sm,
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: "Inter-Regular",
     color: Theme.colors.text.gray,
+    textAlign: "center",
+    marginVertical: Theme.spacing.md,
   },
   cameraButton: {
-    width: "100%",
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: Theme.colors.primary,
     flexDirection: "row",
+    backgroundColor: Theme.colors.primary,
+    borderRadius: Theme.borderRadius.lg,
+    paddingVertical: Theme.spacing.md,
     alignItems: "center",
     justifyContent: "center",
     gap: Theme.spacing.sm,
   },
   cameraButtonText: {
-    fontSize: 14,
-    fontFamily: "Inter-SemiBold",
     color: Theme.colors.white,
+    fontSize: 16,
+    fontFamily: "Inter-SemiBold",
+  },
+  primaryButton: {
+    flexDirection: "row",
+    backgroundColor: Theme.colors.primary,
+    borderRadius: Theme.borderRadius.lg,
+    paddingVertical: Theme.spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Theme.spacing.sm,
+    marginTop: Theme.spacing.md,
+  },
+  primaryButtonText: {
+    color: Theme.colors.white,
+    fontSize: 16,
+    fontFamily: "Inter-SemiBold",
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });
 

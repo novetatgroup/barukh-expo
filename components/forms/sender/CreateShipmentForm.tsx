@@ -77,6 +77,8 @@ const CreateShipmentForm: React.FC<CreateShipmentFormProps> = ({ onSubmit }) => 
           requiredByDate: values.requiredByDate,
           ...(values.photoUri ? { photoUri: values.photoUri } : {}),
         };
+
+        
         await onSubmit(submitData);
       } catch (error) {
         console.error("Error submitting shipment details:", error);

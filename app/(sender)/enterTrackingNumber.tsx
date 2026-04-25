@@ -23,6 +23,7 @@ const EnterTrackingNumberScreen = () => {
     receiptUploaded?: string;
     trackingEntered?: string;
     orderConfirmed?: string;
+    verificationCompleted?: string;
   }>();
   const [trackingNumber, setTrackingNumber] = useState("");
 
@@ -33,6 +34,7 @@ const EnterTrackingNumberScreen = () => {
     receiptUploaded: params.receiptUploaded || "false",
     trackingEntered: params.trackingEntered || "false",
     orderConfirmed: params.orderConfirmed || "false",
+    verificationCompleted: params.verificationCompleted || "false",
   };
 
   const handleSubmit = () => {

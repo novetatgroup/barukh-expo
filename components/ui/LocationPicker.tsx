@@ -1,4 +1,4 @@
-import Theme from "@/constants/Theme";
+import { Theme } from "@/constants/Theme";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -33,6 +33,24 @@ interface AutocompleteSuggestion {
   fullText: string;
 }
 
+interface LegacyPlaceAddressComponent {
+  long_name: string;
+  short_name: string;
+  types: string[];
+}
+
+interface LegacyPlaceDetailsResult {
+  place_id?: string;
+  formatted_address?: string;
+  geometry?: {
+    location?: {
+      lat?: number;
+      lng?: number;
+    };
+  };
+  address_components?: LegacyPlaceAddressComponent[];
+}
+
 const LocationPicker: React.FC<LocationPickerProps> = ({
   label,
   placeholder = "Search for a city...",
@@ -57,8 +75,21 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
     }
   }, [value]);
 
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+
   const fetchAutocomplete = useCallback(async (input: string) => {
     if (input.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+
+    if (!GOOGLE_API_KEY) {
       setSuggestions([]);
       return;
     }
@@ -83,7 +114,14 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
         }
       );
       const { predictions = [], status, error_message } = (await response.json()) as {
-        predictions?: any[];
+        predictions?: {
+          place_id?: string;
+          description?: string;
+          structured_formatting?: {
+            main_text?: string;
+            secondary_text?: string;
+          };
+        }[];
         status?: string;
         error_message?: string;
       };
@@ -93,8 +131,10 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
       }
 
       if (predictions.length > 0) {
-        const formattedSuggestions: AutocompleteSuggestion[] = predictions.map((prediction: any) => ({
-          placeId: prediction.place_id,
+        const formattedSuggestions: AutocompleteSuggestion[] = predictions
+          .filter((prediction) => prediction.place_id && prediction.description)
+          .map((prediction) => ({
+          placeId: prediction.place_id as string,
           mainText: prediction.structured_formatting?.main_text || "",
           secondaryText: prediction.structured_formatting?.secondary_text || "",
           fullText: prediction.description || "",
@@ -111,44 +151,115 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
     }
   }, []);
 
-  const fetchPlaceDetails = async (placeId: string, description: string): Promise<LocationData | null> => {
+  const mapLocationData = (
+    result: LegacyPlaceDetailsResult,
+    description: string,
+    fallbackPlaceId: string
+  ): LocationData | null => {
+    const latitude = result.geometry?.location?.lat;
+    const longitude = result.geometry?.location?.lng;
+
+    if (typeof latitude !== "number" || typeof longitude !== "number") {
+      return null;
+    }
+
+    const addressComponents = result.address_components || [];
+
+    const cityComponent =
+      addressComponents.find((component) => component.types.includes("locality")) ||
+      addressComponents.find((component) =>
+        component.types.includes("administrative_area_level_1")
+      ) ||
+      addressComponents.find((component) => component.types.includes("sublocality"));
+
+    const countryComponent = addressComponents.find((component) =>
+      component.types.includes("country")
+    );
+
+    return {
+      placeId: result.place_id || fallbackPlaceId,
+      description: result.formatted_address || description,
+      city: cityComponent?.long_name || "",
+      country: countryComponent?.long_name || "",
+      countryCode: countryComponent?.short_name || "",
+      latitude,
+      longitude,
+    };
+  };
+
+  const fetchPlaceDetails = async (
+    placeId: string,
+    description: string
+  ): Promise<LocationData | null> => {
+    if (!GOOGLE_API_KEY) {
+      return null;
+    }
+
     try {
-      const response = await fetch(
-        `https://places.googleapis.com/v1/places/${placeId}`,
-        {
-          method: "GET",
-          headers: {
-            "X-Goog-Api-Key": GOOGLE_API_KEY,
-            "X-Goog-FieldMask": "location,addressComponents",
-          },
-        }
+      const detailsParams = new URLSearchParams({
+        place_id: placeId,
+        fields: "place_id,formatted_address,geometry,address_component",
+        language: "en",
+        key: GOOGLE_API_KEY,
+      });
+
+      const detailsResponse = await fetch(
+        `https://maps.googleapis.com/maps/api/place/details/json?${detailsParams.toString()}`
       );
 
-      const data = await response.json();
+      const detailsData = (await detailsResponse.json()) as {
+        result?: LegacyPlaceDetailsResult;
+        status?: string;
+        error_message?: string;
+      };
 
-      if (data.location) {
-        const addressComponents = data.addressComponents || [];
-
-        const cityComponent =
-          addressComponents.find((c: any) => c.types.includes("locality")) ||
-          addressComponents.find((c: any) => c.types.includes("administrative_area_level_1")) ||
-          addressComponents.find((c: any) => c.types.includes("sublocality"));
-
-        const countryComponent = addressComponents.find((c: any) =>
-          c.types.includes("country")
+      if (
+        detailsResponse.ok &&
+        (detailsData.status === "OK" || !detailsData.status) &&
+        detailsData.result
+      ) {
+        const mappedLocation = mapLocationData(
+          detailsData.result,
+          description,
+          placeId
         );
 
-        return {
-          placeId,
-          description,
-          city: cityComponent?.longText || "",
-          country: countryComponent?.longText || "",
-          countryCode: countryComponent?.shortText || "",
-          latitude: data.location.latitude,
-          longitude: data.location.longitude,
-        };
+        if (mappedLocation) {
+          return mappedLocation;
+        }
       }
-      return null;
+
+      const geocodeParams = new URLSearchParams({
+        place_id: placeId,
+        language: "en",
+        key: GOOGLE_API_KEY,
+      });
+
+      const geocodeResponse = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?${geocodeParams.toString()}`
+      );
+
+      const geocodeData = (await geocodeResponse.json()) as {
+        results?: LegacyPlaceDetailsResult[];
+        status?: string;
+        error_message?: string;
+      };
+
+      if (
+        !geocodeResponse.ok ||
+        (geocodeData.status && geocodeData.status !== "OK") ||
+        !geocodeData.results?.length
+      ) {
+        throw new Error(
+          geocodeData.error_message ||
+            detailsData.error_message ||
+            geocodeData.status ||
+            detailsData.status ||
+            "Place details request failed"
+        );
+      }
+
+      return mapLocationData(geocodeData.results[0], description, placeId);
     } catch (err) {
       console.log("Place Details Error:", err);
       return null;
@@ -165,7 +276,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
       description: suggestion.fullText,
       city,
       country,
-      countryCode: country,
+      countryCode: "",
       latitude: 0,
       longitude: 0,
     };

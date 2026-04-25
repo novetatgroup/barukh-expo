@@ -1,9 +1,9 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Theme from "@/constants/Theme";
+import { Theme } from "@/constants/Theme";
 import CustomButton from "@/components/ui/CustomButton";
-import { router } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 type StartTripScreenProps = {
   onCancel: () => void;
@@ -14,6 +14,16 @@ const StartTripScreen: React.FC<StartTripScreenProps> = ({
   onCancel,
   onStartTrip,
 }) => {
+  const router = useRouter();
+  const params = useLocalSearchParams<{
+    itemId?: string;
+    itemName?: string;
+    progress?: string;
+    packageUploaded?: string;
+    verificationCompleted?: string;
+    deliveryPhotoUploaded?: string;
+  }>();
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -52,7 +62,20 @@ const StartTripScreen: React.FC<StartTripScreenProps> = ({
 
         <CustomButton
           title="Start Trip"
-          onPress= {() => router.push('/(traveller)/deliveryUpload')}
+          onPress={() =>
+            router.push({
+              pathname: "/(traveller)/trackingDetails",
+              params: {
+                itemId: params.itemId || "#BK1624",
+                itemName: params.itemName || "MacBook Pro",
+                progress: params.progress || "In Transit",
+                packageUploaded: params.packageUploaded || "false",
+                tripStarted: "true",
+                verificationCompleted: params.verificationCompleted || "false",
+                deliveryPhotoUploaded: params.deliveryPhotoUploaded || "false",
+              },
+            })
+          }
           style={styles.startButton}
           textStyle={styles.startButtonText}
         />

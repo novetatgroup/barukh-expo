@@ -23,6 +23,7 @@ const ConfirmOrderScreen = () => {
     receiptUploaded?: string;
     trackingEntered?: string;
     orderConfirmed?: string;
+    verificationCompleted?: string;
   }>();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -33,6 +34,7 @@ const ConfirmOrderScreen = () => {
     receiptUploaded: params.receiptUploaded || "false",
     trackingEntered: params.trackingEntered || "false",
     orderConfirmed: params.orderConfirmed || "false",
+    verificationCompleted: params.verificationCompleted || "false",
   };
 
   const pickImage = async () => {
@@ -40,6 +42,7 @@ const ConfirmOrderScreen = () => {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
         allowsEditing: true,
+        aspect: [3, 4],
         quality: 0.8,
       });
 
@@ -69,8 +72,8 @@ const ConfirmOrderScreen = () => {
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ["images"],
         allowsEditing: true,
+        aspect: [3, 4],
         quality: 0.8,
       });
 
@@ -83,14 +86,6 @@ const ConfirmOrderScreen = () => {
     }
   };
 
-  const openImageOptions = () => {
-    Alert.alert("Confirm Order", "Choose an order image.", [
-      { text: "Select Image", onPress: pickImage },
-      { text: "Open Camera", onPress: takePhoto },
-      { text: "Cancel", style: "cancel" },
-    ]);
-  };
-
   const handleReject = () => {
     router.replace({
       pathname: "/(sender)/trackingDetails",
@@ -99,6 +94,11 @@ const ConfirmOrderScreen = () => {
   };
 
   const handleConfirm = () => {
+    if (!selectedImage) {
+      Alert.alert("No image selected", "Please choose an image first.");
+      return;
+    }
+
     router.replace({
       pathname: "/(sender)/trackingDetails",
       params: {
@@ -112,10 +112,16 @@ const ConfirmOrderScreen = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={handleReject} style={styles.headerButton}>
-          <Ionicons name="chevron-back" size={26} color={Theme.colors.black} />
+          <Ionicons name="chevron-back" size={24} color={Theme.colors.black} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Confirm Order</Text>
-        <View style={styles.headerButton} />
+
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Confirm Order</Text>
+        </View>
+
+        <TouchableOpacity style={styles.headerButton}>
+          <Ionicons name="ellipsis-vertical" size={24} color={Theme.colors.black} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -123,47 +129,60 @@ const ConfirmOrderScreen = () => {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.metaRow}>
-          <Text style={styles.metaTitle}>Image shared by Miles Okello</Text>
-          <Text style={styles.metaTime}>09:34</Text>
-        </View>
+        <Text style={styles.instructionText}>
+          Review or retake the order photo with the same upload flow used on the
+          traveller side before confirming the item handoff.
+        </Text>
 
         <TouchableOpacity
-          activeOpacity={0.9}
-          style={styles.imageFrame}
-          onPress={openImageOptions}
+          style={styles.uploadArea}
+          onPress={pickImage}
+          activeOpacity={0.75}
         >
           {selectedImage ? (
             <Image source={{ uri: selectedImage }} style={styles.previewImage} />
           ) : (
-            <View style={styles.placeholderImage}>
-              <View style={styles.placeholderSurface}>
-                <View style={styles.placeholderDevice}>
-                  <Ionicons
-                    name="image-outline"
-                    size={42}
-                    color={Theme.colors.primary}
-                  />
-                </View>
-              </View>
+            <View style={styles.placeholderContainer}>
+              <Ionicons
+                name="image-outline"
+                size={48}
+                color={Theme.colors.text.lightGray}
+              />
+              <Text style={styles.uploadText}>Select file</Text>
             </View>
           )}
         </TouchableOpacity>
 
-        <View style={styles.buttonRow}>
+        <Text style={styles.orText}>or</Text>
+
+        <TouchableOpacity
+          style={styles.cameraButton}
+          onPress={takePhoto}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="camera" size={20} color={Theme.colors.white} />
+          <Text style={styles.cameraButtonText}>Open Camera & Take Photo</Text>
+        </TouchableOpacity>
+
+        <View style={styles.actionRow}>
           <TouchableOpacity
-            activeOpacity={0.85}
-            style={[styles.actionButton, styles.rejectButton]}
+            style={styles.rejectButton}
             onPress={handleReject}
+            activeOpacity={0.85}
           >
             <Text style={styles.rejectButtonText}>Reject</Text>
           </TouchableOpacity>
+
           <TouchableOpacity
-            activeOpacity={0.85}
-            style={[styles.actionButton, styles.confirmButton]}
+            style={[
+              styles.confirmButton,
+              !selectedImage && styles.disabledButton,
+            ]}
             onPress={handleConfirm}
+            activeOpacity={0.85}
           >
-            <Text style={styles.confirmButtonText}>Confirm</Text>
+            <Ionicons name="checkmark-circle-outline" size={20} color={Theme.colors.white} />
+            <Text style={styles.confirmButtonText}>Confirm Order</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -174,116 +193,132 @@ const ConfirmOrderScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F4F1F2",
+    backgroundColor: Theme.colors.background.secondary,
+    paddingTop: Theme.spacing.xxl,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 96,
-    paddingHorizontal: Theme.spacing.lg,
-    paddingBottom: Theme.spacing.xl,
+    paddingHorizontal: Theme.spacing.md,
+    paddingVertical: Theme.spacing.md,
   },
   headerButton: {
-    width: 32,
-    height: 32,
+    width: 40,
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
   },
+  headerCenter: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    alignItems: "center",
+  },
   headerTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontFamily: "Inter-SemiBold",
-    color: Theme.colors.text.dark,
+    color: Theme.colors.black,
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    paddingHorizontal: Theme.spacing.lg,
-    paddingTop: Theme.spacing.md,
-    paddingBottom: Theme.spacing.xl,
+    padding: Theme.spacing.lg,
   },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: Theme.spacing.md,
-  },
-  metaTitle: {
-    flex: 1,
-    fontSize: 13,
+  instructionText: {
+    fontSize: 14,
     fontFamily: "Inter-Regular",
-    color: Theme.colors.text.dark,
-    paddingRight: Theme.spacing.sm,
+    color: Theme.colors.text.gray,
+    textAlign: "center",
+    marginBottom: Theme.spacing.xl,
+    lineHeight: 20,
   },
-  metaTime: {
-    fontSize: 12,
-    fontFamily: "Inter-Regular",
-    color: Theme.colors.text.lightGray,
-  },
-  imageFrame: {
+  uploadArea: {
     width: "100%",
-    aspectRatio: 0.82,
-    borderRadius: 18,
-    backgroundColor: Theme.colors.white,
+    height: 280,
+    borderWidth: 3,
+    borderColor: Theme.colors.text.border,
+    borderRadius: Theme.borderRadius.md,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Theme.colors.background.secondary,
+    borderStyle: "dashed",
     overflow: "hidden",
   },
   previewImage: {
     width: "100%",
     height: "100%",
+    borderRadius: Theme.borderRadius.md,
     resizeMode: "cover",
   },
-  placeholderImage: {
-    flex: 1,
-    backgroundColor: "#E8ECEB",
+  placeholderContainer: {
     alignItems: "center",
-    justifyContent: "center",
-    padding: Theme.spacing.lg,
   },
-  placeholderSurface: {
-    width: "100%",
-    height: "78%",
-    borderRadius: 18,
-    backgroundColor: "#D7DFDC",
-    alignItems: "center",
-    justifyContent: "center",
+  uploadText: {
+    fontSize: 14,
+    fontFamily: "Inter-Regular",
+    color: Theme.colors.text.lightGray,
+    marginTop: Theme.spacing.sm,
   },
-  placeholderDevice: {
-    width: 138,
-    height: 92,
-    borderRadius: 14,
-    backgroundColor: Theme.colors.white,
-    alignItems: "center",
-    justifyContent: "center",
+  orText: {
+    fontSize: 14,
+    fontFamily: "Inter-Regular",
+    color: Theme.colors.text.gray,
+    textAlign: "center",
+    marginVertical: Theme.spacing.md,
   },
-  buttonRow: {
+  cameraButton: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: Theme.spacing.md,
-    marginTop: Theme.spacing.xl,
-  },
-  actionButton: {
-    flex: 1,
-    height: 50,
-    borderRadius: 25,
+    backgroundColor: Theme.colors.primary,
+    borderRadius: Theme.borderRadius.lg,
+    paddingVertical: Theme.spacing.md,
     alignItems: "center",
     justifyContent: "center",
+    gap: Theme.spacing.sm,
+  },
+  cameraButtonText: {
+    color: Theme.colors.white,
+    fontSize: 16,
+    fontFamily: "Inter-SemiBold",
+  },
+  actionRow: {
+    flexDirection: "row",
+    gap: Theme.spacing.md,
+    marginTop: Theme.spacing.md,
   },
   rejectButton: {
-    backgroundColor: "#D9D9D9",
-  },
-  confirmButton: {
-    backgroundColor: Theme.colors.primary,
+    flex: 1,
+    borderRadius: Theme.borderRadius.lg,
+    paddingVertical: Theme.spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Theme.colors.white,
+    borderWidth: 1,
+    borderColor: Theme.colors.text.border,
   },
   rejectButtonText: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: "Inter-SemiBold",
     color: Theme.colors.text.dark,
   },
+  confirmButton: {
+    flex: 1.4,
+    flexDirection: "row",
+    borderRadius: Theme.borderRadius.lg,
+    paddingVertical: Theme.spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Theme.spacing.sm,
+    backgroundColor: Theme.colors.primary,
+  },
   confirmButtonText: {
-    fontSize: 14,
-    fontFamily: "Inter-SemiBold",
     color: Theme.colors.white,
+    fontSize: 16,
+    fontFamily: "Inter-SemiBold",
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });
 

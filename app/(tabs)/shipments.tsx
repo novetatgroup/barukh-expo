@@ -1,8 +1,10 @@
 import { Theme } from "@/constants/Theme";
+import { AuthContext } from "@/context/AuthContext";
 import { useRole } from "@/context/RoleContext";
+import { senderService, ShipmentDetails } from "@/services/senderService";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -41,14 +43,16 @@ type SenderShipment = {
   kind: "senderShipment";
   id: string;
   orderId: string;
+  packageId: string;
   itemId: string;
-  receiverName: string;
   itemName: string;
-  progress: "Delivered" | "In Transit" | "Cancelled";
+  progress: string;
   expectedDelivery: string;
   shipmentCost: string;
   insuranceFee: string;
   serviceFee: string;
+  fromLocation: string;
+  toLocation: string;
 };
 
 type TravellerMatchRequest = {
@@ -151,35 +155,6 @@ const senderTravellerRequests: SenderTravellerRequest[] = [
   },
 ];
 
-const senderShipments: SenderShipment[] = [
-  {
-    kind: "senderShipment",
-    id: "5",
-    orderId: "#01-BK1624",
-    itemId: "#BK1624",
-    receiverName: "Daniel Kato",
-    itemName: "MacBook Pro",
-    progress: "Delivered",
-    expectedDelivery: "Jul 30",
-    shipmentCost: "$10.00",
-    insuranceFee: "$3.20",
-    serviceFee: "$1.50",
-  },
-  {
-    kind: "senderShipment",
-    id: "6",
-    orderId: "#01-CL0412",
-    itemId: "#CL0412",
-    receiverName: "Ruth Akello",
-    itemName: "Camera Lens",
-    progress: "In Transit",
-    expectedDelivery: "Aug 05",
-    shipmentCost: "$11.50",
-    insuranceFee: "$3.00",
-    serviceFee: "$1.50",
-  },
-];
-
 const travellerMatchRequests: TravellerMatchRequest[] = [
   {
     kind: "travellerMatchRequest",
@@ -260,7 +235,8 @@ const travellerTabs = ["Matches Requests", "Accepted", "Shipments"] as const;
 
 const getCategoryItems = (
   isTraveller: boolean,
-  activeTab: string
+  activeTab: string,
+  senderShipments: SenderShipment[]
 ): CategoryListItem[] => {
   if (isTraveller) {
     switch (activeTab) {
@@ -310,9 +286,9 @@ const getCardModel = (item: CategoryListItem): CardModel => {
       return {
         icon: "cube-outline",
         iconBackground: Theme.colors.yellow,
-        title: item.orderId,
+        title: item.packageId,
         subtitle: item.itemName,
-        detail: `Receiver: ${item.receiverName}`,
+        detail: `${item.fromLocation} - ${item.toLocation}`,
         meta: item.progress,
       };
     case "travellerMatchRequest":
@@ -345,14 +321,69 @@ const getCardModel = (item: CategoryListItem): CardModel => {
   }
 };
 
+const formatShipmentStatus = (status: string) =>
+  status
+    .toLowerCase()
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+
+const formatDate = (value?: string) => {
+  if (!value) return "Pending";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Pending";
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+  });
+};
+
+const formatMoney = (priceMinor: number, currency: string) => {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+    }).format(priceMinor / 100);
+  } catch {
+    return `${currency} ${(priceMinor / 100).toFixed(2)}`;
+  }
+};
+
+const mapSenderShipment = (shipment: ShipmentDetails): SenderShipment => ({
+  kind: "senderShipment",
+  id: shipment.id,
+  orderId: `#${shipment.id.slice(0, 8).toUpperCase()}`,
+  itemId: `#${shipment.packageId.slice(0, 8).toUpperCase()}`,
+  packageId: `#${shipment.packageId.slice(0, 8).toUpperCase()}`,
+  itemName: shipment.package.name,
+  progress: formatShipmentStatus(shipment.status),
+  expectedDelivery: formatDate(shipment.travel.arrivalAt),
+  shipmentCost: formatMoney(shipment.priceMinor, shipment.currency),
+  insuranceFee: "$0.00",
+  serviceFee: "$0.00",
+  fromLocation: shipment.package.originCity || shipment.travel.originCity,
+  toLocation: shipment.package.destinationCity || shipment.travel.destinationCity,
+});
+
 const ShipmentsScreen = () => {
   const router = useRouter();
-  const params = useLocalSearchParams<{ tab?: string }>();
+  const params = useLocalSearchParams<{ tab?: string; senderId?: string }>();
   const { role, loading } = useRole();
+  const {
+    accessToken,
+    userId,
+    loading: authLoading,
+  } = useContext(AuthContext);
 
   const isTraveller = role === "TRAVELLER";
   const tabs: readonly string[] = isTraveller ? travellerTabs : senderTabs;
   const [activeTab, setActiveTab] = useState(params.tab || tabs[0]);
+  const [senderShipmentItems, setSenderShipmentItems] = useState<SenderShipment[]>([]);
+  const [senderShipmentsLoading, setSenderShipmentsLoading] = useState(false);
+  const [senderShipmentsError, setSenderShipmentsError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!tabs.includes(activeTab)) {
@@ -360,7 +391,68 @@ const ShipmentsScreen = () => {
     }
   }, [activeTab, params.tab, tabs]);
 
-  const activeItems = getCategoryItems(isTraveller, activeTab);
+  const fetchSenderShipments = useCallback(async () => {
+    if (isTraveller || !accessToken || !userId) {
+      setSenderShipmentItems([]);
+      setSenderShipmentsLoading(false);
+      return;
+    }
+
+    setSenderShipmentsLoading(true);
+    setSenderShipmentsError(null);
+
+    try {
+      let resolvedSenderId = params.senderId;
+
+      if (!resolvedSenderId) {
+        const senderResult = await senderService.getSender(userId, accessToken);
+
+        if (!senderResult.ok || !senderResult.data?.senderId) {
+          setSenderShipmentItems([]);
+          setSenderShipmentsError(
+            senderResult.error || "Unable to load sender profile."
+          );
+          return;
+        }
+
+        resolvedSenderId = senderResult.data.senderId;
+      }
+
+      const shipmentsResult = await senderService.getSenderShipments(
+        resolvedSenderId,
+        accessToken
+      );
+
+      if (!shipmentsResult.ok || !shipmentsResult.data) {
+        setSenderShipmentItems([]);
+        setSenderShipmentsError(
+          shipmentsResult.error || "Unable to load shipments."
+        );
+        return;
+      }
+
+      setSenderShipmentItems(shipmentsResult.data.data.map(mapSenderShipment));
+    } catch (error) {
+      console.error("Sender shipments error:", error);
+      setSenderShipmentItems([]);
+      setSenderShipmentsError("Unable to load shipments.");
+    } finally {
+      setSenderShipmentsLoading(false);
+    }
+  }, [accessToken, isTraveller, params.senderId, userId]);
+
+  useEffect(() => {
+    if (!authLoading && !isTraveller && activeTab === "Shipments") {
+      fetchSenderShipments();
+    }
+  }, [activeTab, authLoading, fetchSenderShipments, isTraveller]);
+
+  const activeItems = getCategoryItems(
+    isTraveller,
+    activeTab,
+    senderShipmentItems
+  );
+  const showSenderShipmentsState = !isTraveller && activeTab === "Shipments";
 
   const handleCardPress = (item: CategoryListItem) => {
     switch (item.kind) {
@@ -402,6 +494,8 @@ const ShipmentsScreen = () => {
             shipmentCost: item.shipmentCost,
             insuranceFee: item.insuranceFee,
             serviceFee: item.serviceFee,
+            fromLocation: item.fromLocation,
+            toLocation: item.toLocation,
           },
         });
         break;
@@ -449,7 +543,7 @@ const ShipmentsScreen = () => {
     }
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Theme.colors.primary} />
@@ -488,12 +582,22 @@ const ShipmentsScreen = () => {
         ))}
       </ScrollView>
 
-      {activeItems.length > 0 ? (
+      {showSenderShipmentsState &&
+      senderShipmentsLoading &&
+      activeItems.length === 0 ? (
+        <View style={styles.listLoader}>
+          <ActivityIndicator size="small" color={Theme.colors.primary} />
+        </View>
+      ) : activeItems.length > 0 ? (
         <FlatList<CategoryListItem>
           data={activeItems}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
+          refreshing={showSenderShipmentsState && senderShipmentsLoading}
+          onRefresh={
+            showSenderShipmentsState ? fetchSenderShipments : undefined
+          }
           renderItem={({ item }) => {
             const card = getCardModel(item);
 
@@ -543,7 +647,7 @@ const ShipmentsScreen = () => {
         />
       ) : (
         <Text style={styles.emptyText}>
-          No shipments found in this category.
+          {senderShipmentsError || "No shipments found in this category."}
         </Text>
       )}
     </View>
@@ -607,6 +711,10 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 100,
+  },
+  listLoader: {
+    paddingTop: Theme.spacing.xxl,
+    alignItems: "center",
   },
   card: {
     flexDirection: "row",
