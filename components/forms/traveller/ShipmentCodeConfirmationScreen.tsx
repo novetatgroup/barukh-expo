@@ -1,10 +1,8 @@
 import CustomButton from "@/components/ui/CustomButton";
 import { Theme } from "@/constants/Theme";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -14,44 +12,26 @@ import {
   View,
 } from "react-native";
 
-const VerificationScreen = () => {
-  const router = useRouter();
-  const params = useLocalSearchParams<{
-    shipmentId?: string;
-    orderId?: string;
-    itemId?: string;
-    itemName?: string;
-    receiptUploaded?: string;
-    trackingEntered?: string;
-    pickupCodeShared?: string;
-    deliveryCodeShared?: string;
-    orderConfirmed?: string;
-    verificationCompleted?: string;
-  }>();
+type ShipmentCodeConfirmationScreenProps = {
+  title: string;
+  screenTitle: string;
+  subtitle: string;
+  buttonLabel: string;
+  submitting?: boolean;
+  onBack: () => void;
+  onSubmit: (code: string) => Promise<void> | void;
+};
+
+const ShipmentCodeConfirmationScreen = ({
+  title,
+  screenTitle,
+  subtitle,
+  buttonLabel,
+  submitting = false,
+  onBack,
+  onSubmit,
+}: ShipmentCodeConfirmationScreenProps) => {
   const [code, setCode] = useState("");
-
-  const handleVerify = () => {
-    if (code.length !== 6) {
-      Alert.alert("Invalid code", "Enter the 6 digit traveller code to continue.");
-      return;
-    }
-
-    router.push({
-      pathname: "/(sender)/trackingDetails",
-      params: {
-        shipmentId: params.shipmentId || "",
-        orderId: params.orderId || "#01-BK1624",
-        itemId: params.itemId || "#BK1624",
-        itemName: params.itemName || "MacBook Pro",
-        receiptUploaded: params.receiptUploaded || "false",
-        trackingEntered: params.trackingEntered || "false",
-        pickupCodeShared: params.pickupCodeShared || "false",
-        deliveryCodeShared: params.deliveryCodeShared || "false",
-        orderConfirmed: params.orderConfirmed || "false",
-        verificationCompleted: "true",
-      },
-    });
-  };
 
   return (
     <KeyboardAvoidingView
@@ -59,37 +39,37 @@ const VerificationScreen = () => {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
+        <TouchableOpacity onPress={onBack} style={styles.headerButton}>
           <Ionicons name="chevron-back" size={24} color={Theme.colors.text.dark} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Verification</Text>
+        <Text style={styles.headerTitle}>{screenTitle}</Text>
         <View style={styles.headerButton} />
       </View>
 
       <View style={styles.content}>
         <View style={styles.iconWrap}>
-          <Ionicons name="shield-checkmark-outline" size={28} color={Theme.colors.primary} />
+          <Ionicons name="key-outline" size={28} color={Theme.colors.primary} />
         </View>
-        <Text style={styles.title}>Enter traveller code</Text>
-        <Text style={styles.subtitle}>
-          Ask the traveller for the 6 digit verification code before proof of delivery.
-        </Text>
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.subtitle}>{subtitle}</Text>
 
         <TextInput
           value={code}
-          onChangeText={(value) => setCode(value.replace(/[^0-9]/g, "").slice(0, 6))}
-          keyboardType="number-pad"
-          maxLength={6}
-          placeholder="000000"
+          onChangeText={(value) => setCode(value.replace(/[^0-9A-Za-z]/g, "").slice(0, 12))}
+          autoCapitalize="characters"
+          autoCorrect={false}
+          maxLength={12}
+          placeholder="Enter code"
           placeholderTextColor={Theme.colors.text.lightGray}
           style={styles.input}
         />
 
         <CustomButton
-          title="Verify Code"
-          onPress={handleVerify}
-          disabled={code.length !== 6}
-          style={styles.verifyButton}
+          title={buttonLabel}
+          onPress={() => onSubmit(code.trim())}
+          disabled={!code.trim()}
+          loading={submitting}
+          style={styles.button}
         />
       </View>
     </KeyboardAvoidingView>
@@ -156,15 +136,14 @@ const styles = StyleSheet.create({
     borderColor: Theme.colors.background.border,
     paddingVertical: Theme.spacing.md,
     paddingHorizontal: Theme.spacing.lg,
-    fontSize: 28,
+    fontSize: 22,
     fontFamily: "Inter-SemiBold",
     color: Theme.colors.text.dark,
     textAlign: "center",
-    letterSpacing: 10,
   },
-  verifyButton: {
+  button: {
     marginTop: Theme.spacing.xl,
   },
 });
 
-export default VerificationScreen;
+export default ShipmentCodeConfirmationScreen;

@@ -12,38 +12,54 @@ import {
 
 type TravellerStep = {
   key:
-    | "packageUploaded"
+    // | "packageUploaded"
+    | "confirmPickUpCompleted"
     | "tripStarted"
     | "verificationCompleted"
-    | "deliveryPhotoUploaded";
+    | "deliveryPhotoUploaded"
+    | "confirmDeliveryCompleted";
   title: string;
   route:
-    | "/(traveller)/packageUpload"
+    // | "/(traveller)/packageUpload"
+    | "/(traveller)/confirmPickUp"
     | "/(traveller)/startTrip"
     | "/(traveller)/verificationScreen"
-    | "/(traveller)/deliveryUpload";
+    | "/(traveller)/deliveryUpload"
+    | "/(traveller)/confirmDelivery";
 };
 
 const travellerSteps: TravellerStep[] = [
+  // {
+  //   key: "packageUploaded",
+  //   title: "Upload Package",
+  //   route: "/(traveller)/packageUpload",
+  // },
   {
-    key: "packageUploaded",
-    title: "Upload Package",
-    route: "/(traveller)/packageUpload",
+    key: "confirmPickUpCompleted",
+    title: "Confirm Pick Up (Code)",
+    route: "/(traveller)/confirmPickUp",
   },
   {
     key: "tripStarted",
     title: "Start Trip",
     route: "/(traveller)/startTrip",
   },
-  {
-    key: "verificationCompleted",
-    title: "Verify Sender Code",
-    route: "/(traveller)/verificationScreen",
-  },
+  // {
+  //   key: "verificationCompleted",
+  //   title: "Verify Sender Code",
+  //   route: "/(traveller)/verificationScreen",
+  // },
+  // verificationScreen
   {
     key: "deliveryPhotoUploaded",
     title: "Upload Delivery Photo",
     route: "/(traveller)/deliveryUpload",
+  },
+
+  {
+    key: "confirmDeliveryCompleted",
+    title: "Confirm Delivery (Code)",
+    route: "/(traveller)/confirmDelivery",
   },
 ];
 
@@ -52,42 +68,59 @@ const isComplete = (value?: string) => value === "true";
 const TravellerTrackingDetailsScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams<{
+    shipmentId?: string;
     itemId?: string;
     itemName?: string;
     progress?: string;
     packageUploaded?: string;
+    confirmPickUpCompleted?: string;
     tripStarted?: string;
     verificationCompleted?: string;
     deliveryPhotoUploaded?: string;
+    confirmDeliveryCompleted?: string;
+    deliveryPhotoKey?: string;
   }>();
 
   const itemId = params.itemId || "#BK1624";
   const itemName = params.itemName || "MacBook Pro";
 
   const completionByKey: Record<TravellerStep["key"], boolean> = {
-    packageUploaded: isComplete(params.packageUploaded),
+    // packageUploaded: isComplete(params.packageUploaded),
+    confirmPickUpCompleted: isComplete(params.confirmPickUpCompleted),
     tripStarted: isComplete(params.tripStarted),
     verificationCompleted: isComplete(params.verificationCompleted),
     deliveryPhotoUploaded: isComplete(params.deliveryPhotoUploaded),
+    confirmDeliveryCompleted: isComplete(params.confirmDeliveryCompleted),
   };
 
   const baseParams = {
+    shipmentId: params.shipmentId || "",
     itemId,
     itemName,
     progress: params.progress || "In Transit",
-    packageUploaded: String(completionByKey.packageUploaded),
+    // packageUploaded: String(completionByKey.packageUploaded),
+    confirmPickUpCompleted: String(completionByKey.confirmPickUpCompleted),
     tripStarted: String(completionByKey.tripStarted),
     verificationCompleted: String(completionByKey.verificationCompleted),
     deliveryPhotoUploaded: String(completionByKey.deliveryPhotoUploaded),
+    confirmDeliveryCompleted: String(completionByKey.confirmDeliveryCompleted),
+    deliveryPhotoKey: params.deliveryPhotoKey || "",
   };
 
   const handleStepPress = (step: TravellerStep) => {
+    console.log({step});
+    let pathname = step.route;
+
+    if (step.key === "deliveryPhotoUploaded" && !completionByKey.deliveryPhotoUploaded) {
+      pathname = "/(traveller)/deliveryUpload";
+    }
+
+    if (step.key === "confirmDeliveryCompleted" && !completionByKey.confirmDeliveryCompleted) {
+      pathname = "/(traveller)/verificationScreen";
+    }
+
     router.push({
-      pathname:
-        step.key === "deliveryPhotoUploaded" &&
-        !completionByKey.verificationCompleted
-          ? "/(traveller)/verificationScreen"
-          : step.route,
+      pathname,
       params: baseParams,
     });
   };

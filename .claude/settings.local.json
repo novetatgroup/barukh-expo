@@ -7,7 +7,8 @@
       "mcp__claude_ai_Figma__get_design_context",
       "Bash(xargs grep:*)",
       "Bash(xargs sed:*)",
-      "Bash(ip -4 addr show)"
+      "Bash(ip -4 addr show)",
+      "Bash(npx tsc *)"
     ]
   }
 }

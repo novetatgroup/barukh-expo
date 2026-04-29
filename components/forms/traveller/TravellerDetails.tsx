@@ -35,6 +35,22 @@ type TravellerDetailsFormProps = {
         flightNumber?: string;
         vehiclePlate?: string;
     }) => void;
+    initialValues?: Partial<{
+        userId: number;
+        originCountry: string;
+        originCity: string;
+        destinationCountry: string;
+        destinationCity: string;
+        departureDate: string;
+        departureAt: string;
+        arrivalDate: string;
+        arrivalAt: string;
+        mode: string;
+        spaceType: string;
+        spaceNumber: string;
+        flightNumber: string;
+        vehiclePlate: string;
+    }>;
 }
 
 const ValidationSchema = Yup.object().shape({
@@ -107,6 +123,7 @@ const spaceTypes = [
 
 const TravellerDetailsForm: React.FC<TravellerDetailsFormProps> = ({
     onSubmit,
+    initialValues: initialFormValues,
 }) => {
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showTimePicker, setShowTimePicker] = useState(false);
@@ -117,6 +134,10 @@ const TravellerDetailsForm: React.FC<TravellerDetailsFormProps> = ({
     const [tempArrivalDate, setTempArrivalDate] = useState(new Date());
     const [tempArrivalTime, setTempArrivalTime] = useState(new Date());
     const [loading, setLoading] = useState(false);
+    const formInitialValues = {
+        ...initialValues,
+        ...initialFormValues,
+    };
 
     return (
         <View style={styles.container}>
@@ -125,7 +146,8 @@ const TravellerDetailsForm: React.FC<TravellerDetailsFormProps> = ({
             <ProgressBar step={1} labels={["Destination", "What to Carry"]} />
             <ScrollView showsVerticalScrollIndicator={false}>
                 <Formik
-                    initialValues={initialValues}
+                    initialValues={formInitialValues}
+                    enableReinitialize
                     validationSchema={ValidationSchema}
                     onSubmit={async (values) => {
                         try {

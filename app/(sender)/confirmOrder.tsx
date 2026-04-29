@@ -17,22 +17,28 @@ import {
 const ConfirmOrderScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams<{
+    shipmentId?: string;
     orderId?: string;
     itemId?: string;
     itemName?: string;
     receiptUploaded?: string;
     trackingEntered?: string;
+    pickupCodeShared?: string;
+    deliveryCodeShared?: string;
     orderConfirmed?: string;
     verificationCompleted?: string;
   }>();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const trackingParams = {
+    shipmentId: params.shipmentId || "",
     orderId: params.orderId || "#01-BK1624",
     itemId: params.itemId || "#BK1624",
     itemName: params.itemName || "MacBook Pro",
     receiptUploaded: params.receiptUploaded || "false",
     trackingEntered: params.trackingEntered || "false",
+    pickupCodeShared: params.pickupCodeShared || "false",
+    deliveryCodeShared: params.deliveryCodeShared || "false",
     orderConfirmed: params.orderConfirmed || "false",
     verificationCompleted: params.verificationCompleted || "false",
   };

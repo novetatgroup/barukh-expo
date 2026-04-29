@@ -14,6 +14,8 @@ type Step = {
   key:
     | "receiptUploaded"
     | "trackingEntered"
+    | "sharePickUpCode"
+    | "shareDeliveryCode"
     | "orderConfirmed"
     | "verificationCompleted"
     | "deliveryStatus";
@@ -21,23 +23,28 @@ type Step = {
   route?:
     | "/(sender)/uploadReceipt"
     | "/(sender)/enterTrackingNumber"
+    | "/(sender)/sharePickupCode"
+    | "/(sender)/shareDeliveryCode"
     | "/(sender)/confirmOrder"
     | "/(sender)/verificationScreen";
 };
-
 const checklistSteps: Step[] = [
-  { key: "receiptUploaded", title: "Upload Receipt", route: "/(sender)/uploadReceipt" },
-  { key: "trackingEntered", title: "Enter Tracking Number", route: "/(sender)/enterTrackingNumber" },
-  { key: "orderConfirmed", title: "Confirm Order", route: "/(sender)/confirmOrder" },
-  { key: "verificationCompleted", title: "Verify Traveller Code", route: "/(sender)/verificationScreen" },
+  // { key: "receiptUploaded", title: "Upload Receipt", route: "/(sender)/uploadReceipt" },
+  // { key: "trackingEntered", title: "Enter Tracking Number", route: "/(sender)/enterTrackingNumber" },
+  { key: "sharePickUpCode", title: "Share Pick Up Code", route: "/(sender)/sharePickupCode" },
+  // { key: "orderConfirmed", title: "Confirm Order", route: "/(sender)/confirmOrder" },
+  { key: "shareDeliveryCode", title: "Share Delivery Code", route: "/(sender)/shareDeliveryCode" },
+  // { key: "verificationCompleted", title: "Verify Traveller Code", route: "/(sender)/verificationScreen" },
   { key: "deliveryStatus", title: "Delivery Status" },
 ];
 
 const completedSteps = [
   { date: "Mon, 21 July 2025", title: "Receipt Uploaded" },
-  { date: "Mon, 21 July 2025", title: "Package Expected by Traveler" },
-  { date: "Thur, 27 July 2025", title: "Traveler has item" },
-  { date: "Sat, 29 July 2025", title: "Package in Transit" },
+  { date: "Mon, 21 July 2025", title: "Tracking Number Added" },
+  { date: "Thur, 27 July 2025", title: "Pickup Code Shared" },
+  { date: "Sat, 29 July 2025", title: "Delivery Photo Approved" },
+  { date: "Sat, 29 July 2025", title: "Delivery Code Shared" },
+  { date: "Sat, 29 July 2025", title: "Traveller Code Verified" },
   { date: "Sat, 29 July 2025", title: "Package Delivered" },
 ];
 
@@ -46,43 +53,61 @@ const isComplete = (value?: string) => value === "true";
 const TrackingDetailsScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams<{
+    id?: string;
+    shipmentId?: string;
     orderId?: string;
     itemId?: string;
     itemName?: string;
     receiptUploaded?: string;
     trackingEntered?: string;
+    pickupCodeShared?: string;
+    deliveryCodeShared?: string;
     orderConfirmed?: string;
     verificationCompleted?: string;
   }>();
 
+  const shipmentId = params.id || "";
   const itemId = params.itemId || "#BK1624";
   const itemName = params.itemName || "MacBook Pro";
   const receiptUploaded = isComplete(params.receiptUploaded);
   const trackingEntered = isComplete(params.trackingEntered);
+  const pickupCodeShared = isComplete(params.pickupCodeShared);
+  const deliveryCodeShared = isComplete(params.deliveryCodeShared);
   const orderConfirmed = isComplete(params.orderConfirmed);
   const verificationCompleted = isComplete(params.verificationCompleted);
   const allComplete =
-    receiptUploaded && trackingEntered && orderConfirmed && verificationCompleted;
+    receiptUploaded &&
+    trackingEntered &&
+    pickupCodeShared &&
+    deliveryCodeShared &&
+    orderConfirmed &&
+    verificationCompleted;
 
   const completionByKey: Record<Step["key"], boolean> = {
     receiptUploaded,
     trackingEntered,
+    sharePickUpCode: pickupCodeShared,
+    shareDeliveryCode: deliveryCodeShared,
     orderConfirmed,
     verificationCompleted,
     deliveryStatus: allComplete,
   };
 
   const baseParams = {
+    shipmentId,
     orderId: params.orderId || "#01-BK1624",
     itemId,
     itemName,
     receiptUploaded: String(receiptUploaded),
     trackingEntered: String(trackingEntered),
+    pickupCodeShared: String(pickupCodeShared),
+    deliveryCodeShared: String(deliveryCodeShared),
     orderConfirmed: String(orderConfirmed),
     verificationCompleted: String(verificationCompleted),
   };
 
   const handleStepPress = (step: Step) => {
+    console.log({baseParams})
     if (!step.route) return;
     router.replace({
       pathname: step.route,

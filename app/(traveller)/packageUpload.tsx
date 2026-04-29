@@ -7,12 +7,16 @@ import UploadPackageForm from "@/components/forms/traveller/UploadPackageForm";
 const UploadPackageScreen = () => {
     const router = useRouter();
     const params = useLocalSearchParams<{
+        shipmentId?: string;
         itemId?: string;
         itemName?: string;
         progress?: string;
+        confirmPickUpCompleted?: string;
         tripStarted?: string;
         verificationCompleted?: string;
         deliveryPhotoUploaded?: string;
+        confirmDeliveryCompleted?: string;
+        deliveryPhotoKey?: string;
     }>();
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -45,13 +49,17 @@ const UploadPackageScreen = () => {
         router.push({
             pathname: "/(traveller)/trackingDetails",
             params: {
+                shipmentId: params.shipmentId || "",
                 itemId: params.itemId || "#BK1624",
                 itemName: params.itemName || "MacBook Pro",
                 progress: params.progress || "In Transit",
                 packageUploaded: "true",
+                confirmPickUpCompleted: params.confirmPickUpCompleted || "false",
                 tripStarted: params.tripStarted || "false",
                 verificationCompleted: params.verificationCompleted || "false",
                 deliveryPhotoUploaded: params.deliveryPhotoUploaded || "false",
+                confirmDeliveryCompleted: params.confirmDeliveryCompleted || "false",
+                deliveryPhotoKey: params.deliveryPhotoKey || "",
             },
         });
     };

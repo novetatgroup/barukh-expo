@@ -115,6 +115,10 @@ export interface GetSenderResponse {
 	userId: string;
 }
 
+export interface ShipmentCodeResponse {
+	code: string;
+}
+
 export interface Package {
 	id: string;
 	senderId: string;
@@ -204,6 +208,30 @@ export const senderService = {
 				Authorization: `Bearer ${accessToken}`,
 			},
 		});
+	},
+
+	async getPickupCode(shipmentId: string, accessToken: string) {
+		return apiRequest<ShipmentCodeResponse>(
+			API_ENDPOINTS.shipments.getItemPickupCode(shipmentId),
+			{
+				method: "GET",
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			}
+		);
+	},
+
+	async getDeliveryCode(shipmentId: string, accessToken: string) {
+		return apiRequest<ShipmentCodeResponse>(
+			API_ENDPOINTS.shipments.getItemDeliveryCode(shipmentId),
+			{
+				method: "GET",
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			}
+		);
 	},
 
 	async getSenderShipments(senderId: string, accessToken: string) {

@@ -1,11 +1,13 @@
-import React from "react";
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Ionicons } from "@expo/vector-icons";
 import { Theme } from "@/constants/Theme";
-import CustomButton from "../../ui/CustomButton";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import React from "react";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import CustomButton from "../../ui/CustomButton";
 
 interface shipmentDetailsFormProps {
+    headerTitle: string;
+    shipmentId?: string;
     itemId: string;
     shipperName: string;
     receiverName: string;
@@ -18,6 +20,9 @@ interface shipmentDetailsFormProps {
 }
 
 const ShipmentDetailsForm: React.FC<shipmentDetailsFormProps> = ({
+    headerTitle,
+    
+    shipmentId,
     itemId,
     shipperName,
     receiverName,
@@ -33,6 +38,19 @@ const ShipmentDetailsForm: React.FC<shipmentDetailsFormProps> = ({
 
     return (
         <View style={styles.container}>
+            <View style={styles.header}>
+                <TouchableOpacity onPress={onBack} style={styles.headerButton}>
+                    <Ionicons name="chevron-back" size={24} color={Theme.colors.black} />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>{headerTitle}</Text>
+                <TouchableOpacity style={styles.headerButton}>
+                    <Ionicons
+                        name="ellipsis-vertical"
+                        size={22}
+                        color={Theme.colors.black}
+                    />
+                </TouchableOpacity>
+            </View>
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
@@ -102,6 +120,8 @@ const ShipmentDetailsForm: React.FC<shipmentDetailsFormProps> = ({
                             router.push({
                                 pathname: "/(traveller)/trackingDetails",
                                 params: {
+                                    
+                                    shipmentId,
                                     itemId,
                                     itemName,
                                     progress,
@@ -122,6 +142,25 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: Theme.colors.background.secondary,
     },
+    header: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingTop: 56,
+        paddingHorizontal: Theme.spacing.lg,
+        paddingBottom: Theme.spacing.xl,
+      },
+      headerButton: {
+        width: 32,
+        height: 32,
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      headerTitle: {
+        fontSize: 16,
+        fontFamily: "Inter-SemiBold",
+        color: Theme.colors.text.dark,
+      },
     line: {
         flex: 1,
         height: 1,
@@ -180,7 +219,7 @@ const styles = StyleSheet.create({
         backgroundColor: Theme.colors.lightGreen,
     },
     inTransitText: {
-        color:Theme.colors.white,
+        color: Theme.colors.white,
         fontFamily: "Inter-Regular",
     },
     deliveredText: {

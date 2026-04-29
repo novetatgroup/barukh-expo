@@ -33,6 +33,15 @@ export const API_ENDPOINTS = {
 	},
 	shipments: {
 		findOne: (shipmentId: string) => `/shipments/find-one/${shipmentId}`,
+		confirmItemPickup: "/shipments/confirm-item-pickup",
+		getUploadShipmentUrl: (shipmentId: string) =>
+			`/shipments/get-upload-shipment-url/${shipmentId}`,
+		confirmItemDelivery: "/shipments/confirm-item-delivery",
+		getItemPickupCode: (shipmentId: string) =>
+			`/shipments/get-item-pickup-code/${shipmentId}`,
+		getItemDeliveryCode: (shipmentId: string) =>
+			`/shipments/get-item-delivery-code/${shipmentId}`,
+		update: (shipmentId: string) => `/shipments/${shipmentId}`,
 		listByRole: (actorId: string, role: "SENDER" | "TRAVELLER") =>
 			`/shipments/${actorId}/?role=${role}`,
 	},

@@ -12,6 +12,8 @@ export default function SenderLayout() {
       <Stack.Screen name="modeOfPayment" />
       <Stack.Screen name="payScreen" />
       <Stack.Screen name="shipmentDetails" />
+      <Stack.Screen name="shareDeliveryCode" />
+      <Stack.Screen name="sharePickupCode" />
       <Stack.Screen name="trackingDetails" />
       <Stack.Screen name="verificationScreen" />
       <Stack.Screen name="travellerMatchCategoryDetails" />

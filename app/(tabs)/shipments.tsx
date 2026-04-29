@@ -2,6 +2,7 @@ import { Theme } from "@/constants/Theme";
 import { AuthContext } from "@/context/AuthContext";
 import { useRole } from "@/context/RoleContext";
 import { senderService, ShipmentDetails } from "@/services/senderService";
+import { travellerService } from "@/services/travellerService";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useContext, useEffect, useState } from "react";
@@ -82,13 +83,16 @@ type TravellerShipment = {
   id: string;
   orderId: string;
   itemId: string;
+  packageId:string;
   itemName: string;
   recipientCity: string;
-  progress: "Delivered" | "In Transit";
+  progress: string;
   expectedDelivery: string;
   shipmentCost: string;
   insuranceFee: string;
   serviceFee: string;
+  fromLocation: string;
+  toLocation: string;
 };
 
 type CategoryListItem =
@@ -206,6 +210,7 @@ const travellerShipments: TravellerShipment[] = [
     kind: "travellerShipment",
     id: "11",
     orderId: "#01-TV9012",
+    packageId: "#PK43905",
     itemId: "#TV9012",
     itemName: "Documents",
     recipientCity: "Kampala",
@@ -214,12 +219,16 @@ const travellerShipments: TravellerShipment[] = [
     shipmentCost: "$9.00",
     insuranceFee: "$1.80",
     serviceFee: "$1.20",
+    fromLocation: 'ABC 001',
+  toLocation: 'XYZ 002',
   },
   {
     kind: "travellerShipment",
     id: "12",
     orderId: "#01-TV9013",
     itemId: "#TV9013",
+    packageId:"#PK329040",
+
     itemName: "Smart Watch",
     recipientCity: "Entebbe",
     progress: "Delivered",
@@ -227,6 +236,8 @@ const travellerShipments: TravellerShipment[] = [
     shipmentCost: "$13.00",
     insuranceFee: "$2.70",
     serviceFee: "$1.60",
+    fromLocation: 'ABC 001',
+  toLocation: 'XYZ 002',
   },
 ];
 
@@ -236,7 +247,8 @@ const travellerTabs = ["Matches Requests", "Accepted", "Shipments"] as const;
 const getCategoryItems = (
   isTraveller: boolean,
   activeTab: string,
-  senderShipments: SenderShipment[]
+  senderShipments: SenderShipment[],
+  travellerShipmentItems: TravellerShipment[]
 ): CategoryListItem[] => {
   if (isTraveller) {
     switch (activeTab) {
@@ -246,7 +258,7 @@ const getCategoryItems = (
         return travellerAccepted;
       case "Shipments":
       default:
-        return travellerShipments;
+        return travellerShipmentItems;
     }
   }
 
@@ -313,7 +325,7 @@ const getCardModel = (item: CategoryListItem): CardModel => {
       return {
         icon: "airplane-outline",
         iconBackground: "#EBF2F1",
-        title: item.orderId,
+        title: item.packageId,
         subtitle: item.itemName,
         detail: `To ${item.recipientCity}`,
         meta: item.progress,
@@ -368,6 +380,36 @@ const mapSenderShipment = (shipment: ShipmentDetails): SenderShipment => ({
   toLocation: shipment.package.destinationCity || shipment.travel.destinationCity,
 });
 
+// TODO: implement mapTravellerShipment.
+// Convert an API ShipmentDetails into a TravellerShipment for the card.
+// Decisions to make:
+//   1. recipientCity — use shipment.package.destinationCity (where the parcel
+//      must end up) OR shipment.travel.destinationCity (where the traveller is
+//      heading)? They can differ (e.g. parcel: Nairobi→Kampala on a
+//      Kampala→Toronto trip). The card label is `To ${recipientCity}` so this
+//      shapes what the traveller sees as their delivery target.
+//   2. orderId / itemId — mirror the sender pattern (`#${id.slice(0,8).toUpperCase()}`)?
+//   3. progress — wrap with formatShipmentStatus(shipment.status) to get
+//      "Pending" instead of "PENDING".
+//   4. expectedDelivery / shipmentCost — reuse formatDate and formatMoney.
+const mapTravellerShipment = (shipment: ShipmentDetails): TravellerShipment => ({
+  kind: "travellerShipment",
+  id: shipment.id,
+  orderId: `#${shipment.id.slice(0, 8).toUpperCase()}`,
+  itemId: `#${shipment.packageId.slice(0, 8).toUpperCase()}`,
+  packageId: `#${shipment.packageId.slice(0, 8).toUpperCase()}`,
+  itemName: shipment.package.name,
+  progress: formatShipmentStatus(shipment.status),
+  expectedDelivery: formatDate(shipment.travel.arrivalAt),
+  shipmentCost: formatMoney(shipment.priceMinor, shipment.currency),
+  insuranceFee: "$0.00",
+  serviceFee: "$0.00",
+  fromLocation: shipment.package.originCity || shipment.travel.originCity,
+  toLocation: shipment.package.destinationCity || shipment.travel.destinationCity,
+  recipientCity: shipment.package.destinationCity || shipment.travel.destinationCity,
+  
+});
+
 const ShipmentsScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams<{ tab?: string; senderId?: string }>();
@@ -384,6 +426,9 @@ const ShipmentsScreen = () => {
   const [senderShipmentItems, setSenderShipmentItems] = useState<SenderShipment[]>([]);
   const [senderShipmentsLoading, setSenderShipmentsLoading] = useState(false);
   const [senderShipmentsError, setSenderShipmentsError] = useState<string | null>(null);
+  const [travellerShipmentItems, setTravellerShipmentItems] = useState<TravellerShipment[]>([]);
+  const [travellerShipmentsLoading, setTravellerShipmentsLoading] = useState(false);
+  const [travellerShipmentsError, setTravellerShipmentsError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!tabs.includes(activeTab)) {
@@ -447,12 +492,82 @@ const ShipmentsScreen = () => {
     }
   }, [activeTab, authLoading, fetchSenderShipments, isTraveller]);
 
+  const fetchTravellerShipments = useCallback(async () => {
+    if (!isTraveller || !accessToken || !userId) {
+      setTravellerShipmentItems([]);
+      setTravellerShipmentsLoading(false);
+      return;
+    }
+
+    setTravellerShipmentsLoading(true);
+    setTravellerShipmentsError(null);
+
+    try {
+      const travellerResult = await travellerService.getTraveller(
+        userId,
+        accessToken
+      );
+
+      if (!travellerResult.ok || !travellerResult.data?.travellerId) {
+        setTravellerShipmentItems([]);
+        setTravellerShipmentsError(
+          travellerResult.error || "Unable to load traveller profile."
+        );
+        return;
+      }
+
+      const shipmentsResult = await travellerService.getTravellerShipments(
+        travellerResult.data.travellerId,
+        accessToken
+      );
+
+      if (!shipmentsResult.ok || !shipmentsResult.data) {
+        setTravellerShipmentItems([]);
+        setTravellerShipmentsError(
+          shipmentsResult.error || "Unable to load shipments."
+        );
+        return;
+      }
+
+      setTravellerShipmentItems(
+        shipmentsResult.data.data.map(mapTravellerShipment)
+      );
+    } catch (error) {
+      console.error("Traveller shipments error:", error);
+      setTravellerShipmentItems([]);
+      setTravellerShipmentsError("Unable to load shipments.");
+    } finally {
+      setTravellerShipmentsLoading(false);
+    }
+  }, [accessToken, isTraveller, userId]);
+
+  useEffect(() => {
+    if (!authLoading && isTraveller && activeTab === "Shipments") {
+      fetchTravellerShipments();
+    }
+  }, [activeTab, authLoading, fetchTravellerShipments, isTraveller]);
+
   const activeItems = getCategoryItems(
     isTraveller,
     activeTab,
-    senderShipmentItems
+    senderShipmentItems,
+    travellerShipmentItems
   );
   const showSenderShipmentsState = !isTraveller && activeTab === "Shipments";
+  const showTravellerShipmentsState = isTraveller && activeTab === "Shipments";
+  const showRemoteShipmentsLoading =
+    (showSenderShipmentsState && senderShipmentsLoading) ||
+    (showTravellerShipmentsState && travellerShipmentsLoading);
+  const remoteShipmentsError = showSenderShipmentsState
+    ? senderShipmentsError
+    : showTravellerShipmentsState
+    ? travellerShipmentsError
+    : null;
+  const refreshRemoteShipments = showSenderShipmentsState
+    ? fetchSenderShipments
+    : showTravellerShipmentsState
+    ? fetchTravellerShipments
+    : undefined;
 
   const handleCardPress = (item: CategoryListItem) => {
     switch (item.kind) {
@@ -460,6 +575,7 @@ const ShipmentsScreen = () => {
         router.push({
           pathname: "/(sender)/travellerMatchCategoryDetails",
           params: {
+            id:item.id,
             travellerName: item.travellerName,
             parcelName: item.parcelName,
             route: item.route,
@@ -473,6 +589,7 @@ const ShipmentsScreen = () => {
         router.push({
           pathname: "/(sender)/travellerRequestDetails",
           params: {
+            id:item.id,
             requestId: item.requestId,
             travellerName: item.travellerName,
             requestedItem: item.requestedItem,
@@ -486,6 +603,8 @@ const ShipmentsScreen = () => {
         router.push({
           pathname: "/(sender)/shipmentDetails",
           params: {
+            id:item.id,
+            shipmentId: item.id,
             orderId: item.orderId,
             itemId: item.itemId,
             itemName: item.itemName,
@@ -503,6 +622,7 @@ const ShipmentsScreen = () => {
         router.push({
           pathname: "/(traveller)/matchRequestDetails",
           params: {
+            id:item.id,
             senderName: item.senderName,
             packageName: item.packageName,
             pickupCity: item.pickupCity,
@@ -516,6 +636,7 @@ const ShipmentsScreen = () => {
         router.push({
           pathname: "/(traveller)/acceptedShipmentDetails",
           params: {
+            id:item.id,
             acceptanceCode: item.acceptanceCode,
             senderName: item.senderName,
             packageName: item.packageName,
@@ -529,6 +650,8 @@ const ShipmentsScreen = () => {
         router.push({
           pathname: "/(traveller)/shipmentDetails",
           params: {
+            id:item.id,
+            shipmentId: item.id,
             orderId: item.orderId,
             itemId: item.itemId,
             itemName: item.itemName,
@@ -582,9 +705,7 @@ const ShipmentsScreen = () => {
         ))}
       </ScrollView>
 
-      {showSenderShipmentsState &&
-      senderShipmentsLoading &&
-      activeItems.length === 0 ? (
+      {showRemoteShipmentsLoading && activeItems.length === 0 ? (
         <View style={styles.listLoader}>
           <ActivityIndicator size="small" color={Theme.colors.primary} />
         </View>
@@ -594,10 +715,8 @@ const ShipmentsScreen = () => {
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
-          refreshing={showSenderShipmentsState && senderShipmentsLoading}
-          onRefresh={
-            showSenderShipmentsState ? fetchSenderShipments : undefined
-          }
+          refreshing={showRemoteShipmentsLoading}
+          onRefresh={refreshRemoteShipments}
           renderItem={({ item }) => {
             const card = getCardModel(item);
 
@@ -647,7 +766,7 @@ const ShipmentsScreen = () => {
         />
       ) : (
         <Text style={styles.emptyText}>
-          {senderShipmentsError || "No shipments found in this category."}
+          {remoteShipmentsError || "No shipments found in this category."}
         </Text>
       )}
     </View>

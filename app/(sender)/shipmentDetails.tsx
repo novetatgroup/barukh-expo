@@ -12,7 +12,20 @@ import {
 
 const SenderShipmentDetailsScreen = () => {
   const router = useRouter();
-  const params = useLocalSearchParams();
+  const params = useLocalSearchParams<{
+    id?:string;
+    shipmentId?: string;
+    orderId?: string;
+    itemId?: string;
+    itemName?: string;
+    progress?: string;
+    shipperName?: string;
+    recipientName?: string;
+    fromLocation?: string;
+    toLocation?: string;
+  }>();
+  const id = params.id || "";
+  const shipmentId = params.id || "";
   const orderId = (params.orderId as string) || "#01-BK1624";
   const itemId = (params.itemId as string) || "#BK1624";
   const itemName = (params.itemName as string) || "MacBook Pro";
@@ -23,15 +36,21 @@ const SenderShipmentDetailsScreen = () => {
   const toLocation = (params.toLocation as string) || "Kampala, Uganda";
 
   const handleTrackOrder = () => {
+    console.log({id,shipmentId})
     router.push({
       pathname: "/(sender)/trackingDetails",
       params: {
+        id,
+        shipmentId,
         orderId,
         itemId,
         itemName,
         receiptUploaded: "false",
         trackingEntered: "false",
+        pickupCodeShared: "false",
+        deliveryCodeShared: "false",
         orderConfirmed: "false",
+        verificationCompleted: "false",
       },
     });
   };
