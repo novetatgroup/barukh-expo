@@ -1,11 +1,11 @@
+import { PackagePattern } from "@/assets/svgs";
 import Theme from "@/constants/Theme";
 import { AuthContext } from "@/context/AuthContext";
-import { UserProfile, userService } from "@/services/userService";
 import { Trip, TripDetails, travellerService } from "@/services/travellerService";
-import { PackagePattern } from "@/assets/svgs";
+import { UserProfile, userService } from "@/services/userService";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -44,18 +44,23 @@ const TravellerHomeContent = () => {
     fetchUser();
   }, [userId, accessToken]);
 
-  useEffect(() => {
-    const fetchTrips = async () => {
-      if (!userId || !accessToken) return;
-      setTripsLoading(true);
-      const { data, ok } = await travellerService.getTrips(userId, accessToken);
-      if (ok && data) {
-        setTrips(data.data);
-      }
+  const fetchTrips = useCallback(async () => {
+    if (!userId || !accessToken) {
       setTripsLoading(false);
-    };
-    fetchTrips();
+      return;
+    }
+
+    setTripsLoading(true);
+    const { data, ok } = await travellerService.getTrips(userId, accessToken);
+    if (ok && data) {
+      setTrips(data.data);
+    }
+    setTripsLoading(false);
   }, [userId, accessToken]);
+
+  useEffect(() => {
+    fetchTrips();
+  }, [fetchTrips]);
 
   const userName = userProfile?.firstName || "User";
 
@@ -174,6 +179,8 @@ const TravellerHomeContent = () => {
   return (
     <View style={styles.content}>
       <FlatList
+        onRefresh={fetchTrips}
+        refreshing={tripsLoading}
         data={trips}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
@@ -189,7 +196,7 @@ const TravellerHomeContent = () => {
               </View>
               <Text style={styles.emptyTitle}>No trips yet</Text>
               <Text style={styles.emptySubtext}>
-                You haven't created any trips. Tap the button above to get started.
+                You haven&apos;t created any trips. Tap the button above to get started.
               </Text>
             </View>
           )

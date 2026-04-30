@@ -1,4 +1,4 @@
-import Theme from "@/constants/Theme";
+import { Theme } from "@/constants/Theme";
 import { AuthContext } from "@/context/AuthContext";
 import { senderService } from "@/services/senderService";
 import { userService } from "@/services/userService";
@@ -24,8 +24,9 @@ interface MatchData {
 
 const TravellerMatchDetailsScreen = () => {
   const router = useRouter();
-  const { userId, accessToken } = useContext(AuthContext);
-  const { packageId, itemName } = useLocalSearchParams<{
+  const { accessToken } = useContext(AuthContext);
+  const { shipmentId, itemName } = useLocalSearchParams<{
+    shipmentId?: string;
     packageId: string;
     itemName: string;
   }>();
@@ -36,13 +37,22 @@ const TravellerMatchDetailsScreen = () => {
 
   useEffect(() => {
     const fetchMatch = async () => {
-      if (!packageId || !accessToken) return;
-
       setLoading(true);
       setError(null);
 
-      // Step 1 — fetch existing shipment for this package
-      const shipmentResult = await senderService.getShipmentByPackage(packageId, accessToken);
+      if (!accessToken) {
+        setError("Please sign in to view this traveller match.");
+        setLoading(false);
+        return;
+      }
+
+      if (!shipmentId) {
+        setError("No traveller matched to this package yet.");
+        setLoading(false);
+        return;
+      }
+
+      const shipmentResult = await senderService.getShipment(shipmentId, accessToken);
       if (!shipmentResult.ok || !shipmentResult.data) {
         setError("No traveller matched to this package yet.");
         setLoading(false);
@@ -52,7 +62,6 @@ const TravellerMatchDetailsScreen = () => {
       const shipment = shipmentResult.data;
       const travellerUserId = shipment.traveller.userId;
 
-      // Step 3 — fetch traveller user profile for name
       const userResult = await userService.getUser(travellerUserId, accessToken);
       const travellerName = userResult.data
         ? `${userResult.data.firstName} ${userResult.data.lastName}`.trim()
@@ -73,17 +82,20 @@ const TravellerMatchDetailsScreen = () => {
     };
 
     fetchMatch();
-  }, [packageId, accessToken]);
+  }, [shipmentId, accessToken]);
 
-  const handleChat = () => {
-    if (!matchData) return;
-    const conversationId = [userId, matchData.travellerUserId].sort().join("_");
+  const displayItemName = itemName || "Macbook Pro";
+
+  const handleMakePayment = () => {
     router.push({
-      pathname: "/(chat)/[conversationId]",
+      pathname: "/(sender)/modeOfPayment",
       params: {
-        conversationId,
-        receiverId: matchData.travellerUserId,
-        receiverName: matchData.travellerName,
+        shipmentId: shipmentId || "",
+        itemName: displayItemName,
+        shipmentCost: "$120",
+        insurance: "$3.20",
+        total: "$123.20",
+        payAmount: "$48.20",
       },
     });
   };
@@ -98,14 +110,17 @@ const TravellerMatchDetailsScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
-          <Ionicons name="chevron-back" size={24} color="#111" />
+          <Ionicons name="chevron-back" size={26} color={Theme.colors.black} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Traveller Match Details</Text>
         <TouchableOpacity style={styles.iconBtn}>
-          <Ionicons name="ellipsis-vertical" size={24} color="#111" />
+          <Ionicons
+            name="ellipsis-vertical"
+            size={22}
+            color={Theme.colors.black}
+          />
         </TouchableOpacity>
       </View>
 
@@ -116,7 +131,6 @@ const TravellerMatchDetailsScreen = () => {
           <Text style={styles.errorText}>{error}</Text>
         ) : (
           <View style={styles.card}>
-            {/* Traveller profile row */}
             <View style={styles.profileRow}>
               <View style={styles.avatarFallback}>
                 <Text style={styles.avatarInitials}>{initials}</Text>
@@ -125,16 +139,26 @@ const TravellerMatchDetailsScreen = () => {
                 <Text style={styles.profileName}>{displayName}</Text>
                 <View style={styles.ratingRow}>
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <Ionicons key={i} name="star" size={10} color="#FFCB45" />
+                    <Ionicons
+                      key={i}
+                      name="star"
+                      size={13}
+                      color="#FFCB45"
+                      style={styles.starIcon}
+                    />
                   ))}
+                  <Text style={styles.ratingText}>5.0</Text>
                 </View>
               </View>
-              <Ionicons name="checkmark-circle" size={28} color="#32BF5B" />
+              <View style={styles.verifiedBadge}>
+                <Ionicons
+                  name="checkmark"
+                  size={22}
+                  color={Theme.colors.white}
+                />
+              </View>
             </View>
 
-            <View style={styles.divider} />
-
-            {/* Row 1 */}
             <View style={styles.detailsRow}>
               <View style={styles.detailCell}>
                 <Text style={styles.detailLabel}>Trip Details :</Text>
@@ -142,13 +166,12 @@ const TravellerMatchDetailsScreen = () => {
               </View>
               <View style={styles.detailCell}>
                 <Text style={styles.detailLabel}>Your Item :</Text>
-                <Text style={styles.detailValue}>{itemName ?? "—"}</Text>
+                <Text style={styles.detailValue}>{displayItemName}</Text>
               </View>
             </View>
 
             <View style={styles.divider} />
 
-            {/* Row 2 */}
             <View style={styles.detailsRow}>
               <View style={styles.detailCell}>
                 <Text style={styles.detailLabel}>Remaining Seats / Space :</Text>
@@ -160,11 +183,14 @@ const TravellerMatchDetailsScreen = () => {
               </View>
             </View>
 
-            {/* Chat button */}
-            <TouchableOpacity style={styles.chatButton} onPress={handleChat}>
-              <Text style={styles.chatButtonText}>
-                Chat with {displayName.split(" ")[0]}
-              </Text>
+            <View style={styles.divider} />
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={styles.paymentButton}
+              onPress={handleMakePayment}
+            >
+              <Text style={styles.paymentButtonText}>Make Payment</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -182,100 +208,120 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 56,
-    paddingBottom: 16,
+    paddingHorizontal: Theme.spacing.lg,
+    paddingTop: 104,
+    paddingBottom: Theme.spacing.xl,
   },
   iconBtn: {
-    width: 24,
-    height: 24,
+    width: 32,
+    height: 32,
     justifyContent: "center",
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontFamily: "Inter-SemiBold",
-    color: "#111",
+    color: Theme.colors.text.dark,
   },
   body: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 40,
+    paddingHorizontal: Theme.spacing.lg,
+    paddingTop: Theme.spacing.md,
+    paddingBottom: Theme.spacing.xl,
   },
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 19,
-    padding: 16,
+    backgroundColor: Theme.colors.white,
+    borderRadius: 20,
+    paddingHorizontal: Theme.spacing.md,
+    paddingTop: Theme.spacing.lg,
+    paddingBottom: Theme.spacing.lg,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   profileRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: Theme.spacing.lg,
   },
   avatarFallback: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: "#F5D6A8",
     justifyContent: "center",
     alignItems: "center",
   },
   avatarInitials: {
-    fontSize: 18,
+    fontSize: 15,
     fontFamily: "Inter-Bold",
     color: Theme.colors.primary,
   },
   profileInfo: {
-    marginLeft: 12,
+    marginLeft: Theme.spacing.sm,
     flex: 1,
   },
   profileName: {
-    fontSize: 15,
+    fontSize: 17,
     fontFamily: "Inter-SemiBold",
-    color: "#111",
+    color: Theme.colors.text.dark,
     marginBottom: 4,
   },
   ratingRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 2,
+  },
+  starIcon: {
+    marginRight: 2,
+  },
+  ratingText: {
+    fontSize: 11,
+    fontFamily: "Inter-Regular",
+    color: Theme.colors.text.gray,
+    marginLeft: 5,
+  },
+  verifiedBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Theme.colors.green,
+    alignItems: "center",
+    justifyContent: "center",
   },
   divider: {
     height: 1,
-    backgroundColor: "#F3F4F6",
-    marginVertical: 14,
+    backgroundColor: Theme.colors.background.border,
+    marginVertical: Theme.spacing.md,
   },
   detailsRow: {
     flexDirection: "row",
   },
   detailCell: {
     flex: 1,
-    gap: 6,
   },
   detailLabel: {
-    fontSize: 11,
+    fontSize: 13,
     fontFamily: "Inter-Regular",
     color: "#6B7280",
-    lineHeight: 16,
+    marginBottom: 7,
   },
   detailValue: {
-    fontSize: 13,
-    fontFamily: "Inter-SemiBold",
-    color: "#111",
+    fontSize: 15,
+    fontFamily: "Inter-Regular",
+    color: Theme.colors.text.dark,
   },
-  chatButton: {
+  paymentButton: {
     backgroundColor: Theme.colors.primary,
-    borderRadius: 100,
-    height: 42,
+    borderRadius: 24,
+    height: 48,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 24,
+    marginTop: Theme.spacing.sm,
   },
-  chatButtonText: {
-    fontSize: 12,
+  paymentButtonText: {
+    fontSize: 14,
     fontFamily: "Inter-SemiBold",
-    color: "#fff",
-    letterSpacing: -0.12,
+    color: Theme.colors.white,
   },
   errorText: {
     textAlign: "center",

@@ -1,4 +1,4 @@
-import { apiRequest, API_ENDPOINTS } from "./api";
+import { API_ENDPOINTS, apiRequest } from "./api";
 
 export interface CreateSenderParams {
 	userId: string;
@@ -96,11 +96,28 @@ export interface ShipmentDetails {
 	};
 	sender: { id: string; userId: string };
 	traveller: { id: string; userId: string };
+	deliveryPhotoUrl?: string | null;
+}
+
+export interface GetShipmentsResponse {
+	data: ShipmentDetails[];
+	meta: {
+		page: number;
+		limit: number;
+		total: number;
+		totalPages: number;
+		hasNextPage: boolean;
+		hasPreviousPage: boolean;
+	};
 }
 
 export interface GetSenderResponse {
 	senderId: string;
 	userId: string;
+}
+
+export interface ShipmentCodeResponse {
+	code: string;
 }
 
 export interface Package {
@@ -166,6 +183,7 @@ export const senderService = {
 	},
 
 	async getPackages(userId: string, accessToken: string) {
+		console.log({userId,accessToken, getPackages:API_ENDPOINTS.sender.getPackages(userId) })
 		return apiRequest<GetPackagesResponse>(API_ENDPOINTS.sender.getPackages(userId), {
 			method: "GET",
 			headers: {
@@ -191,5 +209,41 @@ export const senderService = {
 				Authorization: `Bearer ${accessToken}`,
 			},
 		});
+	},
+
+	async getPickupCode(shipmentId: string, accessToken: string) {
+		return apiRequest<ShipmentCodeResponse>(
+			API_ENDPOINTS.shipments.getItemPickupCode(shipmentId),
+			{
+				method: "GET",
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			}
+		);
+	},
+
+	async getDeliveryCode(shipmentId: string, accessToken: string) {
+		return apiRequest<ShipmentCodeResponse>(
+			API_ENDPOINTS.shipments.getItemDeliveryCode(shipmentId),
+			{
+				method: "GET",
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			}
+		);
+	},
+
+	async getSenderShipments(senderId: string, accessToken: string) {
+		return apiRequest<GetShipmentsResponse>(
+			API_ENDPOINTS.shipments.listByRole(senderId, "SENDER"),
+			{
+				method: "GET",
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			}
+		);
 	},
 };

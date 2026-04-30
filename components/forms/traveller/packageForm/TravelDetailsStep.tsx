@@ -1,19 +1,20 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Platform, StyleSheet } from "react-native";
+import AppTheme from "@/constants/Theme";
 import { Ionicons } from "@expo/vector-icons";
-import { FormikErrors, FormikTouched, FormikHandlers } from "formik";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import Theme from "@/constants/Theme";
+import { FormikErrors, FormikHandlers, FormikTouched } from "formik";
+import React, { useState } from "react";
+import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import CustomDropdown from "../../../ui/Dropdown";
 import LocationPicker from "../../../ui/LocationPicker";
-import { PackageFormValues, LocationData } from "./types";
 import { modeOptions } from "./constants";
+import { LocationData, PackageFormValues } from "./types";
 
 type TravelDetailsStepProps = {
   values: PackageFormValues;
   errors: FormikErrors<PackageFormValues>;
   touched: FormikTouched<PackageFormValues>;
-  setFieldValue: (field: string, value: any) => void;
+  setFieldValue: (field: string, value: any, shouldValidate?: boolean) => Promise<unknown> | void;
+  setFieldTouched: (field: string, isTouched?: boolean, shouldValidate?: boolean) => Promise<unknown> | void;
   handleChange: FormikHandlers["handleChange"];
 };
 
@@ -22,6 +23,7 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
   errors,
   touched,
   setFieldValue,
+  setFieldTouched,
   handleChange,
 }) => {
   const [showDepartureDatePicker, setShowDepartureDatePicker] = useState(false);
@@ -50,6 +52,31 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
     });
   };
 
+  const updateField = async (
+    field: keyof PackageFormValues,
+    value: PackageFormValues[keyof PackageFormValues],
+  ) => {
+    await setFieldValue(field, value, true);
+    await setFieldTouched(field, true, false);
+  };
+
+  const updateLocation = async (
+    field: "origin" | "destination",
+    location: LocationData | null,
+  ) => {
+    const countryField = field === "origin" ? "originCountry" : "destinationCountry";
+    const cityField = field === "origin" ? "originCity" : "destinationCity";
+    const latitudeField = field === "origin" ? "originLatitude" : "destinationLatitude";
+    const longitudeField = field === "origin" ? "originLongitude" : "destinationLongitude";
+
+    await setFieldValue(countryField, location?.countryCode || location?.country || "", false);
+    await setFieldValue(cityField, location?.city || "", false);
+    await setFieldValue(latitudeField, location?.latitude ?? null, false);
+    await setFieldValue(longitudeField, location?.longitude ?? null, false);
+    await setFieldValue(field, location, true);
+    await setFieldTouched(field, true, false);
+  };
+
   return (
     <>
       {/* Origin */}
@@ -59,11 +86,7 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
           placeholder="Search origin city..."
           value={values.origin}
           onLocationSelect={(location: LocationData | null) => {
-            setFieldValue("origin", location);
-            setFieldValue("originCountry", location?.countryCode || "");
-            setFieldValue("originCity", location?.city || "");
-            setFieldValue("originLatitude", location?.latitude || null);
-            setFieldValue("originLongitude", location?.longitude || null);
+            void updateLocation("origin", location);
           }}
           error={touched.origin && errors.origin ? String(errors.origin) : undefined}
         />
@@ -76,11 +99,7 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
           placeholder="Search destination city..."
           value={values.destination}
           onLocationSelect={(location: LocationData | null) => {
-            setFieldValue("destination", location);
-            setFieldValue("destinationCountry", location?.countryCode || "");
-            setFieldValue("destinationCity", location?.city || "");
-            setFieldValue("destinationLatitude", location?.latitude || null);
-            setFieldValue("destinationLongitude", location?.longitude || null);
+            void updateLocation("destination", location);
           }}
           error={touched.destination && errors.destination ? String(errors.destination) : undefined}
         />
@@ -98,7 +117,7 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
         <Text style={[styles.datePickerText, !values.departureDate && styles.placeholderText]}>
           {values.departureDate ? formatDate(values.departureDate) : "Select Date"}
         </Text>
-        <Ionicons name="calendar-outline" size={20} color={Theme.colors.text.gray} />
+        <Ionicons name="calendar-outline" size={20} color={AppTheme.colors.text.gray} />
       </TouchableOpacity>
       {touched.departureDate && errors.departureDate && (
         <Text style={styles.errorText}>{errors.departureDate}</Text>
@@ -120,11 +139,11 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
                 if (selectedDate) {
                   const formatted = selectedDate.toISOString().split("T")[0];
                   setTempDepartureDate(selectedDate);
-                  setFieldValue("departureDate", formatted);
+                  void updateField("departureDate", formatted);
                 }
               }}
               minimumDate={new Date()}
-              textColor={Theme.colors.black}
+              textColor={AppTheme.colors.black}
             />
           </View>
         ) : (
@@ -137,7 +156,7 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
               if (event.type === "set" && selectedDate) {
                 const formatted = selectedDate.toISOString().split("T")[0];
                 setTempDepartureDate(selectedDate);
-                setFieldValue("departureDate", formatted);
+                void updateField("departureDate", formatted);
               }
             }}
             minimumDate={new Date()}
@@ -157,7 +176,7 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
         <Text style={[styles.datePickerText, !values.departureTime && styles.placeholderText]}>
           {values.departureTime || "Select Time"}
         </Text>
-        <Ionicons name="time-outline" size={20} color={Theme.colors.text.gray} />
+        <Ionicons name="time-outline" size={20} color={AppTheme.colors.text.gray} />
       </TouchableOpacity>
       {touched.departureTime && errors.departureTime && (
         <Text style={styles.errorText}>{errors.departureTime}</Text>
@@ -183,10 +202,10 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
                     hour12: false,
                   });
                   setTempDepartureTime(selectedTime);
-                  setFieldValue("departureTime", formatted);
+                  void updateField("departureTime", formatted);
                 }
               }}
-              textColor={Theme.colors.black}
+              textColor={AppTheme.colors.black}
             />
           </View>
         ) : (
@@ -203,7 +222,7 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
                   hour12: false,
                 });
                 setTempDepartureTime(selectedTime);
-                setFieldValue("departureTime", formatted);
+                void updateField("departureTime", formatted);
               }
             }}
           />
@@ -222,7 +241,7 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
         <Text style={[styles.datePickerText, !values.arrivalDate && styles.placeholderText]}>
           {values.arrivalDate ? formatDate(values.arrivalDate) : "Select Date"}
         </Text>
-        <Ionicons name="calendar-outline" size={20} color={Theme.colors.text.gray} />
+        <Ionicons name="calendar-outline" size={20} color={AppTheme.colors.text.gray} />
       </TouchableOpacity>
       {touched.arrivalDate && errors.arrivalDate && (
         <Text style={styles.errorText}>{errors.arrivalDate}</Text>
@@ -244,11 +263,11 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
                 if (selectedDate) {
                   const formatted = selectedDate.toISOString().split("T")[0];
                   setTempArrivalDate(selectedDate);
-                  setFieldValue("arrivalDate", formatted);
+                  void updateField("arrivalDate", formatted);
                 }
               }}
               minimumDate={values.departureDate ? new Date(values.departureDate) : new Date()}
-              textColor={Theme.colors.black}
+              textColor={AppTheme.colors.black}
             />
           </View>
         ) : (
@@ -261,7 +280,7 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
               if (event.type === "set" && selectedDate) {
                 const formatted = selectedDate.toISOString().split("T")[0];
                 setTempArrivalDate(selectedDate);
-                setFieldValue("arrivalDate", formatted);
+                void updateField("arrivalDate", formatted);
               }
             }}
             minimumDate={values.departureDate ? new Date(values.departureDate) : new Date()}
@@ -281,7 +300,7 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
         <Text style={[styles.datePickerText, !values.arrivalTime && styles.placeholderText]}>
           {values.arrivalTime || "Select Time"}
         </Text>
-        <Ionicons name="time-outline" size={20} color={Theme.colors.text.gray} />
+        <Ionicons name="time-outline" size={20} color={AppTheme.colors.text.gray} />
       </TouchableOpacity>
       {touched.arrivalTime && errors.arrivalTime && (
         <Text style={styles.errorText}>{errors.arrivalTime}</Text>
@@ -307,10 +326,10 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
                     hour12: false,
                   });
                   setTempArrivalTime(selectedTime);
-                  setFieldValue("arrivalTime", formatted);
+                  void updateField("arrivalTime", formatted);
                 }
               }}
-              textColor={Theme.colors.black}
+              textColor={AppTheme.colors.black}
             />
           </View>
         ) : (
@@ -327,7 +346,7 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
                   hour12: false,
                 });
                 setTempArrivalTime(selectedTime);
-                setFieldValue("arrivalTime", formatted);
+                void updateField("arrivalTime", formatted);
               }
             }}
           />
@@ -340,9 +359,12 @@ const TravelDetailsStep: React.FC<TravelDetailsStepProps> = ({
         value={values.mode}
         options={modeOptions}
         onSelect={(value) => {
-          setFieldValue("mode", value);
-          setFieldValue("flightNumber", "");
-          setFieldValue("vehiclePlate", "");
+          void (async () => {
+            await setFieldValue("flightNumber", "", false);
+            await setFieldValue("vehiclePlate", "", false);
+            await setFieldValue("mode", value, true);
+            await setFieldTouched("mode", true, false);
+          })();
         }}
         placeholder="Select Mode of Transport"
       />
@@ -389,66 +411,66 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: Theme.colors.black,
-    marginBottom: Theme.spacing.sm,
-    marginTop: Theme.spacing.md,
+    color: AppTheme.colors.black,
+    marginBottom: AppTheme.spacing.sm,
+    marginTop: AppTheme.spacing.md,
   },
   datePickerButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
-    borderColor: Theme.colors.text.border,
+    borderColor: AppTheme.colors.text.border,
     borderRadius: 8,
-    paddingHorizontal: Theme.spacing.md,
-    paddingVertical: Theme.spacing.md,
-    backgroundColor: Theme.colors.white,
+    paddingHorizontal: AppTheme.spacing.md,
+    paddingVertical: AppTheme.spacing.md,
+    backgroundColor: AppTheme.colors.white,
   },
   datePickerText: {
     fontSize: 16,
-    color: Theme.colors.text.dark,
+    color: AppTheme.colors.text.dark,
   },
   placeholderText: {
     color: "#999",
   },
   textInput: {
     borderWidth: 1,
-    borderColor: Theme.colors.text.border,
+    borderColor: AppTheme.colors.text.border,
     borderRadius: 8,
-    paddingHorizontal: Theme.spacing.md,
-    paddingVertical: Theme.spacing.md,
+    paddingHorizontal: AppTheme.spacing.md,
+    paddingVertical: AppTheme.spacing.md,
     fontSize: 16,
-    color: Theme.colors.text.dark,
-    backgroundColor: Theme.colors.white,
+    color: AppTheme.colors.text.dark,
+    backgroundColor: AppTheme.colors.white,
   },
   errorText: {
     fontSize: 12,
-    color: Theme.colors.error,
+    color: AppTheme.colors.error,
     marginTop: 4,
     marginBottom: 4,
-    marginLeft: Theme.spacing.xs,
+    marginLeft: AppTheme.spacing.xs,
   },
   pickerContainer: {
-    backgroundColor: Theme.colors.white,
+    backgroundColor: AppTheme.colors.white,
     borderRadius: 12,
-    marginTop: Theme.spacing.sm,
+    marginTop: AppTheme.spacing.sm,
     borderWidth: 1,
-    borderColor: Theme.colors.text.border,
+    borderColor: AppTheme.colors.text.border,
     overflow: "hidden",
   },
   pickerHeader: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    paddingHorizontal: Theme.spacing.md,
-    paddingVertical: Theme.spacing.sm,
+    paddingHorizontal: AppTheme.spacing.md,
+    paddingVertical: AppTheme.spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.text.border,
+    borderBottomColor: AppTheme.colors.text.border,
     backgroundColor: "#F8F8F8",
   },
   pickerDoneText: {
     fontSize: 16,
     fontWeight: "600",
-    color: Theme.colors.green,
+    color: AppTheme.colors.green,
   },
 });
 

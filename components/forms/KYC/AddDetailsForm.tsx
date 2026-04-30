@@ -2,7 +2,7 @@ import Theme from "@/constants/Theme";
 import { AuthContext } from "@/context/AuthContext";
 import { UserProfile, userService } from "@/services/userService";
 import { Formik } from "formik";
-import React, { useState, useMemo, useEffect, useContext } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import {
     KeyboardAvoidingView,
     Platform,
@@ -15,8 +15,8 @@ import { Toast } from "toastify-react-native";
 import * as Yup from "yup";
 import CustomButton from "../../ui/CustomButton";
 import CustomTextInput from "../../ui/CustomTextInput";
-import PhoneNumberInput, { DEFAULT_COUNTRY, Country, COUNTRIES } from "../../ui/PhoneNumberInput";
 import LocationPicker from "../../ui/LocationPicker";
+import PhoneNumberInput, { COUNTRIES, Country, DEFAULT_COUNTRY } from "../../ui/PhoneNumberInput";
 import { LocationData } from "../traveller/packageForm/types";
 
 type AddDetailsFormProps = {
@@ -32,8 +32,8 @@ const ValidationSchema = Yup.object().shape({
     addressLineA: Yup.string().required("Address line A is required"),
     addressLineB: Yup.string().optional(),
     postalCode: Yup.string().optional(),
-    city: Yup.string().required("Location is required"),
-    country: Yup.string().required("Location is required"),
+    city: Yup.string().required("City is required"),
+    country: Yup.string().required("Country is required"),
 });
 
 function parsePhone(fullPhone: string): { country: Country; number: string } {
@@ -133,6 +133,7 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                     if (!userId || !accessToken) return;
                     try {
                         setLoading(true);
+                        console.log({values});
 
                         const fullPhoneNumber = `${phoneCountry.dialCode}${values.phoneNumber}`;
                         const fullEmergencyContact = values.emergencyContact
@@ -252,31 +253,43 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                             placeholder="Apartment, suite, unit, etc."
                         />
 
-                        <Text style={styles.inputLabel}>City</Text>
-                        <LocationPicker
-                            placeholder="Search for your city..."
-                            value={cityLocation}
-                            onLocationSelect={(loc) => {
-                                setCityLocation(loc ? { ...loc, description: loc.city } : null);
-                                setFieldValue("city", loc?.city || "");
-                                if (loc?.country) {
-                                    setCountryLocation({ ...loc, description: loc.country });
-                                    setFieldValue("country", loc.countryCode || "");
-                                }
-                            }}
-                            error={errors.city && touched.city ? errors.city : undefined}
-                        />
+                        <View style={styles.cityPickerLayer}>
+                            <Text style={styles.inputLabel}>City</Text>
+                            <LocationPicker
+                                placeholder="Search for your city..."
+                                value={cityLocation}
+                                zIndex={30}
+                                onInputChange={(text) => {
+                                    setFieldValue("city", text);
+                                }}
+                                onLocationSelect={(loc) => {
+                                    setCityLocation(loc ? { ...loc, description: loc.city } : null);
+                                    setFieldValue("city", loc?.city || loc?.description || "");
+                                    if (loc?.country) {
+                                        setCountryLocation({ ...loc, description: loc.country });
+                                        setFieldValue("country", loc.country);
+                                    }
+                                }}
+                                error={errors.city && touched.city ? errors.city : undefined}
+                            />
+                        </View>
 
-                        <Text style={styles.inputLabel}>Country</Text>
-                        <LocationPicker
-                            placeholder="Search for your country..."
-                            value={countryLocation}
-                            onLocationSelect={(loc) => {
-                                setCountryLocation(loc ? { ...loc, description: loc.country } : null);
-                                setFieldValue("country", loc?.countryCode || "");
-                            }}
-                            error={errors.country && touched.country ? errors.country : undefined}
-                        />
+                        <View style={styles.countryPickerLayer}>
+                            <Text style={styles.inputLabel}>Country</Text>
+                            <LocationPicker
+                                placeholder="Search for your country..."
+                                value={countryLocation}
+                                zIndex={20}
+                                onInputChange={(text) => {
+                                    setFieldValue("country", text);
+                                }}
+                                onLocationSelect={(loc) => {
+                                    setCountryLocation(loc ? { ...loc, description: loc.country } : null);
+                                    setFieldValue("country", loc?.country || loc?.description || "");
+                                }}
+                                error={errors.country && touched.country ? errors.country : undefined}
+                            />
+                        </View>
 
                         <Text style={styles.inputLabel}>Postal Code</Text>
                         <CustomTextInput
@@ -329,6 +342,22 @@ const styles = StyleSheet.create({
         paddingTop: Theme.spacing.md,
         paddingBottom: Theme.spacing.xs,
         fontWeight: '600',
+    },
+    cityPickerLayer: {
+        zIndex: 30,
+        ...Platform.select({
+            android: {
+                elevation: 30,
+            },
+        }),
+    },
+    countryPickerLayer: {
+        zIndex: 20,
+        ...Platform.select({
+            android: {
+                elevation: 20,
+            },
+        }),
     },
     errorText: {
         color: Theme.colors.error,

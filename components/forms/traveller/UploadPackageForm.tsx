@@ -7,7 +7,7 @@ import {
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Theme from "@/constants/Theme";
+import { Theme } from "@/constants/Theme";
 
 interface UploadPackageFormProps {
   onBack: () => void;
@@ -15,6 +15,9 @@ interface UploadPackageFormProps {
   onTakePhoto: () => void;
   onUpload: () => void;
   selectedImage: string | null;
+  title?: string;
+  instructionText?: string;
+  uploadButtonLabel?: string;
 }
 
 const UploadPackageForm: React.FC<UploadPackageFormProps> = ({
@@ -23,6 +26,9 @@ const UploadPackageForm: React.FC<UploadPackageFormProps> = ({
   onTakePhoto,
   onUpload,
   selectedImage,
+  title = "Upload Package",
+  instructionText = "Uploading the received package helps us verify the item for both your and the traveler's safety.",
+  uploadButtonLabel = "Upload",
 }) => {
   return (
     <View style={styles.container}>
@@ -32,7 +38,7 @@ const UploadPackageForm: React.FC<UploadPackageFormProps> = ({
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Upload Package</Text>
+          <Text style={styles.headerTitle}>{title}</Text>
         </View>
 
         <TouchableOpacity style={styles.iconButton}>
@@ -41,10 +47,7 @@ const UploadPackageForm: React.FC<UploadPackageFormProps> = ({
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.instructionText}>
-          Uploading the received package helps us verify{"\n"}
-          the item for both your and the traveler’s safety.
-        </Text>
+        <Text style={styles.instructionText}>{instructionText}</Text>
 
         <TouchableOpacity
           style={[
@@ -75,7 +78,7 @@ const UploadPackageForm: React.FC<UploadPackageFormProps> = ({
           onPress={onUpload}
         >
           <Ionicons name="cloud-upload" size={20} color={Theme.colors.white} />
-          <Text style={styles.cameraButtonText}>Upload</Text>
+          <Text style={styles.cameraButtonText}>{uploadButtonLabel}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -110,7 +113,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "600",
+    fontFamily: "Inter-SemiBold",
     color: Theme.colors.black,
   },
   content: {
@@ -119,6 +122,7 @@ const styles = StyleSheet.create({
   },
   instructionText: {
     fontSize: 14,
+    fontFamily: "Inter-Regular",
     color: Theme.colors.text.gray,
     textAlign: "center",
     marginBottom: Theme.spacing.xl,
@@ -147,11 +151,13 @@ const styles = StyleSheet.create({
   },
   uploadText: {
     fontSize: 14,
+    fontFamily: "Inter-Regular",
     color: "#CCCCCC",
     marginTop: Theme.spacing.sm,
   },
   orText: {
     fontSize: 14,
+    fontFamily: "Inter-Regular",
     color: Theme.colors.text.gray,
     textAlign: "center",
     marginVertical: Theme.spacing.md,
@@ -168,7 +174,7 @@ const styles = StyleSheet.create({
   cameraButtonText: {
     color: Theme.colors.white,
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: "Inter-SemiBold",
   },
 });
 

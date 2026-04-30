@@ -1,11 +1,13 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { Theme } from "@/constants/Theme";
 import { Ionicons } from "@expo/vector-icons";
-import Theme from "@/constants/Theme";
-import CustomButton from "../../ui/CustomButton";
 import { router } from "expo-router";
+import React from "react";
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import CustomButton from "../../ui/CustomButton";
 
 interface shipmentDetailsFormProps {
+    headerTitle: string;
+    shipmentId?: string;
     itemId: string;
     shipperName: string;
     receiverName: string;
@@ -14,10 +16,14 @@ interface shipmentDetailsFormProps {
     toLocation: string;
     status: string;
     progress: string;
+    deliveryPhotoUrl?: string;
     onBack: () => void;
 }
 
 const ShipmentDetailsForm: React.FC<shipmentDetailsFormProps> = ({
+    headerTitle,
+    
+    shipmentId,
     itemId,
     shipperName,
     receiverName,
@@ -26,15 +32,36 @@ const ShipmentDetailsForm: React.FC<shipmentDetailsFormProps> = ({
     toLocation,
     progress,
     status,
+    deliveryPhotoUrl,
     onBack,
 }) => {
+    const isDelivered = progress === "Delivered";
+    const statusLabel = progress;
+
     return (
         <View style={styles.container}>
-            <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+            <View style={styles.header}>
+                <TouchableOpacity onPress={onBack} style={styles.headerButton}>
+                    <Ionicons name="chevron-back" size={24} color={Theme.colors.black} />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>{headerTitle}</Text>
+                <TouchableOpacity style={styles.headerButton}>
+                    <Ionicons
+                        name="ellipsis-vertical"
+                        size={22}
+                        color={Theme.colors.black}
+                    />
+                </TouchableOpacity>
+            </View>
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
                 <View style={styles.userCard}>
                     <View style={styles.userInfo}>
-                        <View style={styles.avatarContainer}>
-                            <Ionicons name="person-circle" size={50} color={Theme.colors.primary} />
+                        <View style={styles.packageIconContainer}>
+                            <Ionicons name="cube-outline" size={20} color={Theme.colors.primary} />
                         </View>
                         <View style={styles.userTextContainer}>
                             <Text style={styles.userName}>{itemId}</Text>
@@ -51,12 +78,12 @@ const ShipmentDetailsForm: React.FC<shipmentDetailsFormProps> = ({
                             <Text
                                 style={[
                                     styles.statusText,
-                                    progress === "Delivered"
+                                    isDelivered
                                         ? styles.deliveredText
                                         : styles.inTransitText,
                                 ]}
                             >
-                                {progress === "Delivered" ? "Delivered" : "In Transit"}
+                                {statusLabel}
                             </Text>
                         </View>
                     </View>
@@ -87,14 +114,41 @@ const ShipmentDetailsForm: React.FC<shipmentDetailsFormProps> = ({
                                 <Text style={styles.detailValue}>{toLocation}</Text>
                             </View>
                         </View>
-
-
                     </View>
 
+                    {deliveryPhotoUrl ? (
+                        <>
+                            <View style={styles.lineContainer}>
+                                <View style={styles.line} />
+                            </View>
+                            <View style={styles.deliveryPhotoSection}>
+                                <Text style={styles.sectionTitle}>Delivery Photo</Text>
+                                <Image
+                                    source={{ uri: deliveryPhotoUrl }}
+                                    style={styles.deliveryPhoto}
+                                    resizeMode="cover"
+                                />
+                            </View>
+                        </>
+                    ) : null}
+
                     <CustomButton
-                        title='Start Trip'
-                        onPress={() =>router.push("/(traveller)/packageUpload")}
-                   
+                        title='Update Order'
+                        onPress={() =>
+                            router.push({
+                                pathname: "/(traveller)/trackingDetails",
+                                params: {
+                                    
+                                    shipmentId,
+                                    itemId,
+                                    itemName,
+                                    progress,
+                                    status,
+                                },
+                            })
+                        }
+                        style={styles.actionButton}
+                        textStyle={styles.actionButtonText}
                     />
                 </View>
             </ScrollView>
@@ -105,58 +159,50 @@ const ShipmentDetailsForm: React.FC<shipmentDetailsFormProps> = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingTop: Theme.spacing.xxxxxl,
         backgroundColor: Theme.colors.background.secondary,
     },
     header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: Theme.spacing.md,
-        paddingVertical: Theme.spacing.md,
-        backgroundColor: Theme.colors.white,
-        borderBottomWidth: 1,
-        borderBottomColor: Theme.colors.text.border,
-    },
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingTop: 56,
+        paddingHorizontal: Theme.spacing.lg,
+        paddingBottom: Theme.spacing.xl,
+      },
+      headerButton: {
+        width: 32,
+        height: 32,
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      headerTitle: {
+        fontSize: 16,
+        fontFamily: "Inter-SemiBold",
+        color: Theme.colors.text.dark,
+      },
     line: {
         flex: 1,
         height: 1,
-        backgroundColor: '#E5E5E5',
+        backgroundColor: Theme.colors.background.border,
     },
     lineContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginVertical: 20,
-    },
-    iconButton: {
-        width: 40,
-        height: 40,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    headerCenter: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    headerTitle: {
-        fontSize: Theme.typography.h2.fontSize,
-        fontWeight: Theme.typography.h2.fontWeight,
-        color: Theme.colors.black,
+        marginVertical: Theme.spacing.md,
     },
     scrollView: {
         flex: 1,
     },
     scrollContent: {
-        padding: Theme.spacing.md,
+        flexGrow: 1,
+        justifyContent: 'center',
+        paddingHorizontal: Theme.spacing.lg,
+        paddingVertical: Theme.spacing.xl,
     },
     userCard: {
         backgroundColor: Theme.colors.white,
-        borderRadius: Theme.borderRadius.md,
+        borderRadius: 20,
         padding: Theme.spacing.lg,
-        marginBottom: Theme.spacing.md,
         shadowColor: Theme.colors.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
@@ -168,32 +214,22 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: Theme.spacing.lg,
     },
-    avatarContainer: {
-        marginRight: Theme.spacing.md,
-    },
-    avatar: {
-        width: 50,
-        height: 50,
-        borderRadius: Theme.borderRadius.lg,
-        marginRight: Theme.spacing.md,
-    },
-    avatarPlaceholder: {
-        backgroundColor: '#D4A574',
+    packageIconContainer: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        marginRight: Theme.spacing.sm,
+        backgroundColor: Theme.colors.yellow,
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    avatarText: {
-        fontSize: 20,
-        fontWeight: '600',
-        color: Theme.colors.white,
     },
     userTextContainer: {
         flex: 1,
     },
     statusBadge: {
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        borderRadius: 20,
+        paddingVertical: 8,
+        paddingHorizontal: 13,
+        borderRadius: 18,
     },
     inTransit: {
         backgroundColor: Theme.colors.lightPurple,
@@ -202,47 +238,72 @@ const styles = StyleSheet.create({
         backgroundColor: Theme.colors.lightGreen,
     },
     inTransitText: {
-        color:Theme.colors.white,
-        fontWeight: "400",
+        color: Theme.colors.white,
+        fontFamily: "Inter-Regular",
     },
     deliveredText: {
-        color: "#155724",
-        fontWeight: "400",
+        color: Theme.colors.primary,
+        fontFamily: "Inter-Regular",
     },
     statusText: {
-        fontSize: 14,
-        fontWeight: "600",
+        fontSize: 13,
     },
     userName: {
-        fontSize: Theme.typography.body.fontSize,
-        fontWeight: '600',
-        color: Theme.colors.black,
+        fontSize: 17,
+        fontFamily: 'Inter-Bold',
+        color: Theme.colors.text.dark,
         marginBottom: 2,
     },
     userSubtitle: {
-        fontSize: Theme.typography.caption.fontSize,
+        fontSize: 13,
+        fontFamily: 'Inter-Regular',
         color: Theme.colors.text.gray,
     },
     detailsGrid: {
         marginBottom: Theme.spacing.lg,
     },
+    deliveryPhotoSection: {
+        gap: Theme.spacing.sm,
+        marginBottom: Theme.spacing.lg,
+    },
+    sectionTitle: {
+        fontSize: 15,
+        fontFamily: 'Inter-SemiBold',
+        color: Theme.colors.text.dark,
+    },
+    deliveryPhoto: {
+        width: '100%',
+        height: 190,
+        borderRadius: Theme.borderRadius.md,
+        backgroundColor: Theme.colors.background.secondary,
+    },
     detailRow: {
         flexDirection: 'row',
-        marginBottom: Theme.spacing.md,
         gap: Theme.spacing.md,
     },
     detailItem: {
         flex: 1,
     },
     detailLabel: {
-        fontSize: Theme.typography.caption.fontSize,
+        fontSize: 13,
+        fontFamily: 'Inter-Regular',
         color: Theme.colors.text.gray,
         marginBottom: 4,
     },
     detailValue: {
-        fontSize: Theme.typography.body.fontSize,
-        color: Theme.colors.black,
-        fontWeight: '500',
+        fontSize: 15,
+        fontFamily: 'Inter-Regular',
+        color: Theme.colors.text.dark,
+    },
+    actionButton: {
+        marginTop: Theme.spacing.xl,
+        marginBottom: 0,
+        minHeight: 45,
+        paddingVertical: Theme.spacing.sm,
+    },
+    actionButtonText: {
+        fontSize: 14,
+        fontFamily: 'Inter-SemiBold',
     },
 });
 

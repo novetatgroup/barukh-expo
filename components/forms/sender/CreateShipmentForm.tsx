@@ -27,6 +27,9 @@ type CreateShipmentFormProps = {
   onSubmit: (data: ShipmentSubmitData) => void;
 };
 
+const isFiniteNumber = (value: number | null | undefined): value is number =>
+  typeof value === "number" && Number.isFinite(value);
+
 const CreateShipmentForm: React.FC<CreateShipmentFormProps> = ({ onSubmit }) => {
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -60,20 +63,22 @@ const CreateShipmentForm: React.FC<CreateShipmentFormProps> = ({ onSubmit }) => 
           quantity: Number(values.quantity),
           originCountry: values.originCountry,
           originCity: values.originCity,
-          ...(values.originLat && {
+          ...(isFiniteNumber(values.originLat) && isFiniteNumber(values.originLon) && {
             originLat: values.originLat,
-            originLon: values.originLon ?? undefined,
+            originLon: values.originLon,
           }),
           destinationCountry: values.destinationCountry,
           destinationCity: values.destinationCity,
-          ...(values.destinationLat && {
+          ...(isFiniteNumber(values.destinationLat) && isFiniteNumber(values.destinationLon) && {
             destinationLat: values.destinationLat,
-            destinationLon: values.destinationLon ?? undefined,
+            destinationLon: values.destinationLon,
           }),
           urgencyLevel: Number(values.urgencyLevel),
           requiredByDate: values.requiredByDate,
           ...(values.photoUri ? { photoUri: values.photoUri } : {}),
         };
+
+        
         await onSubmit(submitData);
       } catch (error) {
         console.error("Error submitting shipment details:", error);

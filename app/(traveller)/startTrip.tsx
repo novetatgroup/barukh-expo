@@ -1,23 +1,75 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useContext, useState } from "react";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Theme from "@/constants/Theme";
+import { Theme } from "@/constants/Theme";
 import CustomButton from "@/components/ui/CustomButton";
-import { router } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { travellerService } from "@/services/travellerService";
+import { AuthContext } from "@/context/AuthContext";
 
-type StartTripScreenProps = {
-  onCancel: () => void;
-  onStartTrip: () => void;
-};
+const StartTripScreen = () => {
+  const router = useRouter();
+  const { accessToken } = useContext(AuthContext);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const params = useLocalSearchParams<{
+    shipmentId?: string;
+    itemId?: string;
+    itemName?: string;
+    progress?: string;
+    packageUploaded?: string;
+    confirmPickUpCompleted?: string;
+    verificationCompleted?: string;
+    deliveryPhotoUploaded?: string;
+    confirmDeliveryCompleted?: string;
+    deliveryPhotoKey?: string;
+  }>();
 
-const StartTripScreen: React.FC<StartTripScreenProps> = ({
-  onCancel,
-  onStartTrip,
-}) => {
+  const handleStartTrip = async () => {
+    if (!params.shipmentId) {
+      Alert.alert("Missing shipment", "No shipment was provided for this trip.");
+      return;
+    }
+
+    if (!accessToken) {
+      Alert.alert("Authentication required", "Please sign in and try again.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    const result = await travellerService.updateShipmentStatus(
+      params.shipmentId,
+      { status: "INTRANSIT" },
+      accessToken
+    );
+    setIsSubmitting(false);
+
+    if (!result.ok) {
+      Alert.alert("Unable to start trip", result.error || "Please try again.");
+      return;
+    }
+
+    router.push({
+      pathname: "/(traveller)/trackingDetails",
+      params: {
+        shipmentId: params.shipmentId,
+        itemId: params.itemId || "#BK1624",
+        itemName: params.itemName || "MacBook Pro",
+        progress: params.progress || "In Transit",
+        packageUploaded: params.packageUploaded || "false",
+        confirmPickUpCompleted: params.confirmPickUpCompleted || "false",
+        tripStarted: "true",
+        verificationCompleted: params.verificationCompleted || "false",
+        deliveryPhotoUploaded: params.deliveryPhotoUploaded || "false",
+        confirmDeliveryCompleted: params.confirmDeliveryCompleted || "false",
+        deliveryPhotoKey: params.deliveryPhotoKey || "",
+      },
+    });
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={onCancel} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color={Theme.colors.text.dark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Start Trip</Text>
@@ -45,14 +97,15 @@ const StartTripScreen: React.FC<StartTripScreenProps> = ({
       <View style={styles.buttonContainer}>
         <CustomButton
           title="Cancel"
-          onPress={onCancel}
+          onPress={() => router.back()}
           style={styles.cancelButton}
           textStyle={styles.cancelButtonText}
         />
 
         <CustomButton
           title="Start Trip"
-          onPress= {() => router.push('/(traveller)/deliveryUpload')}
+          onPress={handleStartTrip}
+          loading={isSubmitting}
           style={styles.startButton}
           textStyle={styles.startButtonText}
         />

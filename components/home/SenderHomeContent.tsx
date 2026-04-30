@@ -1,11 +1,11 @@
+import { PackagePattern } from "@/assets/svgs";
 import Theme from "@/constants/Theme";
 import { AuthContext } from "@/context/AuthContext";
 import { Package, senderService } from "@/services/senderService";
 import { UserProfile, userService } from "@/services/userService";
-import { PackagePattern } from "@/assets/svgs";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -44,18 +44,23 @@ const SenderHomeContent = () => {
     fetchUser();
   }, [userId, accessToken]);
 
-  useEffect(() => {
-    const fetchPackages = async () => {
-      if (!userId || !accessToken) return;
-      setPackagesLoading(true);
-      const { data, ok } = await senderService.getPackages(userId, accessToken);
-      if (ok && data) {
-        setPackages(data.data);
-      }
+  const fetchPackages = useCallback(async () => {
+    if (!userId || !accessToken) {
       setPackagesLoading(false);
-    };
-    fetchPackages();
+      return;
+    }
+
+    setPackagesLoading(true);
+    const { data, ok } = await senderService.getPackages(userId, accessToken);
+    if (ok && data) {
+      setPackages(data.data);
+    }
+    setPackagesLoading(false);
   }, [userId, accessToken]);
+
+  useEffect(() => {
+    fetchPackages();
+  }, [fetchPackages]);
 
   const userName = userProfile?.firstName || "User";
 
@@ -203,6 +208,8 @@ const SenderHomeContent = () => {
   return (
     <View style={styles.content}>
       <FlatList
+        onRefresh={fetchPackages}
+        refreshing={packagesLoading}
         data={packages}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
@@ -218,7 +225,7 @@ const SenderHomeContent = () => {
               </View>
               <Text style={styles.emptyTitle}>No packages yet</Text>
               <Text style={styles.emptySubtext}>
-                You haven't sent any packages. Tap the button above to get started.
+                You haven&apos;t sent any packages. Tap the button above to get started.
               </Text>
              
             </View>

@@ -7,6 +7,8 @@ import { AuthContext } from "@/context/AuthContext";
 import { useShipment } from "@/context/ShipmentContext";
 import { CreateTripParams, travellerService } from "@/services/travellerService";
 
+const isFiniteNumber = (value: number | undefined): value is number =>
+  typeof value === "number" && Number.isFinite(value);
 
 const PackageDetailsScreen = () => {
   const { accessToken, userId } = useContext(AuthContext);
@@ -65,11 +67,11 @@ const PackageDetailsScreen = () => {
         originCity: packageData.originCity,
         destinationCountry: packageData.destinationCountry,
         destinationCity: packageData.destinationCity,
-        ...(packageData.originLatitude && {
+        ...(isFiniteNumber(packageData.originLatitude) && isFiniteNumber(packageData.originLongitude) && {
           originLat: packageData.originLatitude,
           originLon: packageData.originLongitude,
         }),
-        ...(packageData.destinationLatitude && {
+        ...(isFiniteNumber(packageData.destinationLatitude) && isFiniteNumber(packageData.destinationLongitude) && {
           destinationLat: packageData.destinationLatitude,
           destinationLon: packageData.destinationLongitude,
         }),
