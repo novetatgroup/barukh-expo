@@ -147,10 +147,20 @@ const TrackingDetailsScreen = () => {
     });
   };
 
+  const handleGoToShipmentDetails = () => {
+    router.replace({
+      pathname: "/(sender)/shipmentDetails",
+      params: {
+        id: shipmentId,
+        ...baseParams,
+      },
+    });
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
+        <TouchableOpacity onPress={handleGoToShipmentDetails} style={styles.headerButton}>
           <Ionicons name="chevron-back" size={26} color={Theme.colors.black} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Tracking Details</Text>
@@ -228,7 +238,7 @@ const TrackingDetailsScreen = () => {
         <TouchableOpacity
           activeOpacity={0.85}
           style={styles.closeButton}
-          onPress={() => router.back()}
+          onPress={handleGoToShipmentDetails}
         >
           <Text style={styles.closeButtonText}>Close</Text>
         </TouchableOpacity>

@@ -3,6 +3,11 @@ import { AuthContext } from "@/context/AuthContext";
 import { useRole } from "@/context/RoleContext";
 import { senderService, ShipmentDetails } from "@/services/senderService";
 import { travellerService } from "@/services/travellerService";
+import {
+  formatShipmentStatus,
+  normalizeShipmentStatus,
+  ShipmentStage,
+} from "@/utils/shipmentTracking";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useContext, useEffect, useState } from "react";
@@ -111,6 +116,7 @@ type CardModel = {
   detail: string;
   meta: string;
   showStars?: boolean;
+  statusStage?: ShipmentStage;
 };
 
 const senderTravellerMatches: SenderTravellerMatch[] = [
@@ -303,6 +309,7 @@ const getCardModel = (item: CategoryListItem): CardModel => {
         subtitle: item.itemName,
         detail: `${item.fromLocation} - ${item.toLocation}`,
         meta: item.progress,
+        statusStage: normalizeShipmentStatus(item.progress),
       };
     case "travellerMatchRequest":
       return {
@@ -330,17 +337,31 @@ const getCardModel = (item: CategoryListItem): CardModel => {
         subtitle: item.itemName,
         detail: `To ${item.recipientCity}`,
         meta: item.progress,
+        statusStage: normalizeShipmentStatus(item.progress),
       };
   }
 };
 
-const formatShipmentStatus = (status: string) =>
-  status
-    .toLowerCase()
-    .split(/[\s_-]+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
+const getStatusBadgeStyle = (stage: ShipmentStage) => {
+  if (stage === "DELIVERED") {
+    return {
+      backgroundColor: Theme.colors.lightGreen,
+      color: Theme.colors.primary,
+    };
+  }
+
+  if (stage === "IN_TRANSIT") {
+    return {
+      backgroundColor: Theme.colors.lightPurple,
+      color: Theme.colors.white,
+    };
+  }
+
+  return {
+    backgroundColor: Theme.colors.orange,
+    color: Theme.colors.white,
+  };
+};
 
 const formatDate = (value?: string) => {
   if (!value) return "Pending";
@@ -720,6 +741,9 @@ const ShipmentsScreen = () => {
           onRefresh={refreshRemoteShipments}
           renderItem={({ item }) => {
             const card = getCardModel(item);
+            const statusBadgeStyle = card.statusStage
+              ? getStatusBadgeStyle(card.statusStage)
+              : null;
 
             return (
               <TouchableOpacity
@@ -759,7 +783,25 @@ const ShipmentsScreen = () => {
                       ))}
                     </View>
                   )}
-                  <Text style={styles.metaText}>{card.meta}</Text>
+                  {statusBadgeStyle ? (
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        { backgroundColor: statusBadgeStyle.backgroundColor },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.statusBadgeText,
+                          { color: statusBadgeStyle.color },
+                        ]}
+                      >
+                        {card.meta}
+                      </Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.metaText}>{card.meta}</Text>
+                  )}
                 </View>
               </TouchableOpacity>
             );
@@ -878,7 +920,7 @@ const styles = StyleSheet.create({
   },
   metaContainer: {
     alignItems: "flex-end",
-    maxWidth: 86,
+    maxWidth: 104,
   },
   starsRow: {
     flexDirection: "row",
@@ -892,6 +934,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: "Inter-SemiBold",
     textAlign: "right",
+  },
+  statusBadge: {
+    minHeight: 26,
+    borderRadius: 13,
+    paddingHorizontal: Theme.spacing.sm,
+    paddingVertical: 5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statusBadgeText: {
+    fontSize: 11,
+    fontFamily: "Inter-SemiBold",
+    textAlign: "center",
   },
   emptyText: {
     textAlign: "center",

@@ -50,7 +50,7 @@ const ShipmentDetailsScreen = () => {
   );
 
   const handleBack = () => {
-    router.back();
+    router.replace("/(tabs)/shipments");
   };
 
   return (

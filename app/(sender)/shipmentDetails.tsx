@@ -99,7 +99,10 @@ const SenderShipmentDetailsScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
+        <TouchableOpacity
+          onPress={() => router.replace("/(tabs)/shipments")}
+          style={styles.headerButton}
+        >
           <Ionicons name="chevron-back" size={26} color={Theme.colors.black} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Shipment Details</Text>
