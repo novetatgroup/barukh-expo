@@ -240,9 +240,10 @@ const travellerShipments: TravellerShipment[] = [
   toLocation: 'XYZ 002',
   },
 ];
-
-const senderTabs = ["Traveller Matches", "Traveller Requests", "Shipments"] as const;
-const travellerTabs = ["Matches Requests", "Accepted", "Shipments"] as const;
+// sender archived tabs -> "Traveller Matches", "Traveller Requests"
+// traveller archived tabs -> "Matches Requests", "Accepted"
+const senderTabs = [ "Shipments"] as const;
+const travellerTabs = [ "Shipments"] as const;
 
 const getCategoryItems = (
   isTraveller: boolean,

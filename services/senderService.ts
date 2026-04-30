@@ -96,6 +96,7 @@ export interface ShipmentDetails {
 	};
 	sender: { id: string; userId: string };
 	traveller: { id: string; userId: string };
+	deliveryPhotoUrl?: string | null;
 }
 
 export interface GetShipmentsResponse {

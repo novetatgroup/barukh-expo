@@ -1,8 +1,16 @@
 import { Theme } from "@/constants/Theme";
-import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React from "react";
+import { AuthContext } from "@/context/AuthContext";
+import { senderService, ShipmentDetails } from "@/services/senderService";
 import {
+  formatShipmentStatus,
+  hasReachedShipmentStage,
+} from "@/utils/shipmentTracking";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useContext, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,7 +26,9 @@ type Step = {
     | "shareDeliveryCode"
     | "orderConfirmed"
     | "verificationCompleted"
-    | "deliveryStatus";
+    | "deliveryStatus"
+    | "inTransit"
+    | "completed";
   title: string;
   route?:
     | "/(sender)/uploadReceipt"
@@ -27,31 +37,51 @@ type Step = {
     | "/(sender)/shareDeliveryCode"
     | "/(sender)/confirmOrder"
     | "/(sender)/verificationScreen";
+  completed: boolean;
 };
-const checklistSteps: Step[] = [
-  // { key: "receiptUploaded", title: "Upload Receipt", route: "/(sender)/uploadReceipt" },
-  // { key: "trackingEntered", title: "Enter Tracking Number", route: "/(sender)/enterTrackingNumber" },
-  { key: "sharePickUpCode", title: "Share Pick Up Code", route: "/(sender)/sharePickupCode" },
-  // { key: "orderConfirmed", title: "Confirm Order", route: "/(sender)/confirmOrder" },
-  { key: "shareDeliveryCode", title: "Share Delivery Code", route: "/(sender)/shareDeliveryCode" },
-  // { key: "verificationCompleted", title: "Verify Traveller Code", route: "/(sender)/verificationScreen" },
-  { key: "deliveryStatus", title: "Delivery Status" },
-];
 
-const completedSteps = [
-  { date: "Mon, 21 July 2025", title: "Receipt Uploaded" },
-  { date: "Mon, 21 July 2025", title: "Tracking Number Added" },
-  { date: "Thur, 27 July 2025", title: "Pickup Code Shared" },
-  { date: "Sat, 29 July 2025", title: "Delivery Photo Approved" },
-  { date: "Sat, 29 July 2025", title: "Delivery Code Shared" },
-  { date: "Sat, 29 July 2025", title: "Traveller Code Verified" },
-  { date: "Sat, 29 July 2025", title: "Package Delivered" },
-];
+const getSenderSteps = (status?: string): Step[] => {
+  const pickedUp = hasReachedShipmentStage(status, "PICKED_UP");
+  const inTransit = hasReachedShipmentStage(status, "IN_TRANSIT");
+  const delivered = hasReachedShipmentStage(status, "DELIVERED");
 
-const isComplete = (value?: string) => value === "true";
+  return [
+    {
+      key: "sharePickUpCode",
+      title: "Share Pick Up Code",
+      route: "/(sender)/sharePickupCode",
+      completed: pickedUp,
+    },
+    {
+      key: "inTransit",
+      title: "In Transit",
+      completed: inTransit,
+    },
+    {
+      key: "shareDeliveryCode",
+      title: "Share Delivery Code",
+      route: "/(sender)/shareDeliveryCode",
+      completed: delivered,
+    },
+    {
+      key: "deliveryStatus",
+      title: "Delivery Status",
+      completed: delivered,
+    },
+    {
+      key: "completed",
+      title: "Completed",
+      completed: delivered,
+    },
+  ];
+};
 
 const TrackingDetailsScreen = () => {
   const router = useRouter();
+  const { accessToken } = useContext(AuthContext);
+  const [shipment, setShipment] = useState<ShipmentDetails | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const params = useLocalSearchParams<{
     id?: string;
     shipmentId?: string;
@@ -64,52 +94,54 @@ const TrackingDetailsScreen = () => {
     deliveryCodeShared?: string;
     orderConfirmed?: string;
     verificationCompleted?: string;
+    status?: string;
+    progress?: string;
   }>();
 
-  const shipmentId = params.id || "";
-  const itemId = params.itemId || "#BK1624";
-  const itemName = params.itemName || "MacBook Pro";
-  const receiptUploaded = isComplete(params.receiptUploaded);
-  const trackingEntered = isComplete(params.trackingEntered);
-  const pickupCodeShared = isComplete(params.pickupCodeShared);
-  const deliveryCodeShared = isComplete(params.deliveryCodeShared);
-  const orderConfirmed = isComplete(params.orderConfirmed);
-  const verificationCompleted = isComplete(params.verificationCompleted);
-  const allComplete =
-    receiptUploaded &&
-    trackingEntered &&
-    pickupCodeShared &&
-    deliveryCodeShared &&
-    orderConfirmed &&
-    verificationCompleted;
-
-  const completionByKey: Record<Step["key"], boolean> = {
-    receiptUploaded,
-    trackingEntered,
-    sharePickUpCode: pickupCodeShared,
-    shareDeliveryCode: deliveryCodeShared,
-    orderConfirmed,
-    verificationCompleted,
-    deliveryStatus: allComplete,
-  };
+  const shipmentId = params.shipmentId || params.id || "";
+  const status = shipment?.status || params.status || params.progress || "PENDING";
+  const itemId = shipment?.packageId
+    ? `#${shipment.packageId.slice(0, 8).toUpperCase()}`
+    : params.itemId || "#BK1624";
+  const itemName = shipment?.package?.name || params.itemName || "MacBook Pro";
+  const checklistSteps = useMemo(() => getSenderSteps(status), [status]);
 
   const baseParams = {
     shipmentId,
     orderId: params.orderId || "#01-BK1624",
     itemId,
     itemName,
-    receiptUploaded: String(receiptUploaded),
-    trackingEntered: String(trackingEntered),
-    pickupCodeShared: String(pickupCodeShared),
-    deliveryCodeShared: String(deliveryCodeShared),
-    orderConfirmed: String(orderConfirmed),
-    verificationCompleted: String(verificationCompleted),
+    status,
+    progress: formatShipmentStatus(status),
+    pickupCodeShared: String(hasReachedShipmentStage(status, "PICKED_UP")),
+    deliveryCodeShared: String(hasReachedShipmentStage(status, "DELIVERED")),
   };
 
+  const fetchShipment = useCallback(async () => {
+    if (!shipmentId || !accessToken) return;
+
+    setIsRefreshing(true);
+    setErrorMessage(null);
+    const result = await senderService.getShipment(shipmentId, accessToken);
+    setIsRefreshing(false);
+
+    if (!result.ok || !result.data) {
+      setErrorMessage(result.error || "Unable to load shipment.");
+      return;
+    }
+
+    setShipment(result.data);
+  }, [accessToken, shipmentId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchShipment();
+    }, [fetchShipment])
+  );
+
   const handleStepPress = (step: Step) => {
-    console.log({baseParams})
-    if (!step.route) return;
-    router.replace({
+    if (!step.route || step.completed) return;
+    router.push({
       pathname: step.route,
       params: baseParams,
     });
@@ -135,6 +167,9 @@ const TrackingDetailsScreen = () => {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={fetchShipment} />
+        }
       >
         <View style={styles.card}>
           <View style={styles.packageRow}>
@@ -152,53 +187,42 @@ const TrackingDetailsScreen = () => {
           </View>
 
           <Text style={styles.sectionTitle}>Order Status</Text>
+          {isRefreshing && !shipment ? (
+            <ActivityIndicator color={Theme.colors.primary} style={styles.loader} />
+          ) : null}
+          {errorMessage ? (
+            <Text style={styles.errorText}>{errorMessage}</Text>
+          ) : null}
 
-          {allComplete ? (
-            <View style={styles.timeline}>
-              {completedSteps.map((step, index) => (
-                <View key={step.title} style={styles.timelineRow}>
-                  <View style={styles.markerColumn}>
-                    <View style={[styles.marker, styles.completedMarker]}>
-                      <Ionicons name="checkmark" size={14} color={Theme.colors.white} />
-                    </View>
-                    {index < completedSteps.length - 1 ? (
-                      <View style={[styles.timelineLine, styles.completedLine]} />
-                    ) : null}
+          <View style={styles.timeline}>
+            {checklistSteps.map((step, index) => (
+              <TouchableOpacity
+                key={step.key}
+                activeOpacity={step.route && !step.completed ? 0.75 : 1}
+                style={styles.timelineRow}
+                onPress={() => handleStepPress(step)}
+                disabled={!step.route || step.completed}
+              >
+                <View style={styles.markerColumn}>
+                  <View style={[styles.marker, step.completed && styles.completedMarker]}>
+                    <Ionicons name="checkmark" size={14} color={Theme.colors.white} />
                   </View>
-                  <View style={styles.timelineText}>
-                    <Text style={styles.stepDate}>{step.date}</Text>
-                    <Text style={styles.completedTitle}>{step.title}</Text>
-                  </View>
+                  {index < checklistSteps.length - 1 ? (
+                    <View
+                      style={[
+                        styles.timelineLine,
+                        step.completed && styles.completedLine,
+                      ]}
+                    />
+                  ) : null}
                 </View>
-              ))}
-            </View>
-          ) : (
-            <View style={styles.timeline}>
-              {checklistSteps.map((step, index) => {
-                const checked = completionByKey[step.key];
-                return (
-                  <TouchableOpacity
-                    key={step.key}
-                    activeOpacity={step.route ? 0.75 : 1}
-                    style={styles.timelineRow}
-                    onPress={() => handleStepPress(step)}
-                    disabled={!step.route}
-                  >
-                    <View style={styles.markerColumn}>
-                      <View style={[styles.marker, checked && styles.completedMarker]}>
-                        <Ionicons name="checkmark" size={14} color={Theme.colors.white} />
-                      </View>
-                      {index < checklistSteps.length - 1 ? <View style={styles.timelineLine} /> : null}
-                    </View>
-                    <View style={styles.timelineText}>
-                      <Text style={styles.stepLabel}>STEP {index + 1}</Text>
-                      <Text style={styles.checklistTitle}>{step.title}</Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          )}
+                <View style={styles.timelineText}>
+                  <Text style={styles.stepLabel}>STEP {index + 1}</Text>
+                  <Text style={styles.checklistTitle}>{step.title}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         <TouchableOpacity
@@ -216,7 +240,7 @@ const TrackingDetailsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F4F1F2",
+    backgroundColor: Theme.colors.background.secondary,
   },
   header: {
     flexDirection: "row",
@@ -281,6 +305,15 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: "Inter-SemiBold",
     color: Theme.colors.text.dark,
+    marginBottom: Theme.spacing.md,
+  },
+  loader: {
+    marginBottom: Theme.spacing.md,
+  },
+  errorText: {
+    fontSize: 13,
+    fontFamily: "Inter-Regular",
+    color: Theme.colors.error,
     marginBottom: Theme.spacing.md,
   },
   timeline: {

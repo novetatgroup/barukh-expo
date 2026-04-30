@@ -1,8 +1,16 @@
 import { Theme } from "@/constants/Theme";
-import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React from "react";
+import { AuthContext } from "@/context/AuthContext";
+import { senderService, ShipmentDetails } from "@/services/senderService";
 import {
+  formatShipmentStatus,
+  hasReachedShipmentStage,
+} from "@/utils/shipmentTracking";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useContext, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,115 +20,127 @@ import {
 
 type TravellerStep = {
   key:
-    // | "packageUploaded"
     | "confirmPickUpCompleted"
     | "tripStarted"
-    | "verificationCompleted"
     | "deliveryPhotoUploaded"
-    | "confirmDeliveryCompleted";
+    | "confirmDeliveryCompleted"
+    | "completed";
   title: string;
-  route:
-    // | "/(traveller)/packageUpload"
+  route?:
     | "/(traveller)/confirmPickUp"
     | "/(traveller)/startTrip"
     | "/(traveller)/verificationScreen"
     | "/(traveller)/deliveryUpload"
     | "/(traveller)/confirmDelivery";
+  completed: boolean;
 };
 
-const travellerSteps: TravellerStep[] = [
-  // {
-  //   key: "packageUploaded",
-  //   title: "Upload Package",
-  //   route: "/(traveller)/packageUpload",
-  // },
-  {
-    key: "confirmPickUpCompleted",
-    title: "Confirm Pick Up (Code)",
-    route: "/(traveller)/confirmPickUp",
-  },
-  {
-    key: "tripStarted",
-    title: "Start Trip",
-    route: "/(traveller)/startTrip",
-  },
-  // {
-  //   key: "verificationCompleted",
-  //   title: "Verify Sender Code",
-  //   route: "/(traveller)/verificationScreen",
-  // },
-  // verificationScreen
-  {
-    key: "deliveryPhotoUploaded",
-    title: "Upload Delivery Photo",
-    route: "/(traveller)/deliveryUpload",
-  },
+const getTravellerSteps = (status?: string): TravellerStep[] => {
+  const pickedUp = hasReachedShipmentStage(status, "PICKED_UP");
+  const inTransit = hasReachedShipmentStage(status, "IN_TRANSIT");
+  const delivered = hasReachedShipmentStage(status, "DELIVERED");
 
-  {
-    key: "confirmDeliveryCompleted",
-    title: "Confirm Delivery (Code)",
-    route: "/(traveller)/confirmDelivery",
-  },
-];
-
-const isComplete = (value?: string) => value === "true";
+  return [
+    {
+      key: "confirmPickUpCompleted",
+      title: "Confirm Pick Up (Code)",
+      route: "/(traveller)/confirmPickUp",
+      completed: pickedUp,
+    },
+    {
+      key: "tripStarted",
+      title: "Start Trip",
+      route: "/(traveller)/startTrip",
+      completed: inTransit,
+    },
+    {
+      key: "deliveryPhotoUploaded",
+      title: "Upload Delivery Photo",
+      route: "/(traveller)/deliveryUpload",
+      completed: delivered,
+    },
+    {
+      key: "confirmDeliveryCompleted",
+      title: "Confirm Delivery (Code)",
+      route: "/(traveller)/confirmDelivery",
+      completed: delivered,
+    },
+    {
+      key: "completed",
+      title: "Completed",
+      completed: delivered,
+    },
+  ];
+};
 
 const TravellerTrackingDetailsScreen = () => {
   const router = useRouter();
+  const { accessToken } = useContext(AuthContext);
+  const [shipment, setShipment] = useState<ShipmentDetails | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const params = useLocalSearchParams<{
+    id?: string;
     shipmentId?: string;
     itemId?: string;
     itemName?: string;
+    status?: string;
     progress?: string;
-    packageUploaded?: string;
-    confirmPickUpCompleted?: string;
-    tripStarted?: string;
-    verificationCompleted?: string;
-    deliveryPhotoUploaded?: string;
-    confirmDeliveryCompleted?: string;
     deliveryPhotoKey?: string;
   }>();
 
-  const itemId = params.itemId || "#BK1624";
-  const itemName = params.itemName || "MacBook Pro";
-
-  const completionByKey: Record<TravellerStep["key"], boolean> = {
-    // packageUploaded: isComplete(params.packageUploaded),
-    confirmPickUpCompleted: isComplete(params.confirmPickUpCompleted),
-    tripStarted: isComplete(params.tripStarted),
-    verificationCompleted: isComplete(params.verificationCompleted),
-    deliveryPhotoUploaded: isComplete(params.deliveryPhotoUploaded),
-    confirmDeliveryCompleted: isComplete(params.confirmDeliveryCompleted),
-  };
+  const shipmentId = params.shipmentId || params.id || "";
+  const status = shipment?.status || params.status || params.progress || "PENDING";
+  const itemId = shipment?.packageId
+    ? `#${shipment.packageId.slice(0, 8).toUpperCase()}`
+    : params.itemId || "#BK1624";
+  const itemName = shipment?.package?.name || params.itemName || "MacBook Pro";
+  const travellerSteps = useMemo(() => getTravellerSteps(status), [status]);
 
   const baseParams = {
-    shipmentId: params.shipmentId || "",
+    shipmentId,
     itemId,
     itemName,
-    progress: params.progress || "In Transit",
-    // packageUploaded: String(completionByKey.packageUploaded),
-    confirmPickUpCompleted: String(completionByKey.confirmPickUpCompleted),
-    tripStarted: String(completionByKey.tripStarted),
-    verificationCompleted: String(completionByKey.verificationCompleted),
-    deliveryPhotoUploaded: String(completionByKey.deliveryPhotoUploaded),
-    confirmDeliveryCompleted: String(completionByKey.confirmDeliveryCompleted),
+    status,
+    progress: formatShipmentStatus(status),
+    confirmPickUpCompleted: String(hasReachedShipmentStage(status, "PICKED_UP")),
+    tripStarted: String(hasReachedShipmentStage(status, "IN_TRANSIT")),
+    deliveryPhotoUploaded: String(hasReachedShipmentStage(status, "DELIVERED")),
+    confirmDeliveryCompleted: String(hasReachedShipmentStage(status, "DELIVERED")),
     deliveryPhotoKey: params.deliveryPhotoKey || "",
   };
 
-  const handleStepPress = (step: TravellerStep) => {
-    console.log({step});
-    let pathname = step.route;
+  const fetchShipment = useCallback(async () => {
+    if (!shipmentId || !accessToken) return;
 
-    if (step.key === "deliveryPhotoUploaded" && !completionByKey.deliveryPhotoUploaded) {
-      pathname = "/(traveller)/deliveryUpload";
+    setIsRefreshing(true);
+    setErrorMessage(null);
+    const result = await senderService.getShipment(shipmentId, accessToken);
+    setIsRefreshing(false);
+
+    if (!result.ok || !result.data) {
+      setErrorMessage(result.error || "Unable to load shipment.");
+      return;
     }
 
-    if (step.key === "confirmDeliveryCompleted" && !completionByKey.confirmDeliveryCompleted) {
-      pathname = "/(traveller)/verificationScreen";
+    setShipment(result.data);
+  }, [accessToken, shipmentId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchShipment();
+    }, [fetchShipment])
+  );
+
+  const handleStepPress = (step: TravellerStep) => {
+    if (!step.route || step.completed) {
+      return;
     }
 
     router.push({
-      pathname,
+      pathname: step.key === "confirmDeliveryCompleted"
+        ? "/(traveller)/verificationScreen"
+        : step.route,
       params: baseParams,
     });
   };
@@ -145,6 +165,9 @@ const TravellerTrackingDetailsScreen = () => {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={fetchShipment} />
+        }
       >
         <View style={styles.card}>
           <View style={styles.packageRow}>
@@ -162,20 +185,27 @@ const TravellerTrackingDetailsScreen = () => {
           </View>
 
           <Text style={styles.sectionTitle}>Order Status</Text>
+          {isRefreshing && !shipment ? (
+            <ActivityIndicator color={Theme.colors.primary} style={styles.loader} />
+          ) : null}
+          {errorMessage ? (
+            <Text style={styles.errorText}>{errorMessage}</Text>
+          ) : null}
 
           <View style={styles.timeline}>
             {travellerSteps.map((step, index) => (
               <TouchableOpacity
                 key={step.key}
-                activeOpacity={0.75}
+                activeOpacity={step.route && !step.completed ? 0.75 : 1}
                 style={styles.timelineRow}
                 onPress={() => handleStepPress(step)}
+                disabled={!step.route || step.completed}
               >
                 <View style={styles.markerColumn}>
                   <View
                     style={[
                       styles.marker,
-                      completionByKey[step.key] && styles.completedMarker,
+                      step.completed && styles.completedMarker,
                     ]}
                   >
                     <Ionicons name="checkmark" size={14} color={Theme.colors.white} />
@@ -283,6 +313,15 @@ const styles = StyleSheet.create({
     fontFamily: "Inter-SemiBold",
     color: Theme.colors.text.dark,
     marginBottom: Theme.spacing.lg,
+  },
+  loader: {
+    marginBottom: Theme.spacing.md,
+  },
+  errorText: {
+    fontSize: 13,
+    fontFamily: "Inter-Regular",
+    color: Theme.colors.error,
+    marginBottom: Theme.spacing.md,
   },
   timeline: {
     paddingLeft: 2,

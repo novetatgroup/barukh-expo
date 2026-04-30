@@ -2,7 +2,7 @@ import { Theme } from "@/constants/Theme";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import CustomButton from "../../ui/CustomButton";
 
 interface shipmentDetailsFormProps {
@@ -16,6 +16,7 @@ interface shipmentDetailsFormProps {
     toLocation: string;
     status: string;
     progress: string;
+    deliveryPhotoUrl?: string;
     onBack: () => void;
 }
 
@@ -31,10 +32,11 @@ const ShipmentDetailsForm: React.FC<shipmentDetailsFormProps> = ({
     toLocation,
     progress,
     status,
+    deliveryPhotoUrl,
     onBack,
 }) => {
     const isDelivered = progress === "Delivered";
-    const statusLabel = isDelivered ? "Delivered" : "In Transit";
+    const statusLabel = progress;
 
     return (
         <View style={styles.container}>
@@ -114,6 +116,22 @@ const ShipmentDetailsForm: React.FC<shipmentDetailsFormProps> = ({
                         </View>
                     </View>
 
+                    {deliveryPhotoUrl ? (
+                        <>
+                            <View style={styles.lineContainer}>
+                                <View style={styles.line} />
+                            </View>
+                            <View style={styles.deliveryPhotoSection}>
+                                <Text style={styles.sectionTitle}>Delivery Photo</Text>
+                                <Image
+                                    source={{ uri: deliveryPhotoUrl }}
+                                    style={styles.deliveryPhoto}
+                                    resizeMode="cover"
+                                />
+                            </View>
+                        </>
+                    ) : null}
+
                     <CustomButton
                         title='Update Order'
                         onPress={() =>
@@ -125,6 +143,7 @@ const ShipmentDetailsForm: React.FC<shipmentDetailsFormProps> = ({
                                     itemId,
                                     itemName,
                                     progress,
+                                    status,
                                 },
                             })
                         }
@@ -242,6 +261,21 @@ const styles = StyleSheet.create({
     },
     detailsGrid: {
         marginBottom: Theme.spacing.lg,
+    },
+    deliveryPhotoSection: {
+        gap: Theme.spacing.sm,
+        marginBottom: Theme.spacing.lg,
+    },
+    sectionTitle: {
+        fontSize: 15,
+        fontFamily: 'Inter-SemiBold',
+        color: Theme.colors.text.dark,
+    },
+    deliveryPhoto: {
+        width: '100%',
+        height: 190,
+        borderRadius: Theme.borderRadius.md,
+        backgroundColor: Theme.colors.background.secondary,
     },
     detailRow: {
         flexDirection: 'row',

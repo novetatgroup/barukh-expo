@@ -1,8 +1,17 @@
 import { Theme } from "@/constants/Theme";
-import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React from "react";
+import { AuthContext } from "@/context/AuthContext";
+import { senderService, ShipmentDetails } from "@/services/senderService";
 import {
+  formatShipmentStatus,
+  getShipmentDeliveryPhotoUrl,
+} from "@/utils/shipmentTracking";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useContext, useState } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,6 +21,10 @@ import {
 
 const SenderShipmentDetailsScreen = () => {
   const router = useRouter();
+  const { accessToken } = useContext(AuthContext);
+  const [shipment, setShipment] = useState<ShipmentDetails | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const params = useLocalSearchParams<{
     id?:string;
     shipmentId?: string;
@@ -24,19 +37,51 @@ const SenderShipmentDetailsScreen = () => {
     fromLocation?: string;
     toLocation?: string;
   }>();
-  const id = params.id || "";
-  const shipmentId = params.id || "";
+  const shipmentId = params.shipmentId || params.id || "";
+  const id = shipmentId;
   const orderId = (params.orderId as string) || "#01-BK1624";
-  const itemId = (params.itemId as string) || "#BK1624";
-  const itemName = (params.itemName as string) || "MacBook Pro";
-  const progress = (params.progress as string) || "In Transit";
+  const itemId = shipment?.packageId
+    ? `#${shipment.packageId.slice(0, 8).toUpperCase()}`
+    : (params.itemId as string) || "#BK1624";
+  const itemName = shipment?.package?.name || (params.itemName as string) || "MacBook Pro";
+  const progress = formatShipmentStatus(shipment?.status || params.progress || "PENDING");
   const shipperName = (params.shipperName as string) || "James Lutalo";
   const recipientName = (params.recipientName as string) || "Sanyu Twine";
-  const fromLocation = (params.fromLocation as string) || "Ontario, Canada";
-  const toLocation = (params.toLocation as string) || "Kampala, Uganda";
+  const fromLocation =
+    shipment?.package?.originCity ||
+    shipment?.travel?.originCity ||
+    (params.fromLocation as string) ||
+    "Ontario, Canada";
+  const toLocation =
+    shipment?.package?.destinationCity ||
+    shipment?.travel?.destinationCity ||
+    (params.toLocation as string) ||
+    "Kampala, Uganda";
+  const deliveryPhotoUrl = getShipmentDeliveryPhotoUrl(shipment);
+
+  const fetchShipment = useCallback(async () => {
+    if (!shipmentId || !accessToken) return;
+
+    setIsRefreshing(true);
+    setErrorMessage(null);
+    const result = await senderService.getShipment(shipmentId, accessToken);
+    setIsRefreshing(false);
+
+    if (!result.ok || !result.data) {
+      setErrorMessage(result.error || "Unable to load shipment.");
+      return;
+    }
+
+    setShipment(result.data);
+  }, [accessToken, shipmentId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchShipment();
+    }, [fetchShipment])
+  );
 
   const handleTrackOrder = () => {
-    console.log({id,shipmentId})
     router.push({
       pathname: "/(sender)/trackingDetails",
       params: {
@@ -45,12 +90,8 @@ const SenderShipmentDetailsScreen = () => {
         orderId,
         itemId,
         itemName,
-        receiptUploaded: "false",
-        trackingEntered: "false",
-        pickupCodeShared: "false",
-        deliveryCodeShared: "false",
-        orderConfirmed: "false",
-        verificationCompleted: "false",
+        status: shipment?.status || params.progress || "PENDING",
+        progress,
       },
     });
   };
@@ -75,8 +116,17 @@ const SenderShipmentDetailsScreen = () => {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={fetchShipment} />
+        }
       >
         <View style={styles.card}>
+          {isRefreshing && !shipment ? (
+            <ActivityIndicator color={Theme.colors.primary} style={styles.loader} />
+          ) : null}
+          {errorMessage ? (
+            <Text style={styles.errorText}>{errorMessage}</Text>
+          ) : null}
           <View style={styles.packageRow}>
             <View style={styles.packageIcon}>
               <Ionicons
@@ -120,6 +170,20 @@ const SenderShipmentDetailsScreen = () => {
             </View>
           </View>
 
+          {deliveryPhotoUrl ? (
+            <>
+              <View style={styles.divider} />
+              <View style={styles.deliveryPhotoSection}>
+                <Text style={styles.sectionTitle}>Delivery Photo</Text>
+                <Image
+                  source={{ uri: deliveryPhotoUrl }}
+                  style={styles.deliveryPhoto}
+                  resizeMode="cover"
+                />
+              </View>
+            </>
+          ) : null}
+
           <TouchableOpacity
             activeOpacity={0.85}
             style={styles.trackButton}
@@ -136,7 +200,7 @@ const SenderShipmentDetailsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F4F1F2",
+    backgroundColor: Theme.colors.background.secondary,
   },
   header: {
     flexDirection: "row",
@@ -169,10 +233,19 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.white,
     borderRadius: 20,
     padding: Theme.spacing.md,
-    shadowColor: "#000",
+    shadowColor: Theme.colors.black,
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+  },
+  loader: {
+    marginBottom: Theme.spacing.md,
+  },
+  errorText: {
+    fontSize: 13,
+    fontFamily: "Inter-Regular",
+    color: Theme.colors.error,
+    marginBottom: Theme.spacing.md,
   },
   packageRow: {
     flexDirection: "row",
@@ -222,7 +295,7 @@ const styles = StyleSheet.create({
   detailLabel: {
     fontSize: 13,
     fontFamily: "Inter-Regular",
-    color: "#6B7280",
+    color: Theme.colors.text.gray,
     marginBottom: 8,
   },
   detailValue: {
@@ -234,6 +307,20 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: Theme.colors.background.border,
     marginVertical: Theme.spacing.md,
+  },
+  deliveryPhotoSection: {
+    gap: Theme.spacing.sm,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontFamily: "Inter-SemiBold",
+    color: Theme.colors.text.dark,
+  },
+  deliveryPhoto: {
+    width: "100%",
+    height: 190,
+    borderRadius: Theme.borderRadius.md,
+    backgroundColor: Theme.colors.background.secondary,
   },
   trackButton: {
     height: 45,
