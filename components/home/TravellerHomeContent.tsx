@@ -1,5 +1,5 @@
 import { PackagePattern } from "@/assets/svgs";
-import Theme from "@/constants/Theme";
+import { Theme } from "@/constants/Theme";
 import { AuthContext } from "@/context/AuthContext";
 import { Trip, TripDetails, travellerService } from "@/services/travellerService";
 import { UserProfile, userService } from "@/services/userService";
@@ -104,6 +104,12 @@ const TravellerHomeContent = () => {
     router.push("/(traveller)/packageDetails");
   };
 
+  const goToNotifications = () => {
+    router.push({
+      pathname: "/(profile)/notifications",
+    });
+  };
+
   const listHeader = (
     <>
       {/* Header Card */}
@@ -122,7 +128,7 @@ const TravellerHomeContent = () => {
               <Text style={styles.welcomeText}>Welcome Back !</Text>
               <Text style={styles.userName}>Hi {userName}</Text>
             </View>
-            <TouchableOpacity style={styles.bellIcon}>
+            <TouchableOpacity onPress={goToNotifications} style={styles.bellIcon}>
               <Ionicons
                 name="notifications-outline"
                 size={22}

@@ -1,5 +1,5 @@
 import { PackagePattern } from "@/assets/svgs";
-import Theme from "@/constants/Theme";
+import { Theme } from "@/constants/Theme";
 import { AuthContext } from "@/context/AuthContext";
 import { Package, senderService } from "@/services/senderService";
 import { UserProfile, userService } from "@/services/userService";
@@ -68,6 +68,12 @@ const SenderHomeContent = () => {
     router.push({
       pathname: "/(tabs)/shipments",
       params: { tab: tab || "All" },
+    });
+  };
+
+  const goToNotifications = () => {
+    router.push({
+      pathname: "/(profile)/notifications",
     });
   };
 
@@ -144,7 +150,7 @@ const SenderHomeContent = () => {
               <Text style={styles.welcomeText}>Welcome Back !</Text>
               <Text style={styles.userName}>Hi {userName}</Text>
             </View>
-            <TouchableOpacity style={styles.bellIcon}>
+            <TouchableOpacity onPress={goToNotifications} style={styles.bellIcon}>
               <Ionicons
                 name="notifications-outline"
                 size={22}
@@ -227,7 +233,7 @@ const SenderHomeContent = () => {
               <Text style={styles.emptySubtext}>
                 You haven&apos;t sent any packages. Tap the button above to get started.
               </Text>
-             
+
             </View>
           )
         }

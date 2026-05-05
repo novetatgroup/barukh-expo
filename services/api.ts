@@ -45,6 +45,10 @@ export const API_ENDPOINTS = {
 		listByRole: (actorId: string, role: "SENDER" | "TRAVELLER") =>
 			`/shipments/${actorId}/?role=${role}`,
 	},
+	pushNotifications: {
+		me: (page: number, limit: number) =>
+			`/push-notifications/me?page=${page}&limit=${limit}`,
+	},
 } as const;
 
 interface ApiResponse<T> {
