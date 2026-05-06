@@ -21,7 +21,7 @@ import {
 
 const SenderShipmentDetailsScreen = () => {
   const router = useRouter();
-  const { accessToken } = useContext(AuthContext);
+  const { accessToken, userId } = useContext(AuthContext);
   const [shipment, setShipment] = useState<ShipmentDetails | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -33,7 +33,10 @@ const SenderShipmentDetailsScreen = () => {
     itemName?: string;
     progress?: string;
     shipperName?: string;
+    senderUserId?: string;
     recipientName?: string;
+    travellerName?: string;
+    travellerUserId?: string;
     fromLocation?: string;
     toLocation?: string;
   }>();
@@ -92,6 +95,25 @@ const SenderShipmentDetailsScreen = () => {
         itemName,
         status: shipment?.status || params.progress || "PENDING",
         progress,
+      },
+    });
+  };
+
+  const handleOpenChat = () => {
+    const receiverId = shipment?.traveller?.userId || params.travellerUserId;
+    const currentUserId = userId || shipment?.sender?.userId || params.senderUserId;
+
+    if (!receiverId || !currentUserId) {
+      router.push("/(tabs)/chat");
+      return;
+    }
+
+    router.push({
+      pathname: "/(chat)/[conversationId]",
+      params: {
+        conversationId: [currentUserId, receiverId].sort().join("_"),
+        receiverId,
+        receiverName: params.travellerName || receiverId,
       },
     });
   };
@@ -196,6 +218,17 @@ const SenderShipmentDetailsScreen = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      <TouchableOpacity
+        activeOpacity={0.85}
+        style={styles.chatButton}
+        onPress={handleOpenChat}
+      >
+        <Ionicons
+          name="chatbubble-ellipses"
+          size={25}
+          color={Theme.colors.white}
+        />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -230,7 +263,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: Theme.spacing.lg,
     paddingTop: Theme.spacing.md,
-    paddingBottom: Theme.spacing.xl,
+    paddingBottom: 112,
   },
   card: {
     backgroundColor: Theme.colors.white,
@@ -337,6 +370,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Inter-SemiBold",
     color: Theme.colors.white,
+  },
+  chatButton: {
+    position: "absolute",
+    right: Theme.spacing.lg,
+    bottom: Theme.spacing.xl,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Theme.colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: Theme.colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.16,
+    shadowRadius: 8,
+    elevation: 4,
   },
 });
 

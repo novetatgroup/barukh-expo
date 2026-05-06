@@ -1,6 +1,7 @@
 import { PackagePattern } from "@/assets/svgs";
 import { Theme } from "@/constants/Theme";
 import { AuthContext } from "@/context/AuthContext";
+import { useUnreadNotificationsCount } from "@/hooks/useUnreadNotificationsCount";
 import { Trip, TripDetails, travellerService } from "@/services/travellerService";
 import { UserProfile, userService } from "@/services/userService";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,6 +28,7 @@ if (Platform.OS === "android") {
 const TravellerHomeContent = () => {
   const router = useRouter();
   const { userId, accessToken } = useContext(AuthContext);
+  const { unreadNotificationsCount } = useUnreadNotificationsCount();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [tripsLoading, setTripsLoading] = useState(true);
@@ -63,6 +65,8 @@ const TravellerHomeContent = () => {
   }, [fetchTrips]);
 
   const userName = userProfile?.firstName || "User";
+  const notificationBadgeLabel =
+    unreadNotificationsCount > 99 ? "99+" : String(unreadNotificationsCount);
 
   const getStatusStyle = (status: string) => {
     switch (status) {
@@ -134,6 +138,13 @@ const TravellerHomeContent = () => {
                 size={22}
                 color={Theme.colors.white}
               />
+              {unreadNotificationsCount > 0 ? (
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationBadgeText}>
+                    {notificationBadgeLabel}
+                  </Text>
+                </View>
+              ) : null}
             </TouchableOpacity>
           </View>
 
@@ -321,6 +332,25 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginLeft: "auto",
+    position: "relative",
+  },
+  notificationBadge: {
+    position: "absolute",
+    top: -3,
+    right: -3,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: Theme.colors.yellow,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  notificationBadgeText: {
+    fontSize: 9,
+    fontFamily: "Inter-Bold",
+    color: Theme.colors.primary,
+    includeFontPadding: false,
   },
   welcomeText: {
     color: "#CED1D8",

@@ -18,6 +18,7 @@ interface shipmentDetailsFormProps {
     progress: string;
     deliveryPhotoUrl?: string;
     onBack: () => void;
+    onChatPress?: () => void;
 }
 
 const ShipmentDetailsForm: React.FC<shipmentDetailsFormProps> = ({
@@ -34,6 +35,7 @@ const ShipmentDetailsForm: React.FC<shipmentDetailsFormProps> = ({
     status,
     deliveryPhotoUrl,
     onBack,
+    onChatPress,
 }) => {
     const isDelivered = progress === "Delivered";
     const statusLabel = progress;
@@ -152,6 +154,19 @@ const ShipmentDetailsForm: React.FC<shipmentDetailsFormProps> = ({
                     />
                 </View>
             </ScrollView>
+            {onChatPress ? (
+                <TouchableOpacity
+                    activeOpacity={0.85}
+                    style={styles.chatButton}
+                    onPress={onChatPress}
+                >
+                    <Ionicons
+                        name="chatbubble-ellipses"
+                        size={25}
+                        color={Theme.colors.white}
+                    />
+                </TouchableOpacity>
+            ) : null}
         </View>
     );
 };
@@ -197,7 +212,8 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         justifyContent: 'center',
         paddingHorizontal: Theme.spacing.lg,
-        paddingVertical: Theme.spacing.xl,
+        paddingTop: Theme.spacing.xl,
+        paddingBottom: 112,
     },
     userCard: {
         backgroundColor: Theme.colors.white,
@@ -304,6 +320,22 @@ const styles = StyleSheet.create({
     actionButtonText: {
         fontSize: 14,
         fontFamily: 'Inter-SemiBold',
+    },
+    chatButton: {
+        position: 'absolute',
+        right: Theme.spacing.lg,
+        bottom: Theme.spacing.xl,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: Theme.colors.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: Theme.colors.black,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.16,
+        shadowRadius: 8,
+        elevation: 4,
     },
 });
 

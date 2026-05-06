@@ -1,4 +1,4 @@
-import Theme from "@/constants/Theme";
+import { Theme } from "@/constants/Theme";
 import { ChatContext, ChatMessage } from "@/context/ChatContext";
 import { AuthContext } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
@@ -176,7 +176,8 @@ const ChatScreen = () => {
     setMessages((prev) => [...prev, optimistic]);
     setText("");
 
-    socket.emit("message:send", { receiverId, content: trimmed });
+    // Backend currently expects the misspelled key for message:send.
+    socket.emit("message:send", { recieverId: receiverId, content: trimmed });
     socket.emit("typing:stop", { receiverId });
     isTypingActiveRef.current = false;
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);

@@ -10,9 +10,23 @@ import React, { useCallback, useContext, useState } from "react";
 
 const ShipmentDetailsScreen = () => {
   const router = useRouter();
-  const { accessToken } = useContext(AuthContext);
+  const { accessToken, userId } = useContext(AuthContext);
   const [shipment, setShipment] = useState<ShipmentDetails | null>(null);
-  const params = useLocalSearchParams();
+  const params = useLocalSearchParams<{
+    id?: string;
+    shipmentId?: string;
+    itemId?: string;
+    itemName?: string;
+    fromLocation?: string;
+    toLocation?: string;
+    status?: string;
+    progress?: string;
+    title?: string;
+    shipperName?: string;
+    receiverName?: string;
+    senderUserId?: string;
+    travellerUserId?: string;
+  }>();
   const shipmentId =
     (params.shipmentId as string | undefined) || (params.id as string | undefined);
   const itemId = shipment?.packageId
@@ -53,6 +67,25 @@ const ShipmentDetailsScreen = () => {
     router.replace("/(tabs)/shipments");
   };
 
+  const handleOpenChat = () => {
+    const receiverId = shipment?.sender?.userId || params.senderUserId;
+    const currentUserId = userId || shipment?.traveller?.userId || params.travellerUserId;
+
+    if (!receiverId || !currentUserId) {
+      router.push("/(tabs)/chat");
+      return;
+    }
+
+    router.push({
+      pathname: "/(chat)/[conversationId]",
+      params: {
+        conversationId: [currentUserId, receiverId].sort().join("_"),
+        receiverId,
+        receiverName: (params.shipperName as string) || receiverId,
+      },
+    });
+  };
+
   return (
     <ShipmentDetailsForm
       headerTitle={(params.title as string) || "Shipment Details"}
@@ -67,6 +100,7 @@ const ShipmentDetailsScreen = () => {
       progress={progress}
       deliveryPhotoUrl={deliveryPhotoUrl}
       onBack={handleBack}
+      onChatPress={handleOpenChat}
     />
   );
 };

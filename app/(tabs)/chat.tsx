@@ -1,16 +1,42 @@
-import Theme from "@/constants/Theme";
+import { Theme } from "@/constants/Theme";
 import { ChatContext, Conversation } from "@/context/ChatContext";
 import { AuthContext } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useContext } from "react";
+import React, { useContext, useMemo, useState } from "react";
 import {
   FlatList,
+  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+
+type ChatFilter = "all" | "unread" | "notifications";
+
+const filters: { key: ChatFilter; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "unread", label: "Unread" },
+  { key: "notifications", label: "Notifications" },
+];
+
+const avatarColors = [
+  Theme.colors.yellow,
+  Theme.colors.lightGreen,
+  Theme.colors.background.border,
+  Theme.colors.lightPurple,
+  Theme.colors.primary,
+  Theme.colors.orange,
+];
+
+const getAvatarColor = (value: string) => {
+  const total = value
+    .split("")
+    .reduce((sum, char) => sum + char.charCodeAt(0), 0);
+
+  return avatarColors[total % avatarColors.length];
+};
 
 const ConversationRow = ({
   item,
@@ -21,6 +47,11 @@ const ConversationRow = ({
 }) => {
   const otherId = item.participants.find((p) => p !== myUserId) ?? item.participants[0];
   const initials = otherId.slice(0, 2).toUpperCase();
+  const avatarColor = getAvatarColor(item.conversationId || otherId);
+  const avatarTextColor =
+    avatarColor === Theme.colors.primary || avatarColor === Theme.colors.lightPurple
+      ? Theme.colors.white
+      : Theme.colors.primary;
 
   const handlePress = () => {
     router.push({
@@ -34,9 +65,9 @@ const ConversationRow = ({
   };
 
   return (
-    <TouchableOpacity style={styles.row} onPress={handlePress} activeOpacity={0.7}>
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{initials}</Text>
+    <TouchableOpacity style={styles.row} onPress={handlePress} activeOpacity={0.75}>
+      <View style={[styles.avatar, { backgroundColor: avatarColor }]}>
+        <Text style={[styles.avatarText, { color: avatarTextColor }]}>{initials}</Text>
       </View>
 
       <View style={styles.rowContent}>
@@ -69,39 +100,104 @@ const ConversationRow = ({
 };
 
 const ChatListScreen = () => {
-  const { conversations } = useContext(ChatContext);
+  const { conversations, refreshConversations } = useContext(ChatContext);
   const { userId } = useContext(AuthContext);
+  const [activeFilter, setActiveFilter] = useState<ChatFilter>("all");
+  const unreadCount = conversations.reduce(
+    (total, conversation) => total + conversation.unreadCount,
+    0
+  );
+  const filteredConversations = useMemo(() => {
+    if (activeFilter === "unread") {
+      return conversations.filter((conversation) => conversation.unreadCount > 0);
+    }
+
+    if (activeFilter === "notifications") {
+      return [];
+    }
+
+    return conversations;
+  }, [activeFilter, conversations]);
+  const emptyCopy =
+    activeFilter === "unread"
+      ? "Unread conversations will appear here."
+      : activeFilter === "notifications"
+      ? "Chat notifications will appear here."
+      : "Your conversations will appear here.";
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Messages</Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>
+          My <Text style={styles.titleHighlight}>Chat</Text>
+        </Text>
 
-      {conversations.length === 0 ? (
-        <View style={styles.emptyState}>
-          <View style={styles.iconContainer}>
-            <Ionicons
-              name="chatbubbles-outline"
-              size={64}
-              color={Theme.colors.text.gray}
-            />
-          </View>
-          <Text style={styles.emptyTitle}>No messages yet</Text>
-          <Text style={styles.emptyText}>
-            Your conversations will appear here.
-          </Text>
+        <View style={styles.filterBar}>
+          {filters.map((filter) => {
+            const isActive = activeFilter === filter.key;
+            const count =
+              filter.key === "all"
+                ? conversations.length
+                : filter.key === "unread"
+                ? unreadCount
+                : 0;
+
+            return (
+              <TouchableOpacity
+                key={filter.key}
+                style={[styles.filterPill, isActive && styles.activeFilterPill]}
+                onPress={() => setActiveFilter(filter.key)}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.filterText,
+                    isActive && styles.activeFilterText,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {filter.label}
+                </Text>
+                {isActive && count > 0 ? (
+                  <View style={styles.filterCountBadge}>
+                    <Text style={styles.filterCountText}>{count}</Text>
+                  </View>
+                ) : null}
+              </TouchableOpacity>
+            );
+          })}
         </View>
-      ) : (
-        <FlatList
-          data={conversations}
-          keyExtractor={(item) => item.conversationId}
-          renderItem={({ item }) => (
-            <ConversationRow item={item} myUserId={userId} />
-          )}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          contentContainerStyle={styles.list}
-        />
-      )}
-    </View>
+      </View>
+
+      <View style={styles.listPanel}>
+        {filteredConversations.length === 0 ? (
+          <View style={styles.emptyState}>
+            <View style={styles.iconContainer}>
+              <Ionicons
+                name="chatbubbles-outline"
+                size={44}
+                color={Theme.colors.text.gray}
+              />
+            </View>
+            <Text style={styles.emptyTitle}>No messages yet</Text>
+            <Text style={styles.emptyText}>{emptyCopy}</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filteredConversations}
+            keyExtractor={(item) => item.conversationId}
+            renderItem={({ item }) => (
+              <ConversationRow item={item} myUserId={userId} />
+            )}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            contentContainerStyle={styles.list}
+            showsVerticalScrollIndicator={false}
+            onRefresh={refreshConversations}
+            refreshing={false}
+          />
+        )}
+      </View>
+    </SafeAreaView>
   );
 };
 
@@ -109,38 +205,92 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Theme.colors.background.secondary,
-    paddingTop: Theme.spacing.xxxxl,
+  },
+  header: {
+    paddingTop: Theme.spacing.xxl,
+    paddingHorizontal: Theme.spacing.lg,
+    paddingBottom: Theme.spacing.sm,
   },
   title: {
-    fontSize: 28,
-    fontFamily: "Inter-Bold",
-    color: Theme.colors.text.dark,
-    marginTop: Theme.spacing.lg,
+    fontSize: 27,
+    fontFamily: "Inter-Regular",
+    color: Theme.colors.primary,
     marginBottom: Theme.spacing.xl,
-    paddingHorizontal: Theme.screenPadding.horizontal,
+  },
+  titleHighlight: {
+    fontFamily: "Inter-Bold",
+  },
+  filterBar: {
+    height: 42,
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 22,
+    backgroundColor: Theme.colors.white,
+    padding: 4,
+  },
+  filterPill: {
+    flex: 1,
+    height: 34,
+    borderRadius: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    paddingHorizontal: Theme.spacing.sm,
+  },
+  activeFilterPill: {
+    backgroundColor: Theme.colors.green,
+  },
+  filterText: {
+    fontSize: 14,
+    fontFamily: "Inter-Regular",
+    color: Theme.colors.text.lightGray,
+  },
+  activeFilterText: {
+    color: Theme.colors.white,
+    fontFamily: "Inter-SemiBold",
+  },
+  filterCountBadge: {
+    minWidth: 20,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: Theme.colors.white,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 5,
+  },
+  filterCountText: {
+    fontSize: 9,
+    fontFamily: "Inter-Bold",
+    color: Theme.colors.green,
+  },
+  listPanel: {
+    flex: 1,
+    marginTop: Theme.spacing.sm,
+    backgroundColor: Theme.colors.white,
   },
   list: {
-    paddingHorizontal: Theme.screenPadding.horizontal,
+    paddingBottom: 142,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Theme.spacing.sm,
+    minHeight: 84,
+    paddingHorizontal: Theme.spacing.lg,
+    paddingVertical: Theme.spacing.md,
     gap: Theme.spacing.md,
   },
   avatar: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#F5D6A8",
     justifyContent: "center",
     alignItems: "center",
     flexShrink: 0,
   },
   avatarText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: Theme.colors.primary,
+    fontSize: 14,
+    fontFamily: "Inter-Bold",
   },
   rowContent: {
     flex: 1,
@@ -152,14 +302,14 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   rowName: {
-    fontSize: 15,
+    fontSize: 17,
     fontFamily: "Inter-SemiBold",
     color: Theme.colors.text.dark,
     flex: 1,
     marginRight: Theme.spacing.sm,
   },
   rowTime: {
-    fontSize: 12,
+    fontSize: 9,
     color: Theme.colors.text.lightGray,
     fontFamily: "Inter-Regular",
   },
@@ -169,40 +319,42 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   rowPreview: {
-    fontSize: 13,
+    fontSize: 12,
     color: Theme.colors.text.gray,
     fontFamily: "Inter-Regular",
     flex: 1,
     marginRight: Theme.spacing.sm,
   },
   badge: {
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: Theme.colors.primary,
+    minWidth: 22,
+    height: 15,
+    borderRadius: 8,
+    backgroundColor: Theme.colors.green,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 4,
+    paddingHorizontal: 6,
   },
   badgeText: {
     color: Theme.colors.white,
-    fontSize: 11,
-    fontWeight: "700",
+    fontSize: 9,
+    fontFamily: "Inter-Bold",
   },
   separator: {
     height: 1,
-    backgroundColor: Theme.colors.text.border,
+    backgroundColor: Theme.colors.background.border,
+    marginLeft: 88,
   },
   emptyState: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingBottom: Theme.spacing.xxxxxxxl,
+    paddingHorizontal: Theme.spacing.xl,
+    paddingBottom: 142,
   },
   iconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 82,
+    height: 82,
+    borderRadius: 41,
     backgroundColor: Theme.colors.background.border,
     justifyContent: "center",
     alignItems: "center",

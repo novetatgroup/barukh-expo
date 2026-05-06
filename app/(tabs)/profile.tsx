@@ -1,6 +1,7 @@
-import Theme from "@/constants/Theme";
+import { Theme } from "@/constants/Theme";
 import { AuthContext } from "@/context/AuthContext";
 import { useRole } from "@/context/RoleContext";
+import { useUnreadNotificationsCount } from "@/hooks/useUnreadNotificationsCount";
 import { UserProfile, userService } from "@/services/userService";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -18,6 +19,7 @@ const ProfileScreen = () => {
   const router = useRouter();
   const { logout, userId, accessToken } = useContext(AuthContext);
   const { clearRole } = useRole();
+  const { unreadNotificationsCount } = useUnreadNotificationsCount();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
@@ -34,13 +36,16 @@ const ProfileScreen = () => {
   const userName = userProfile
     ? `${userProfile.firstName} ${userProfile.lastName}`
     : "User";
+  const notificationBadgeLabel =
+    unreadNotificationsCount > 99 ? "99+" : String(unreadNotificationsCount);
 
   const menuItems = [
-     { icon: "swap-horizontal-outline", label: "Switch Barukh Mode", route: "/(profile)/switchProfile" },
-{ icon: "shield-checkmark-outline", label: "Verification", route: null },
+    { icon: "swap-horizontal-outline", label: "Switch Barukh Mode", route: "/(profile)/switchProfile" },
+    { icon: "notifications-outline", label: "Notifications", route: "/(profile)/notifications" },
+    { icon: "shield-checkmark-outline", label: "Verification", route: null },
     { icon: "card-outline", label: "My Payments", route: null },
     { icon: "cube-outline", label: "My Shipments", route: null },
-   
+
     { icon: "help-circle-outline", label: "Help & Support", route: null },
     { icon: "settings-outline", label: "Settings", route: null },
   ];
@@ -93,6 +98,13 @@ const ProfileScreen = () => {
                 size={22}
                 color={Theme.colors.primary}
               />
+              {item.label === "Notifications" && unreadNotificationsCount > 0 ? (
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationBadgeText}>
+                    {notificationBadgeLabel}
+                  </Text>
+                </View>
+              ) : null}
             </View>
             <Text style={styles.menuLabel}>{item.label}</Text>
             <Ionicons
@@ -182,6 +194,25 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.background.border,
     justifyContent: "center",
     alignItems: "center",
+    position: "relative",
+  },
+  notificationBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: Theme.colors.yellow,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  notificationBadgeText: {
+    fontSize: 9,
+    fontFamily: "Inter-Bold",
+    color: Theme.colors.primary,
+    includeFontPadding: false,
   },
   menuLabel: {
     flex: 1,
