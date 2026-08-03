@@ -61,9 +61,55 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
 	body?: object | FormData;
 }
 
+type ParsedResponseBody = Record<string, unknown> | unknown[] | string | number | boolean | null;
+
 const DEFAULT_HEADERS: Record<string, string> = {
 	"Content-Type": "application/json",
 	"x-client-platform": "barukh_mobile",
+};
+
+const parseResponseBody = (rawResponseBody: string): ParsedResponseBody => {
+	if (!rawResponseBody) {
+		return null;
+	}
+
+	try {
+		return JSON.parse(rawResponseBody) as ParsedResponseBody;
+	} catch {
+		return rawResponseBody;
+	}
+};
+
+const getResponseMessage = (data: ParsedResponseBody): string => {
+	if (data && typeof data === "object" && !Array.isArray(data)) {
+		const responseData = data as Record<string, unknown>;
+		const message = responseData.message || responseData.error;
+
+		if (typeof message === "string") {
+			return message;
+		}
+
+		if (Array.isArray(message)) {
+			return message.map(String).join(", ");
+		}
+	}
+
+	return "Request failed";
+};
+
+const sanitizeHeaders = (headers: Record<string, string>): Record<string, string> => {
+	return Object.entries(headers).reduce<Record<string, string>>((sanitized, [key, value]) => {
+		sanitized[key] = key.toLowerCase() === "authorization" ? "[redacted]" : value;
+		return sanitized;
+	}, {});
+};
+
+const getLoggedRequestBody = (body: RequestOptions["body"]) => {
+	if (!body) {
+		return undefined;
+	}
+
+	return body instanceof FormData ? "[FormData]" : body;
 };
 
 export async function apiRequest<T>(
@@ -83,35 +129,54 @@ export async function apiRequest<T>(
 		delete headers["Content-Type"];
 	}
 
+	const url = `${API_URL}${endpoint}`;
+	const method = restOptions.method || "GET";
+
 	try {
-		const response = await fetch(`${API_URL}${endpoint}`, {
+		const response = await fetch(url, {
 			...restOptions,
 			headers,
 			body: isFormData ? body : body ? JSON.stringify(body) : undefined,
 		});
 
 		let data: T | null = null;
-		const contentType = response.headers.get("content-type");
+		const rawResponseBody = await response.text();
+		const parsedResponseBody = parseResponseBody(rawResponseBody);
 
-		if (contentType?.includes("application/json")) {
-			data = await response.json();
+		if (parsedResponseBody !== null && typeof parsedResponseBody !== "string") {
+			data = parsedResponseBody as T;
 		}
 
 		if (!response.ok) {
-			const errorMessage =
-				(data as Record<string, unknown>)?.message ||
-				(data as Record<string, unknown>)?.error ||
-				"Request failed";
+			if (__DEV__) {
+				console.error("API request failed", {
+					endpoint,
+					url,
+					method,
+					status: response.status,
+					statusText: response.statusText,
+					requestHeaders: sanitizeHeaders(headers),
+					requestBody: getLoggedRequestBody(body),
+					responseBody: parsedResponseBody,
+					rawResponseBody,
+				});
+			}
+
 			return {
 				data: null,
-				error: String(errorMessage),
+				error: getResponseMessage(parsedResponseBody),
 				ok: false,
 			};
 		}
 
 		return { data, error: null, ok: true };
 	} catch (error) {
-		console.error("API request error:", error);
+		console.error("API request error:", {
+			endpoint,
+			url,
+			method,
+			error,
+		});
 		return {
 			data: null,
 			error: "Network error. Please try again later.",

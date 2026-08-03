@@ -1,11 +1,11 @@
-import { router } from "expo-router";
-import React, { useContext, useState } from "react";
-import { StyleSheet, View } from "react-native";
-import { Toast } from "toastify-react-native";
 import PackageDetailsForm from "@/components/forms/traveller/PackageDetailsForm";
 import { AuthContext } from "@/context/AuthContext";
 import { useShipment } from "@/context/ShipmentContext";
 import { CreateTripParams, travellerService } from "@/services/travellerService";
+import { router } from "expo-router";
+import React, { useContext, useState } from "react";
+import { StyleSheet, View } from "react-native";
+import { Toast } from "toastify-react-native";
 
 const isFiniteNumber = (value: number | undefined): value is number =>
   typeof value === "number" && Number.isFinite(value);
@@ -16,7 +16,7 @@ const PackageDetailsScreen = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (packageData: {
-    allowedCategories: string[];
+    // allowedCategories: string[];
     maxWeightKg: number;
     maxHeightCm: number;
     maxWidthCm: number;
@@ -35,6 +35,7 @@ const PackageDetailsScreen = () => {
     flightNumber?: string;
     vehiclePlate?: string;
   }) => {
+    console.log("Submitting package data:", packageData);
     if (!accessToken || !userId) {
       Toast.error("You must be logged in to create a trip.");
       return;
@@ -59,6 +60,7 @@ const PackageDetailsScreen = () => {
       // Build trip payload
       const tripPayload: CreateTripParams = {
         userId,
+        // allowedCategories: packageData.allowedCategories,
         maxWeightKg: Number(packageData.maxWeightKg) || 0,
         maxHeightCm: Number(packageData.maxHeightCm) || 0,
         maxWidthCm: Number(packageData.maxWidthCm) || 0,
@@ -88,6 +90,12 @@ const PackageDetailsScreen = () => {
 
       const tripResult = await travellerService.createTrip(tripPayload, accessToken);
       if (!tripResult.ok) {
+        if (__DEV__) {
+          console.error("Create trip failed", {
+            error: tripResult.error,
+            payload: tripPayload,
+          });
+        }
         Toast.error(tripResult.error || "Failed to create trip");
         return;
       }
@@ -107,7 +115,7 @@ const PackageDetailsScreen = () => {
         mode: packageData.mode,
         flightNumber: packageData.flightNumber,
         vehiclePlate: packageData.vehiclePlate,
-        allowedCategories: packageData.allowedCategories,
+        // allowedCategories: packageData.allowedCategories,
         maxWeightKg: Number(packageData.maxWeightKg),
         maxHeightCm: Number(packageData.maxHeightCm),
         maxWidthCm: Number(packageData.maxWidthCm),

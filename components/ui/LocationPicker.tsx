@@ -66,11 +66,17 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skipNextNullSyncRef = useRef(false);
 
   useEffect(() => {
     if (value?.description) {
+      skipNextNullSyncRef.current = false;
       setInputValue(value.description);
     } else if (!value) {
+      if (skipNextNullSyncRef.current) {
+        skipNextNullSyncRef.current = false;
+        return;
+      }
       setInputValue("");
     }
   }, [value]);
@@ -99,7 +105,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
     try {
       const params = new URLSearchParams({
         input,
-        types: "(regions)",
+        types: "(cities)",
         language: "en",
         key: GOOGLE_API_KEY
       });
@@ -286,6 +292,11 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
     setInputValue(text);
     setShowSuggestions(true);
     onInputChange?.(text);
+
+    if (value) {
+      skipNextNullSyncRef.current = true;
+      onLocationSelect(null);
+    }
 
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);

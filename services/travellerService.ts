@@ -19,6 +19,7 @@ export interface TravellerProfile {
 
 export interface CreateTripParams {
 	userId: string;
+	// allowedCategories: string[];
 	maxWeightKg: number;
 	maxHeightCm: number;
 	maxWidthCm: number;

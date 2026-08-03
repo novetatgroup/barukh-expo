@@ -2,9 +2,10 @@ import AppTheme from "@/constants/Theme";
 import { ShipmentData } from "@/context/ShipmentContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { Formik } from "formik";
+import { Formik, FormikErrors, FormikHelpers, FormikTouched } from "formik";
 import React, { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ValidationError } from "yup";
 import CustomButton from "../../ui/CustomButton";
 import {
   initialFormValues,
@@ -12,12 +13,20 @@ import {
   PackageDetailsStep,
   PackageFormValues,
   PackageSubmitData,
+  PackageValidationSchema,
   Step1ValidationSchema,
   Step2ValidationSchema,
   TravelDetailsStep,
 } from "./packageForm";
 
-type PackageFormInitialValues = Partial<ShipmentData> & Partial<PackageFormValues>;
+type PackageFormInitialValues =
+  Partial<Omit<ShipmentData, "destination" | "maxHeightCm" | "maxWidthCm" | "maxLengthCm">> &
+  Partial<Omit<PackageFormValues, "destination" | "maxHeightCm" | "maxWidthCm" | "maxLengthCm">> & {
+    destination?: LocationData | string | null;
+    maxHeightCm?: string | number;
+    maxWidthCm?: string | number;
+    maxLengthCm?: string | number;
+  };
 
 type PackageDetailsFormProps = {
   initialValues?: PackageFormInitialValues;
@@ -67,8 +76,60 @@ const toTimeField = (value?: string): string => {
   });
 };
 
+const toTextField = (value?: string | number): string =>
+  value === undefined || value === null ? "" : String(value);
+
 const isFiniteNumber = (value: number | null | undefined): value is number =>
   typeof value === "number" && Number.isFinite(value);
+
+const isLocationData = (value: unknown): value is LocationData =>
+  typeof value === "object" &&
+  value !== null &&
+  "placeId" in value &&
+  "description" in value &&
+  "city" in value;
+
+const step1Fields = new Set<keyof PackageFormValues>([
+  "origin",
+  "originCountry",
+  "originCity",
+  "destination",
+  "destinationCountry",
+  "destinationCity",
+  "departureDate",
+  "departureTime",
+  "arrivalDate",
+  "arrivalTime",
+  "mode",
+  "flightNumber",
+  "vehiclePlate",
+]);
+
+const toFormikErrors = (error: ValidationError): FormikErrors<PackageFormValues> => {
+  const errors: Partial<Record<keyof PackageFormValues, string>> = {};
+  const validationErrors = error.inner.length > 0 ? error.inner : [error];
+
+  validationErrors.forEach((validationError) => {
+    const path = validationError.path as keyof PackageFormValues | undefined;
+    if (path && !errors[path]) {
+      errors[path] = validationError.message;
+    }
+  });
+
+  return errors as FormikErrors<PackageFormValues>;
+};
+
+const toTouchedFields = (
+  errors: FormikErrors<PackageFormValues>,
+): FormikTouched<PackageFormValues> => {
+  const touched: Partial<Record<keyof PackageFormValues, boolean>> = {};
+
+  (Object.keys(errors) as (keyof PackageFormValues)[]).forEach((field) => {
+    touched[field] = true;
+  });
+
+  return touched as FormikTouched<PackageFormValues>;
+};
 
 const toLocationValue = (
   city?: string,
@@ -112,7 +173,7 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
         initialValues?.originLongitude ?? undefined,
       ),
     destination:
-      initialValues?.destination ??
+      (isLocationData(initialValues?.destination) ? initialValues.destination : null) ??
       toLocationValue(
         initialValues?.destinationCity,
         initialValues?.destinationCountry,
@@ -127,6 +188,9 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
       initialValues?.arrivalDate || toDateField(initialValues?.arrivalAt),
     arrivalTime:
       initialValues?.arrivalTime || toTimeField(initialValues?.arrivalAt),
+    maxHeightCm: toTextField(initialValues?.maxHeightCm),
+    maxWidthCm: toTextField(initialValues?.maxWidthCm),
+    maxLengthCm: toTextField(initialValues?.maxLengthCm),
   };
 
   const validateStep1 = async (values: PackageFormValues) => {
@@ -138,14 +202,40 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
     }
   };
 
-  const handleFormSubmit = async (values: PackageFormValues) => {
-    if (currentStep === 1) {
-      const isValid = await validateStep1(values);
-      if (isValid) {
-        setCurrentStep(2);
-      }
-    } else {
-      try {
+  const handleFormSubmit = async (
+    values: PackageFormValues,
+    helpers: FormikHelpers<PackageFormValues>,
+  ) => {
+    try {
+      console.log("Form values on submit:", values);
+
+      if (currentStep === 1) {
+        const isValid = await validateStep1(values);
+        console.log("Step 1 validation result:", isValid);
+        if (isValid) {
+          setCurrentStep(2);
+        }
+      } else {
+        try {
+          await PackageValidationSchema.validate(values, { abortEarly: false });
+        } catch (error) {
+          if (error instanceof ValidationError) {
+            const errors = toFormikErrors(error);
+            helpers.setErrors(errors);
+            helpers.setTouched(toTouchedFields(errors), false);
+
+            const hasStep1Error = (Object.keys(errors) as (keyof PackageFormValues)[])
+              .some((field) => step1Fields.has(field));
+
+            if (hasStep1Error) {
+              setCurrentStep(1);
+            }
+            return;
+          }
+
+          throw error;
+        }
+        console.log("Submitting package data v1:", values);
         setLoading(true);
         const submitData: PackageSubmitData = {
           originCountry: values.originCountry,
@@ -165,18 +255,22 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
           mode: values.mode,
           ...(values.mode === "FLIGHT" && { flightNumber: values.flightNumber }),
           ...(values.mode === "CAR" && { vehiclePlate: values.vehiclePlate }),
-          allowedCategories: values.allowedCategories,
+          // allowedCategories: values.allowedCategories,
           maxWeightKg: Number(values.maxWeightKg),
           maxHeightCm: Number(values.maxHeightCm),
           maxWidthCm: Number(values.maxWidthCm),
           maxLengthCm: Number(values.maxLengthCm),
         };
+
+        console.log("Submitting package data:", submitData);
         await onSubmit(submitData);
-      } catch (error) {
-        console.error("Error submitting package details:", error);
-      } finally {
-        setLoading(false);
+
       }
+
+    } catch (error) {
+      console.error("Error submitting package details:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -201,7 +295,7 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
         <View style={styles.headerSpacer} />
       </View>
 
-   
+
       <View style={styles.progressContainer}>
         <View style={styles.progressStep}>
           <View style={[styles.progressDot, currentStep >= 1 && styles.progressDotActive]}>
@@ -253,7 +347,7 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
                     errors={errors}
                     touched={touched}
                     setFieldValue={setFieldValue}
-                    handleChange={handleChange}
+                    setFieldTouched={setFieldTouched}
                   />
                 )}
 
