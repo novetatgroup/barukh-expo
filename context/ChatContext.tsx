@@ -52,7 +52,6 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     if (!isAuthenticated || !accessToken) return;
 
-    console.log("[Chat] connecting with token:", accessToken ? `${accessToken.slice(0, 20)}...` : "NULL");
     const newSocket = io(CHAT_URL, {
       auth: { token: accessToken },
       reconnection: true,
@@ -65,19 +64,15 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     setSocket(newSocket);
 
     newSocket.on("connect", () => {
-      console.log("[Chat] socket connected");
       setConnected(true);
       newSocket.emit("conversations:fetch");
     });
     newSocket.on("disconnect", () => {
-      console.log("[Chat] socket disconnected");
       setConnected(false);
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
     });
 
-    newSocket.on("connected", (data: unknown) => {
-      console.log("[Chat] server connected event:", JSON.stringify(data));
-      console.log("[Chat] emitting conversations:fetch");
+    newSocket.on("connected", () => {
       newSocket.emit("conversations:fetch");
       heartbeatRef.current = setInterval(
         () => newSocket.emit("heartbeat"),
@@ -88,10 +83,8 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     newSocket.on(
       "conversations:list",
       (data: unknown) => {
-        console.log("[Chat] conversations:list raw:", JSON.stringify(data));
         const payload = data as { conversations?: Conversation[] };
         const convos = payload.conversations ?? [];
-        console.log("[Chat] conversations count:", convos.length);
         setConversations(convos);
       }
     );
@@ -107,7 +100,6 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     newSocket.on("connect_error", (err) => {
-      console.warn("[Chat] connect_error:", err.message);
       if (err.message === "Invalid token") {
         logout();
       }
@@ -119,7 +111,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       setSocket(null);
       setConnected(false);
     };
-  }, [isAuthenticated, accessToken]);
+  }, [isAuthenticated, accessToken, logout]);
 
   const refreshConversations = () => {
     socket?.emit("conversations:fetch");

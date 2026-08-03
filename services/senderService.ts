@@ -2,6 +2,9 @@ import { API_ENDPOINTS, apiRequest } from "./api";
 
 export interface CreateSenderParams {
 	userId: string;
+	firstName: string;
+	lastName: string;
+	email: string;
 }
 
 export interface CreateSenderResponse {
@@ -52,19 +55,16 @@ export interface CreatePackageResponse {
 	updatedAt: string;
 }
 
-export interface AutoAssignParams {
-	packageId: string;
-}
-
 export interface AutoAssignResponse {
-	packageId: string;
-	assigned: boolean;
-	shipmentId: string;
-	tripId: string;
-	matchScore?: number;
-	strategyUsed?: string;
+	trip: {
+		id: string;
+		travellerId?: string;
+		userId?: string;
+		traveller?: { id?: string; userId?: string };
+		[key: string]: unknown;
+	} | null;
+	shipmentId?: string;
 	reason?: string;
-	processingTimeMs?: number;
 }
 
 export interface ShipmentDetails {
@@ -183,7 +183,6 @@ export const senderService = {
 	},
 
 	async getPackages(userId: string, accessToken: string) {
-		console.log({userId,accessToken, getPackages:API_ENDPOINTS.sender.getPackages(userId) })
 		return apiRequest<GetPackagesResponse>(API_ENDPOINTS.sender.getPackages(userId), {
 			method: "GET",
 			headers: {
@@ -192,13 +191,12 @@ export const senderService = {
 		});
 	},
 
-	async autoAssign(params: AutoAssignParams, accessToken: string) {
-		return apiRequest<AutoAssignResponse>(API_ENDPOINTS.matching.autoAssign, {
-			method: "POST",
+	async autoAssign(packageId: string, accessToken: string) {
+		return apiRequest<AutoAssignResponse>(API_ENDPOINTS.matching.autoAssign(packageId), {
+			method: "GET",
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
 			},
-			body: params,
 		});
 	},
 

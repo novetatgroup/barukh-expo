@@ -45,8 +45,7 @@ const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
       if (!result.canceled && result.assets[0]) {
         setFieldValue("photoUri", result.assets[0].uri);
       }
-    } catch (error) {
-      console.error("Camera error:", error);
+    } catch {
       alert("Unable to open camera. Please try again.");
     }
   };
@@ -56,7 +55,7 @@ const ItemDetailsStep: React.FC<ItemDetailsStepProps> = ({
   return (
     <>
       {/* Item Name */}
-      <Text style={styles.sectionLabel}>What's the item?</Text>
+      <Text style={styles.sectionLabel}>What&apos;s the item?</Text>
       <TextInput
         style={styles.textInput}
         value={values.itemName}

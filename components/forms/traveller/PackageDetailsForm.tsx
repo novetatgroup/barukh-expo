@@ -207,11 +207,8 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
     helpers: FormikHelpers<PackageFormValues>,
   ) => {
     try {
-      console.log("Form values on submit:", values);
-
       if (currentStep === 1) {
         const isValid = await validateStep1(values);
-        console.log("Step 1 validation result:", isValid);
         if (isValid) {
           setCurrentStep(2);
         }
@@ -235,7 +232,6 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
 
           throw error;
         }
-        console.log("Submitting package data v1:", values);
         setLoading(true);
         const submitData: PackageSubmitData = {
           originCountry: values.originCountry,
@@ -255,20 +251,18 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
           mode: values.mode,
           ...(values.mode === "FLIGHT" && { flightNumber: values.flightNumber }),
           ...(values.mode === "CAR" && { vehiclePlate: values.vehiclePlate }),
-          // allowedCategories: values.allowedCategories,
+          allowedCategories: values.allowedCategories,
           maxWeightKg: Number(values.maxWeightKg),
           maxHeightCm: Number(values.maxHeightCm),
           maxWidthCm: Number(values.maxWidthCm),
           maxLengthCm: Number(values.maxLengthCm),
         };
 
-        console.log("Submitting package data:", submitData);
         await onSubmit(submitData);
 
       }
 
-    } catch (error) {
-      console.error("Error submitting package details:", error);
+    } catch {
     } finally {
       setLoading(false);
     }

@@ -137,9 +137,7 @@ const VerificationScreen = () => {
           deliveryPhotoKey,
         },
       });
-    } catch (error) {
-      console.error("Delivery verification error:", error);
-      console.log({message:"Delivery verification error:", error});
+    } catch {
       Alert.alert("Verification failed", "Unable to confirm delivery right now.");
     } finally {
       setSubmitting(false);

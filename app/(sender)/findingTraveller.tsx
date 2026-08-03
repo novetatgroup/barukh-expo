@@ -11,7 +11,7 @@ import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 type SearchState = "searching" | "success" | "failure";
 
 const FindingTravellerScreen = () => {
-  const { senderId, packageId } = useLocalSearchParams<{ senderId: string; packageId: string }>();
+  const { packageId } = useLocalSearchParams<{ packageId: string }>();
   const { accessToken } = useContext(AuthContext);
   const [searchState, setSearchState] = useState<SearchState>("searching");
   const [failureMessage, setFailureMessage] = useState("");
@@ -90,7 +90,7 @@ const FindingTravellerScreen = () => {
     }
 
     // Step 1 — auto-assign
-    const assignResult = await senderService.autoAssign({ packageId }, accessToken);
+    const assignResult = await senderService.autoAssign(packageId, accessToken);
 
     if (cancelledRef.current) return;
 
@@ -101,7 +101,7 @@ const FindingTravellerScreen = () => {
       return;
     }
 
-    if (!assignResult.data.assigned || !assignResult.data.shipmentId) {
+    if (!assignResult.data.trip) {
       stopPulseAnimations();
       const reasonMessages: Record<string, string> = {
         no_compatible_trips: "No compatible travellers found at this time.",
@@ -110,6 +110,15 @@ const FindingTravellerScreen = () => {
       setFailureMessage(
         reasonMessages[assignResult.data.reason ?? ""] ||
           "We couldn't find a traveller for your package right now."
+      );
+      setSearchState("failure");
+      return;
+    }
+
+    if (!assignResult.data.shipmentId) {
+      stopPulseAnimations();
+      setFailureMessage(
+        "A traveller was found, but the matching response did not include the shipment ID required to continue safely.",
       );
       setSearchState("failure");
       return;

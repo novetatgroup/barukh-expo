@@ -46,8 +46,6 @@ const SharePickupCodeRoute = () => {
   };
 
   const handleFetchCode = async () => {
-    console.log({code: 'testing....',shipmentId: trackingParams.shipmentId,
-      accessToken})
     if (!accessToken) {
       throw new Error("Your session has expired. Please sign in again.");
     }

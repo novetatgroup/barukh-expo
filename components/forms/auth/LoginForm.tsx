@@ -5,7 +5,6 @@ import { StyleSheet, Text, View } from "react-native";
 import * as Yup from "yup";
 import CustomButton from "../../ui/CustomButton";
 import CustomTextInput from "../../ui/CustomTextInput";
-import Divider from "../../ui/Divider";
 import FooterLink from "../../ui/FooterLink";
 import AuthScreenLayout from "./AuthScreenLayout";
 
@@ -51,8 +50,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
           try {
             setLoading(true);
             await onSubmit(values);
-          } catch (error) {
-            console.error("Error sending OTP:", error);
+        } catch {
           } finally {
             setLoading(false);
           }

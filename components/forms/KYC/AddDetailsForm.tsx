@@ -133,8 +133,6 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                     if (!userId || !accessToken) return;
                     try {
                         setLoading(true);
-                        console.log({values});
-
                         const fullPhoneNumber = `${phoneCountry.dialCode}${values.phoneNumber}`;
                         const fullEmergencyContact = values.emergencyContact
                             ? `${emergencyCountry.dialCode}${values.emergencyContact}`
@@ -162,17 +160,14 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                             return;
                         }
 
-                        console.log("[AddDetailsForm] updateProfile payload:", payload);
                         const { ok, error } = await userService.updateProfile(userId, payload, accessToken);
                         if (ok) {
                             Toast.success("Details saved successfully!");
                             onSuccess();
                         } else {
-                            console.error("[AddDetailsForm] updateProfile failed:", error);
                             Toast.error(error || "Failed to save details.");
                         }
-                    } catch (err) {
-                        console.error("[AddDetailsForm] updateProfile threw an exception:", err);
+                    } catch {
                         Toast.error("Something went wrong. Please try again.");
                     } finally {
                         setLoading(false);

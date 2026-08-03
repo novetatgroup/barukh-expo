@@ -80,8 +80,7 @@ const CreateShipmentForm: React.FC<CreateShipmentFormProps> = ({ onSubmit }) => 
 
         
         await onSubmit(submitData);
-      } catch (error) {
-        console.error("Error submitting shipment details:", error);
+      } catch {
       } finally {
         setLoading(false);
       }

@@ -1,12 +1,6 @@
-export const categoryOptions = [
-  { label: "Electronics", value: "ELECTRONIC" },
-  { label: "Documents", value: "DOCUMENT" },
-  { label: "Clothing", value: "CLOTHING" },
-  { label: "Food Items", value: "FOOD" },
-  { label: "Fragile Items", value: "FRAGILE" },
-  { label: "Books", value: "BOOK" },
-  { label: "Other", value: "OTHER" },
-];
+import { TRIP_CATEGORY_OPTIONS } from "@/types/trip";
+
+export const categoryOptions = [...TRIP_CATEGORY_OPTIONS];
 
 export const fragileOptions = [
   { label: "Yes", value: "Yes" },

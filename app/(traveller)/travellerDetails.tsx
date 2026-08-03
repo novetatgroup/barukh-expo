@@ -33,8 +33,6 @@ const TravellerDetailsScreen = () => {
 			return;
 		}
 
-		console.log("Traveller Details submitted:", data);
-		
 		setCurrentShipment((prev) => ({ 
 			...prev, 
 			...data,

@@ -55,8 +55,7 @@ const ConfirmOrderScreen = () => {
       if (!result.canceled && result.assets[0]) {
         setSelectedImage(result.assets[0].uri);
       }
-    } catch (error) {
-      console.error("Confirm order picker error:", error);
+    } catch {
       Alert.alert("Image failed", "Unable to select an order photo right now.");
     }
   };
@@ -86,8 +85,7 @@ const ConfirmOrderScreen = () => {
       if (!result.canceled && result.assets[0]) {
         setSelectedImage(result.assets[0].uri);
       }
-    } catch (error) {
-      console.error("Confirm order camera error:", error);
+    } catch {
       Alert.alert("Camera failed", "Unable to open the camera right now.");
     }
   };

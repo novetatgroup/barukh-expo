@@ -2,6 +2,8 @@ import PackageDetailsForm from "@/components/forms/traveller/PackageDetailsForm"
 import { AuthContext } from "@/context/AuthContext";
 import { useShipment } from "@/context/ShipmentContext";
 import { CreateTripParams, travellerService } from "@/services/travellerService";
+import { userService } from "@/services/userService";
+import { TripCategory } from "@/types/trip";
 import { router } from "expo-router";
 import React, { useContext, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -16,7 +18,7 @@ const PackageDetailsScreen = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (packageData: {
-    // allowedCategories: string[];
+    allowedCategories: TripCategory[];
     maxWeightKg: number;
     maxHeightCm: number;
     maxWidthCm: number;
@@ -35,7 +37,6 @@ const PackageDetailsScreen = () => {
     flightNumber?: string;
     vehiclePlate?: string;
   }) => {
-    console.log("Submitting package data:", packageData);
     if (!accessToken || !userId) {
       Toast.error("You must be logged in to create a trip.");
       return;
@@ -44,8 +45,21 @@ const PackageDetailsScreen = () => {
     try {
       setIsSubmitting(true);
 
-      // Ensure traveller profile exists before creating a trip
-      const travellerResult = await travellerService.createTraveller({ userId }, accessToken);
+      const userResult = await userService.getUser(userId, accessToken);
+      if (!userResult.ok || !userResult.data) {
+        Toast.error(userResult.error || "Unable to load your profile. Please try again.");
+        return;
+      }
+
+      const travellerResult = await travellerService.createTraveller(
+        {
+          userId,
+          firstName: userResult.data.firstName,
+          lastName: userResult.data.lastName,
+          email: userResult.data.email,
+        },
+        accessToken,
+      );
       let resolvedTravellerId = travellerResult.data?.travellerId;
 
       if (!travellerResult.ok || !resolvedTravellerId) {
@@ -60,7 +74,7 @@ const PackageDetailsScreen = () => {
       // Build trip payload
       const tripPayload: CreateTripParams = {
         userId,
-        // allowedCategories: packageData.allowedCategories,
+        allowedCategories: packageData.allowedCategories,
         maxWeightKg: Number(packageData.maxWeightKg) || 0,
         maxHeightCm: Number(packageData.maxHeightCm) || 0,
         maxWidthCm: Number(packageData.maxWidthCm) || 0,
@@ -90,12 +104,6 @@ const PackageDetailsScreen = () => {
 
       const tripResult = await travellerService.createTrip(tripPayload, accessToken);
       if (!tripResult.ok) {
-        if (__DEV__) {
-          console.error("Create trip failed", {
-            error: tripResult.error,
-            payload: tripPayload,
-          });
-        }
         Toast.error(tripResult.error || "Failed to create trip");
         return;
       }
@@ -115,7 +123,7 @@ const PackageDetailsScreen = () => {
         mode: packageData.mode,
         flightNumber: packageData.flightNumber,
         vehiclePlate: packageData.vehiclePlate,
-        // allowedCategories: packageData.allowedCategories,
+        allowedCategories: packageData.allowedCategories,
         maxWeightKg: Number(packageData.maxWeightKg),
         maxHeightCm: Number(packageData.maxHeightCm),
         maxWidthCm: Number(packageData.maxWidthCm),
@@ -131,8 +139,7 @@ const PackageDetailsScreen = () => {
         clearCurrentShipment();
         router.push("/(tabs)/home");
       }, 600);
-    } catch (error) {
-      console.error("Error submitting trip:", error);
+    } catch {
       Toast.error("Failed to create trip. Please check your connection and try again.");
     } finally {
       setIsSubmitting(false);

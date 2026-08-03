@@ -44,16 +44,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	useEffect(() => {
 		const loadAuthState = async () => {
 			try {
-				const token = await getSecureItem("accessToken");
-				console.log("Loaded token Secure Store:", token);
+				const [token, refreshToken] = await Promise.all([
+					getSecureItem("accessToken"),
+					getSecureItem("refreshToken"),
+				]);
 
 				if (token) {
 					const decoded: DecodedToken = jwtDecode(token);
 					const currentTime = Date.now() / 1000;
 
 					if (decoded.exp && Number(decoded.exp) < currentTime) {
-						console.log("Token expired — removing from storage.");
-						await deleteSecureItem("accessToken");
+						await Promise.all([
+							deleteSecureItem("accessToken"),
+							deleteSecureItem("refreshToken"),
+						]);
 						setAuthStateInternal({
 							accessToken: null,
 							refreshToken: null,
@@ -78,14 +82,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 						setAuthStateInternal({
 							accessToken: token,
-							refreshToken: null,
+							refreshToken,
 							isAuthenticated: true,
 							userId: userId,
 						});
 					}
+				} else if (refreshToken) {
+					// A refresh endpoint is not confirmed, so an orphaned refresh token
+					// cannot safely restore the session.
+					await deleteSecureItem("refreshToken");
 				}
-			} catch (err) {
-				console.error("Failed to load auth state:", err);
+			} catch {
+				await Promise.all([
+					deleteSecureItem("accessToken"),
+					deleteSecureItem("refreshToken"),
+				]);
 			} finally {
 				setLoading(false);
 			}
@@ -98,17 +109,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 		setAuthStateInternal(state);
 		if (state.accessToken) {
 			await saveSecureItem("accessToken", state.accessToken);
-			console.log(
-				"Access token saved to Secure Store:",
-				state.accessToken
-			);
 		}
 		if (state.refreshToken) {
 			await saveSecureItem("refreshToken", state.refreshToken);
-			console.log(
-				"Refresh token saved to Secure Store:",
-				state.refreshToken
-			);
 		}
 	};
 
@@ -120,7 +123,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 		const currentTime = Date.now() / 1000;
 
 		if (decoded.exp && Number(decoded.exp) < currentTime) {
-			console.log("Access token expired — logging out.");
 			await logout();
 			throw new Error("Token expired");
 		}

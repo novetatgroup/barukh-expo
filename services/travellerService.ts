@@ -1,8 +1,12 @@
 import { API_ENDPOINTS, apiRequest } from "./api";
 import type { GetShipmentsResponse } from "./senderService";
+import { TripCategory } from "@/types/trip";
 
 export interface CreateTravellerParams {
 	userId: string;
+	firstName: string;
+	lastName: string;
+	email: string;
 }
 
 export interface CreateTravellerResponse {
@@ -19,7 +23,7 @@ export interface TravellerProfile {
 
 export interface CreateTripParams {
 	userId: string;
-	// allowedCategories: string[];
+	allowedCategories: TripCategory[];
 	maxWeightKg: number;
 	maxHeightCm: number;
 	maxWidthCm: number;
@@ -144,8 +148,6 @@ export const travellerService = {
 	},
 
 	async getTraveller(userId: string, accessToken: string) {
-		console.log({userId,getTraveller: API_ENDPOINTS.traveller.getTraveller(userId), accessToken});
-
 		return apiRequest<TravellerProfile>(API_ENDPOINTS.traveller.getTraveller(userId), {
 			method: "GET",
 			headers: {
@@ -164,8 +166,6 @@ export const travellerService = {
 	},
 
 	async getTravellerShipments(travellerId: string, accessToken: string) {
-
-		console.log({travellerId,getTravellerShipments: API_ENDPOINTS.shipments.listByRole(travellerId, "TRAVELLER"), accessToken});
 		return apiRequest<GetShipmentsResponse>(
 			API_ENDPOINTS.shipments.listByRole(travellerId, "TRAVELLER"),
 			{
@@ -192,7 +192,6 @@ export const travellerService = {
 	},
 
 	async confirmItemPickup(params: ConfirmItemPickupParams, accessToken: string) {
-		console.log({params,accessToken, url:API_ENDPOINTS.shipments.confirmItemPickup })
 		return apiRequest<{ message?: string }>(API_ENDPOINTS.shipments.confirmItemPickup, {
 			method: "POST",
 			headers: {

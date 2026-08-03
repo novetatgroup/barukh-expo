@@ -91,11 +91,6 @@ const TravellerMatchDetailsScreen = () => {
       pathname: "/(sender)/modeOfPayment",
       params: {
         shipmentId: shipmentId || "",
-        itemName: displayItemName,
-        shipmentCost: "$120",
-        insurance: "$3.20",
-        total: "$123.20",
-        payAmount: "$48.20",
       },
     });
   };

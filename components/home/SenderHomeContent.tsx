@@ -86,13 +86,18 @@ const SenderHomeContent = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const handleSendPackage = async () => {
-    if (!userProfile?.isActive) {
-      router.push("/(KYC)/KYCLanding");
+    if (!userId || !accessToken) {
+      Toast.error("You must be logged in to send a package.");
       return;
     }
 
-    if (!userId || !accessToken) {
-      Toast.error("You must be logged in to send a package.");
+    if (!userProfile) {
+      Toast.error("Your profile is still loading. Please try again.");
+      return;
+    }
+
+    if (!userProfile.isActive) {
+      router.push("/(KYC)/KYCLanding");
       return;
     }
 
@@ -106,7 +111,15 @@ const SenderHomeContent = () => {
 
     try {
       setIsSending(true);
-      const result = await senderService.createSender({ userId }, accessToken);
+      const result = await senderService.createSender(
+        {
+          userId,
+          firstName: userProfile.firstName,
+          lastName: userProfile.lastName,
+          email: userProfile.email,
+        },
+        accessToken,
+      );
 
       let resolvedSenderId = result.data?.senderId;
 
@@ -121,16 +134,14 @@ const SenderHomeContent = () => {
         resolvedSenderId = getResult.data.senderId;
       }
 
-      console.log("Resolved senderId:", resolvedSenderId);
       setSenderId(resolvedSenderId);
 
       router.push({
         pathname: "/(sender)/createShipment",
         params: { senderId: resolvedSenderId },
       });
-    } catch (error) {
+    } catch {
       Toast.error("Unable to create your sender profile. Please check your connection and try again.");
-      console.error("Error creating sender:", error);
     } finally {
       setIsSending(false);
     }

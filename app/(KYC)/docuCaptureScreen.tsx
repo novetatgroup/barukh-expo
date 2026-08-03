@@ -69,8 +69,7 @@ export default function DocumentCaptureScreen() {
 
       Toast.success("Documents submitted successfully!");
       setTimeout(() => router.push("/(KYC)/verificationPendingScreen"), 1500);
-    } catch (err) {
-      console.error("Submission error:", err);
+    } catch {
       Toast.error("Submission failed. Please try again later.");
     } finally {
       setIsSubmitting(false);

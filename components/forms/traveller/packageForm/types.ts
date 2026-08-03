@@ -1,4 +1,5 @@
 import * as Yup from "yup";
+import { TripCategory } from "@/types/trip";
 
 export type LocationData = {
   placeId: string;
@@ -30,7 +31,7 @@ export type PackageFormValues = {
   flightNumber: string;
   vehiclePlate: string;
   // Step 2 - Package Details
-  // allowedCategories: string[];
+  allowedCategories: TripCategory[];
   maxWeightKg: number;
   maxHeightCm: string;
   maxWidthCm: string;
@@ -38,7 +39,7 @@ export type PackageFormValues = {
 };
 
 export type PackageSubmitData = {
-  // allowedCategories: string[];
+  allowedCategories: TripCategory[];
   maxWeightKg: number;
   maxHeightCm: number;
   maxWidthCm: number;
@@ -76,7 +77,7 @@ export const initialFormValues: PackageFormValues = {
   mode: "",
   flightNumber: "",
   vehiclePlate: "",
-  // allowedCategories: [],
+  allowedCategories: [],
   maxWeightKg: 0,
   maxHeightCm: "",
   maxWidthCm: "",
@@ -125,10 +126,10 @@ const positiveNumber = (requiredMessage: string) =>
     .positive("Must be positive");
 
 export const Step2ValidationSchema = Yup.object().shape({
-  // allowedCategories: Yup.array()
-  //   .of(Yup.string().required())
-  //   .min(1, "Select at least one category")
-  //   .required("Select at least one category"),
+  allowedCategories: Yup.array()
+    .of(Yup.string().required())
+    .min(1, "Select at least one category")
+    .required("Select at least one category"),
   maxWeightKg: positiveNumber("Package size is required"),
   maxHeightCm: positiveNumber("Max height is required"),
   maxWidthCm: positiveNumber("Max width is required"),

@@ -9,6 +9,7 @@ export const API_ENDPOINTS = {
 	users: {
 		get: (userId: string) => `/users/${userId}`,
 		update: (userId: string) => `/users/update/${userId}`,
+		createBankAccount: "/users/create-bank-account",
 	},
 	traveller: {
 		createTraveller: "/traveller/create-traveller",
@@ -24,7 +25,11 @@ export const API_ENDPOINTS = {
 		getPackages: (userId: string) => `/sender/${userId}/packages/all`,
 	},
 	matching: {
-		autoAssign: "/matching/auto-assign",
+		autoAssign: (packageId: string) => `/matching/auto-assign/${packageId}`,
+	},
+	payments: {
+		initiateCharge: "/payments/initiate-charge",
+		nextAction: "/payments/next-action",
 	},
 	kyc: {
 		getUploadUrls: (userId: string) => `/smile-id/upload-urls/${userId}`,
@@ -97,21 +102,6 @@ const getResponseMessage = (data: ParsedResponseBody): string => {
 	return "Request failed";
 };
 
-const sanitizeHeaders = (headers: Record<string, string>): Record<string, string> => {
-	return Object.entries(headers).reduce<Record<string, string>>((sanitized, [key, value]) => {
-		sanitized[key] = key.toLowerCase() === "authorization" ? "[redacted]" : value;
-		return sanitized;
-	}, {});
-};
-
-const getLoggedRequestBody = (body: RequestOptions["body"]) => {
-	if (!body) {
-		return undefined;
-	}
-
-	return body instanceof FormData ? "[FormData]" : body;
-};
-
 export async function apiRequest<T>(
 	endpoint: string,
 	options: RequestOptions = {}
@@ -130,8 +120,6 @@ export async function apiRequest<T>(
 	}
 
 	const url = `${API_URL}${endpoint}`;
-	const method = restOptions.method || "GET";
-
 	try {
 		const response = await fetch(url, {
 			...restOptions,
@@ -148,20 +136,6 @@ export async function apiRequest<T>(
 		}
 
 		if (!response.ok) {
-			if (__DEV__) {
-				console.error("API request failed", {
-					endpoint,
-					url,
-					method,
-					status: response.status,
-					statusText: response.statusText,
-					requestHeaders: sanitizeHeaders(headers),
-					requestBody: getLoggedRequestBody(body),
-					responseBody: parsedResponseBody,
-					rawResponseBody,
-				});
-			}
-
 			return {
 				data: null,
 				error: getResponseMessage(parsedResponseBody),
@@ -170,13 +144,7 @@ export async function apiRequest<T>(
 		}
 
 		return { data, error: null, ok: true };
-	} catch (error) {
-		console.error("API request error:", {
-			endpoint,
-			url,
-			method,
-			error,
-		});
+	} catch {
 		return {
 			data: null,
 			error: "Network error. Please try again later.",

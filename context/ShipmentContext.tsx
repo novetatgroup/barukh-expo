@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { TripCategory } from "@/types/trip";
 
 export interface ShipmentData {
   departure?: string;
@@ -24,7 +25,7 @@ export interface ShipmentData {
   flightNumber?: string;
   vehiclePlate?: string;
 
-  allowedCategories?: string[];
+  allowedCategories?: TripCategory[];
   weight?: string;
   height?: string;
   width?: string;

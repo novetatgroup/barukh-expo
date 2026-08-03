@@ -1,6 +1,7 @@
 import { Theme } from "@/constants/Theme";
 import { AuthContext } from "@/context/AuthContext";
 import { useRole } from "@/context/RoleContext";
+import { getPaymentExecutionMode } from "@/services/paymentConfig";
 import { senderService, ShipmentDetails } from "@/services/senderService";
 import { travellerService } from "@/services/travellerService";
 import {
@@ -499,8 +500,7 @@ const ShipmentsScreen = () => {
       }
 
       setSenderShipmentItems(shipmentsResult.data.data.map(mapSenderShipment));
-    } catch (error) {
-      console.error("Sender shipments error:", error);
+    } catch {
       setSenderShipmentItems([]);
       setSenderShipmentsError("Unable to load shipments.");
     } finally {
@@ -554,8 +554,7 @@ const ShipmentsScreen = () => {
       setTravellerShipmentItems(
         shipmentsResult.data.data.map(mapTravellerShipment)
       );
-    } catch (error) {
-      console.error("Traveller shipments error:", error);
+    } catch {
       setTravellerShipmentItems([]);
       setTravellerShipmentsError("Unable to load shipments.");
     } finally {
@@ -598,6 +597,8 @@ const ShipmentsScreen = () => {
           pathname: "/(sender)/travellerMatchCategoryDetails",
           params: {
             id:item.id,
+            shipmentId:
+              getPaymentExecutionMode() === "mock" ? `mock-shipment-${item.id}` : "",
             travellerName: item.travellerName,
             parcelName: item.parcelName,
             route: item.route,

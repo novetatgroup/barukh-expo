@@ -32,8 +32,7 @@ const DocumentTypeSelectionScreen = () => {
         pathname: "/(KYC)/docuCaptureScreen",
         params: { type: selectedType },
       });
-    } catch (err) {
-      console.error("Upload URL fetch error:", err);
+    } catch {
       Toast.error("Failed to initialise verification. Please try again.");
     } finally {
       setIsLoading(false);

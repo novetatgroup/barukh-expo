@@ -30,8 +30,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
         if (savedRole === "TRAVELLER" || savedRole === "SENDER") {
           setRoleState(savedRole as Role);
         }
-      } catch (err) {
-        console.error("Failed to load role:", err);
+      } catch {
       } finally {
         setLoading(false);
       }

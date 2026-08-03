@@ -1,7 +1,8 @@
 import { Theme } from "@/constants/Theme";
+import { getPaymentExecutionMode } from "@/services/paymentConfig";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -13,6 +14,8 @@ import {
 const TravellerMatchCategoryDetailsScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const mode = getPaymentExecutionMode();
+  const [paymentMessage, setPaymentMessage] = useState<string | null>(null);
 
   const travellerName = (params.travellerName as string) || "Traveller";
   const route = (params.route as string) || "Ontario - Kampala";
@@ -28,13 +31,18 @@ const TravellerMatchCategoryDetailsScreen = () => {
 
 
   const handleConfirm = () => {
+    const suppliedShipmentId = params.shipmentId as string | undefined;
+    const shipmentId = suppliedShipmentId || (mode === "mock" ? "mock-shipment-001" : "");
+    if (!shipmentId) {
+      setPaymentMessage(
+        "Payment cannot continue because this real match has no shipment ID.",
+      );
+      return;
+    }
     router.push({
       pathname: "/(sender)/modeOfPayment",
       params: {
-        shipmentCost: "$120",
-        insurance: "$3.20",
-        total: "$123.20",
-        payAmount: "$48.20",
+        shipmentId,
       },
     });
   };
@@ -112,6 +120,10 @@ const TravellerMatchCategoryDetailsScreen = () => {
           </View>
 
           <View style={styles.divider} />
+
+          {paymentMessage ? (
+            <Text style={styles.paymentMessage}>{paymentMessage}</Text>
+          ) : null}
 
           <View style={styles.buttonRow}>
             <TouchableOpacity
@@ -245,6 +257,13 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: Theme.colors.background.border,
+    marginBottom: Theme.spacing.md,
+  },
+  paymentMessage: {
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: "Inter-Regular",
+    color: Theme.colors.error,
     marginBottom: Theme.spacing.md,
   },
   detailRow: {

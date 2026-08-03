@@ -87,8 +87,7 @@ const ShareShipmentCodeScreen = ({
       await Share.share({
         message: `${content.shareMessage} ${code}`,
       });
-    } catch (error) {
-      console.error("Share shipment code error:", error);
+    } catch {
       Alert.alert("Share failed", "Unable to open the share sheet right now.");
     }
   };

@@ -42,7 +42,7 @@ const RegisterScreen = ({ activeTab, onTabChange }: RegisterScreenProps) => {
     <View style={styles.container}>
       <RegisterForm
         onSubmit={handleRegister}
-        onGooglePress={() => console.log("Google pressed")}
+        onGooglePress={() => {}}
         onLoginPress={() => onTabChange("login")}
         activeTab={activeTab}
         onTabChange={onTabChange}

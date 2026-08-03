@@ -62,8 +62,7 @@ const UploadReceiptScreen = () => {
       if (!result.canceled && result.assets[0]) {
         setSelectedImage(result.assets[0].uri);
       }
-    } catch (error) {
-      console.error("Receipt picker error:", error);
+    } catch {
       Alert.alert("Upload failed", "Unable to select a receipt right now.");
     }
   };
@@ -93,8 +92,7 @@ const UploadReceiptScreen = () => {
       if (!result.canceled && result.assets[0]) {
         setSelectedImage(result.assets[0].uri);
       }
-    } catch (error) {
-      console.error("Receipt camera error:", error);
+    } catch {
       Alert.alert("Camera failed", "Unable to open the camera right now.");
     }
   };

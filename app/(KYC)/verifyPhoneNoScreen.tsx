@@ -5,8 +5,7 @@ import { router } from 'expo-router';
 import { Country } from '@/components/ui/PhoneNumberInput';
 
 const VerifyPhoneNoScreen = () => {
-  const handleSubmit = (phoneNumber: string, country: Country) => {
-    console.log('Phone Number submitted:', phoneNumber, country);
+  const handleSubmit = (_phoneNumber: string, _country: Country) => {
     router.push("/(KYC)/phoneOtpScreen");
   };
 

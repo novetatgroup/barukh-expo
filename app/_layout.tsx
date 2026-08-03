@@ -9,6 +9,7 @@ import { ChatProvider } from "@/context/ChatContext";
 import { KYCProvider } from "@/context/KYCContext";
 import { RoleProvider } from "@/context/RoleContext";
 import { ShipmentProvider } from "@/context/ShipmentContext";
+import { PaymentProvider } from "@/context/PaymentContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -37,10 +38,12 @@ export default function RootLayout() {
       <RoleProvider>
         <KYCProvider>
           <ShipmentProvider>
-            <ChatProvider>
-              <Slot />
-              <ToastManager />
-            </ChatProvider>
+            <PaymentProvider>
+              <ChatProvider>
+                <Slot />
+                <ToastManager />
+              </ChatProvider>
+            </PaymentProvider>
           </ShipmentProvider>
         </KYCProvider>
       </RoleProvider>

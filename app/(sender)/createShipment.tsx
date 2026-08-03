@@ -44,11 +44,9 @@ const CreateShipmentScreen = () => {
       //     });
       //
       //     if (!uploadResponse.ok) {
-      //       console.error("Photo upload failed:", uploadResponse.status);
       //       Toast.error("Package created but photo upload failed.");
       //     }
-      //   } catch (uploadError) {
-      //     console.error("Photo upload error:", uploadError);
+      //   } catch {
       //     Toast.error("Package created but photo upload failed.");
       //   }
       // }
@@ -65,7 +63,6 @@ const CreateShipmentScreen = () => {
         ? error.message
         : "Failed to create package. Please try again.";
       Toast.error(errorMessage);
-      console.error("Error creating package:", error);
     }
   };
 

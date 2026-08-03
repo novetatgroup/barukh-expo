@@ -149,8 +149,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
       } else {
         setSuggestions([]);
       }
-    } catch (err) {
-      console.error("Autocomplete Error:", err);
+    } catch {
       setSuggestions([]);
     } finally {
       setIsLoading(false);
@@ -266,8 +265,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
       }
 
       return mapLocationData(geocodeData.results[0], description, placeId);
-    } catch (err) {
-      console.log("Place Details Error:", err);
+    } catch {
       return null;
     }
   };

@@ -3,7 +3,7 @@ import Theme from "@/constants/Theme";
 import { kycService } from "@/services/kycService";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
 import CustomButton from "@/components/ui/CustomButton";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -18,12 +18,10 @@ export default function VerificationPendingScreen() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const checkJobStatus = async () => {
+  const checkJobStatus = useCallback(async () => {
     if (!userId || !accessToken) return;
 
     const { data } = await kycService.getJobStatus(userId, accessToken);
-    console.log("[KYC] Job status response:", JSON.stringify(data, null, 2));
-
     if (!data || data.status === "PROCESSING") return; // still processing, keep polling
 
     clearInterval(intervalRef.current!);
@@ -42,7 +40,7 @@ export default function VerificationPendingScreen() {
     } else {
       setIsFailed(true);
     }
-  };
+  }, [accessToken, userId]);
 
   useEffect(() => {
     checkJobStatus();
@@ -51,7 +49,7 @@ export default function VerificationPendingScreen() {
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (countdownRef.current) clearInterval(countdownRef.current);
     };
-  }, [userId]);
+  }, [checkJobStatus]);
 
   if (isVerified) {
     return (
@@ -116,7 +114,7 @@ export default function VerificationPendingScreen() {
           <Text style={styles.titleBold}>In Progress</Text>
         </Text>
         <Text style={styles.body}>
-          We're verifying your identity. This may take a few minutes. You'll be notified once it's done.
+          We&apos;re verifying your identity. This may take a few minutes. You&apos;ll be notified once it&apos;s done.
         </Text>
         <CustomButton
           title="Go to Home"

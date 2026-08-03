@@ -1,25 +1,19 @@
-import PayScreenForm from "@/components/forms/payments/PayScreenForm";
-import { router, useLocalSearchParams } from "expo-router";
+import PaymentCheckoutForm from "@/components/forms/payments/PaymentCheckoutForm";
+import { usePaymentCheckout } from "@/hooks/usePaymentCheckout";
+import { useLocalSearchParams } from "expo-router";
 import React from "react";
 
 const PayScreen = () => {
   const params = useLocalSearchParams<{
-    shipmentCost?: string;
-    insurance?: string;
-    total?: string;
-    payAmount?: string;
+    shipmentId?: string;
+    accepted?: string;
   }>();
+  const checkout = usePaymentCheckout({
+    shipmentId: params.shipmentId ?? "",
+    acceptedParam: params.accepted,
+  });
 
-  return (
-    <PayScreenForm
-      shipmentCost={params.shipmentCost || "$120"}
-      insurance={params.insurance || "$3.20"}
-      total={params.total || "$123.20"}
-      payAmount={params.payAmount || "$48.20"}
-      onBack={() => router.back()}
-      onPay={() => router.replace("/(tabs)/shipments")}
-    />
-  );
+  return <PaymentCheckoutForm {...checkout} />;
 };
 
 export default PayScreen;

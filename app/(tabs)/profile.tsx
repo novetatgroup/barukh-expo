@@ -4,7 +4,7 @@ import { useRole } from "@/context/RoleContext";
 import { useUnreadNotificationsCount } from "@/hooks/useUnreadNotificationsCount";
 import { UserProfile, userService } from "@/services/userService";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { Href, useRouter } from "expo-router";
 import React, { useContext, useEffect, useState } from "react";
 import {
   Image,
@@ -18,7 +18,7 @@ import {
 const ProfileScreen = () => {
   const router = useRouter();
   const { logout, userId, accessToken } = useContext(AuthContext);
-  const { clearRole } = useRole();
+  const { clearRole, role } = useRole();
   const { unreadNotificationsCount } = useUnreadNotificationsCount();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
@@ -39,20 +39,28 @@ const ProfileScreen = () => {
   const notificationBadgeLabel =
     unreadNotificationsCount > 99 ? "99+" : String(unreadNotificationsCount);
 
-  const menuItems = [
+  const menuItems: {
+    icon: keyof typeof Ionicons.glyphMap;
+    label: string;
+    route: Href | null;
+  }[] = [
     { icon: "swap-horizontal-outline", label: "Switch Barukh Mode", route: "/(profile)/switchProfile" },
     { icon: "notifications-outline", label: "Notifications", route: "/(profile)/notifications" },
-    { icon: "shield-checkmark-outline", label: "Verification", route: null },
-    { icon: "card-outline", label: "My Payments", route: null },
-    { icon: "cube-outline", label: "My Shipments", route: null },
+    { icon: "shield-checkmark-outline", label: "Verification", route: "/(KYC)/KYCLanding" },
+    ...(role === "TRAVELLER"
+      ? [{ icon: "business-outline" as const, label: "Payout Accounts", route: "/(profile)/payoutAccounts" as Href }]
+      : role === "SENDER"
+        ? [{ icon: "card-outline" as const, label: "My Payments", route: "/(profile)/payments" as Href }]
+        : []),
+    { icon: "cube-outline", label: "My Shipments", route: "/(tabs)/shipments" },
 
     { icon: "help-circle-outline", label: "Help & Support", route: null },
     { icon: "settings-outline", label: "Settings", route: null },
   ];
 
-  const handleMenuPress = (route: string | null) => {
+  const handleMenuPress = (route: Href | null) => {
     if (route) {
-      router.push(route as any);
+      router.push(route);
     }
   };
 
@@ -79,7 +87,7 @@ const ProfileScreen = () => {
         </View>
         <TouchableOpacity
           style={styles.editIcon}
-          onPress={() => router.push("/(profile)/editProfile" as any)}
+          onPress={() => router.push("/(profile)/editProfile")}
         >
           <Ionicons name="create-outline" size={22} color={Theme.colors.primary} />
         </TouchableOpacity>
@@ -94,7 +102,7 @@ const ProfileScreen = () => {
           >
             <View style={styles.menuIconContainer}>
               <Ionicons
-                name={item.icon as keyof typeof Ionicons.glyphMap}
+                name={item.icon}
                 size={22}
                 color={Theme.colors.primary}
               />

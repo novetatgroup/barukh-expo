@@ -1,40 +1,19 @@
-import ModeOfPaymentForm from "@/components/forms/payments/ModeOfPaymentForm";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
-
-type PaymentMode = "Mobile Money" | "Paypal" | "Apple Pay" | "Wallet Pay" | "Cash On Delivery";
+import PaymentCheckoutForm from "@/components/forms/payments/PaymentCheckoutForm";
+import { usePaymentCheckout } from "@/hooks/usePaymentCheckout";
+import { useLocalSearchParams } from "expo-router";
+import React from "react";
 
 const ModeOfPaymentScreen = () => {
-  const router = useRouter();
   const params = useLocalSearchParams<{
-    shipmentCost?: string;
-    insurance?: string;
-    total?: string;
-    payAmount?: string;
+    shipmentId?: string;
+    accepted?: string;
   }>();
-  const [selectedMode, setSelectedMode] = useState<PaymentMode>("Paypal");
+  const checkout = usePaymentCheckout({
+    shipmentId: params.shipmentId ?? "",
+    acceptedParam: params.accepted,
+  });
 
-  const handleSelectMode = (mode: PaymentMode) => {
-    setSelectedMode(mode);
-    router.push({
-      pathname: "/(sender)/payScreen",
-      params: {
-        mode,
-        shipmentCost: params.shipmentCost || "$120",
-        insurance: params.insurance || "$3.20",
-        total: params.total || "$123.20",
-        payAmount: params.payAmount || "$48.20",
-      },
-    });
-  };
-
-  return (
-    <ModeOfPaymentForm
-      selectedMode={selectedMode}
-      onBack={() => router.back()}
-      onSelectMode={handleSelectMode}
-    />
-  );
+  return <PaymentCheckoutForm {...checkout} />;
 };
 
 export default ModeOfPaymentScreen;

@@ -5,6 +5,7 @@ import React from "react";
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { packageSizeOptions } from "./constants";
 import { PackageFormValues } from "./types";
+import { TRIP_CATEGORY_OPTIONS, TripCategory } from "@/types/trip";
 
 type PackageDetailsStepProps = {
   values: PackageFormValues;
@@ -31,40 +32,30 @@ const PackageDetailsStep: React.FC<PackageDetailsStepProps> = ({
 
   return (
     <>
-      {/* Allowed Items */}
-      {/* <Text style={[styles.sectionLabel, styles.firstSectionLabel]}>Select Allowed Items</Text>
-      <CustomDropdown
-        value={values.allowedCategories.length > 0 ? values.allowedCategories[0] : ""}
-        options={consignmentOptions}
-        onSelect={(value) => {
-          const updated = values.allowedCategories.includes(value)
-            ? values.allowedCategories
-            : [...values.allowedCategories, value];
-          void updateField("allowedCategories", updated);
-        }}
-        placeholder="Select Allowed Items"
-      /> */}
-
-      {/* {values.allowedCategories.length > 0 && (
-        <View style={styles.tagsContainer}>
-          {values.allowedCategories.map((category) => (
-            <View key={category} style={styles.tag}>
-              <Text style={styles.tagText}>{category}</Text>
-              <TouchableOpacity
-                onPress={() => {
-                  const filtered = values.allowedCategories.filter((c) => c !== category);
-                  void updateField("allowedCategories", filtered);
-                }}
-              >
-                <Text style={styles.tagRemove}>×</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
-        </View>
-      )}
+      <Text style={[styles.sectionLabel, styles.firstSectionLabel]}>Allowed package categories</Text>
+      <Text style={styles.helperText}>Select every category you can carry.</Text>
+      <View style={styles.categoryGrid}>
+        {TRIP_CATEGORY_OPTIONS.map((option) => {
+          const selected = values.allowedCategories.includes(option.value);
+          return (
+            <TouchableOpacity
+              key={option.value}
+              style={[styles.categoryPill, selected && styles.categoryPillSelected]}
+              onPress={() => {
+                const updated: TripCategory[] = selected
+                  ? values.allowedCategories.filter((category) => category !== option.value)
+                  : [...values.allowedCategories, option.value];
+                void updateField("allowedCategories", updated);
+              }}
+            >
+              <Text style={[styles.categoryText, selected && styles.categoryTextSelected]}>{option.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
       {touched.allowedCategories && errors.allowedCategories && (
         <Text style={styles.errorText}>{errors.allowedCategories}</Text>
-      )} */}
+      )}
 
       {/* Package Size */}
       <Text style={styles.sectionLabel}>Package Size</Text>
@@ -169,6 +160,36 @@ const styles = StyleSheet.create({
   },
   firstSectionLabel: {
     marginTop: 0,
+  },
+  helperText: {
+    fontSize: 12,
+    fontFamily: "Inter-Regular",
+    color: Theme.colors.text.gray,
+    marginBottom: Theme.spacing.sm,
+  },
+  categoryGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Theme.spacing.sm,
+    marginBottom: Theme.spacing.sm,
+  },
+  categoryPill: {
+    paddingHorizontal: Theme.spacing.md,
+    paddingVertical: Theme.spacing.sm,
+    borderRadius: Theme.borderRadius.xl,
+    backgroundColor: Theme.colors.background.border,
+  },
+  categoryPillSelected: {
+    backgroundColor: Theme.colors.yellow,
+  },
+  categoryText: {
+    fontSize: 12,
+    fontFamily: "Inter-Regular",
+    color: Theme.colors.text.gray,
+  },
+  categoryTextSelected: {
+    fontFamily: "Inter-SemiBold",
+    color: Theme.colors.primary,
   },
   inputContainer: {
     marginBottom: Theme.spacing.sm,

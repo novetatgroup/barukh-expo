@@ -172,10 +172,8 @@ const TravellerDetailsForm: React.FC<TravellerDetailsFormProps> = ({
 
                             values.departureAt = toISO(values.departureDate, values.departureAt);
                             values.arrivalAt = toISO(values.arrivalDate, values.arrivalAt);
-                            console.log("Submitting traveller details:", values);
                             await onSubmit(values);
-                        } catch (error) {
-                            console.error("Error Submitting traveller details:", error);
+                        } catch {
                         } finally {
                             setLoading(false);
                         }

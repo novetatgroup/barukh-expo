@@ -99,6 +99,13 @@ const SenderShipmentDetailsScreen = () => {
     });
   };
 
+  const handleOpenPayment = () => {
+    router.push({
+      pathname: "/(sender)/modeOfPayment",
+      params: { shipmentId },
+    });
+  };
+
   const handleOpenChat = () => {
     const receiverId = shipment?.traveller?.userId || params.travellerUserId;
     const currentUserId = userId || shipment?.sender?.userId || params.senderUserId;
@@ -216,6 +223,15 @@ const SenderShipmentDetailsScreen = () => {
           >
             <Text style={styles.trackButtonText}>Track Order</Text>
           </TouchableOpacity>
+          {shipmentId ? (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={styles.paymentButton}
+              onPress={handleOpenPayment}
+            >
+              <Text style={styles.paymentButtonText}>Review payment</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       </ScrollView>
       <TouchableOpacity
@@ -370,6 +386,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Inter-SemiBold",
     color: Theme.colors.white,
+  },
+  paymentButton: {
+    height: 45,
+    borderRadius: Theme.borderRadius.xl,
+    borderWidth: 1,
+    borderColor: Theme.colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: Theme.spacing.sm,
+  },
+  paymentButtonText: {
+    fontSize: 14,
+    fontFamily: "Inter-SemiBold",
+    color: Theme.colors.primary,
   },
   chatButton: {
     position: "absolute",

@@ -4,8 +4,7 @@ import VerifyPhoneOtpForm from "@/components/forms/KYC/PhoneOtp";
 import { router } from "expo-router";
 
 const PhoneOtpScreen = () => {
-  const handleVerifyOtp = async ({ otp }: { otp: string }) => {
-    console.log("OTP entered:", otp);
+  const handleVerifyOtp = async ({ otp: _otp }: { otp: string }) => {
     router.push("/(KYC)/addDetailsScreen");
   };
 

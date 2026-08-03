@@ -91,8 +91,7 @@ const DeliveryUploadScreen = () => {
                     deliveryPhotoKey: uploadUrlResult.data.key,
                 },
             });
-        } catch (error) {
-            console.error("Delivery upload error:", error);
+          } catch {
             Alert.alert("Upload failed", "Unable to upload the delivery photo right now.");
         }
     };
