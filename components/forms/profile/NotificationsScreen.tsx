@@ -236,7 +236,7 @@ const NotificationsScreen = () => {
 
 		if (packageId) {
 			router.push({
-				pathname: "/(sender)/matchedTraveller",
+				pathname: "/(sender)/findingTraveller",
 				params: { packageId },
 			});
 			return;

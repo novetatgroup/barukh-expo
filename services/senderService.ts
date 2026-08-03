@@ -55,16 +55,40 @@ export interface CreatePackageResponse {
 	updatedAt: string;
 }
 
-export interface AutoAssignResponse {
-	trip: {
-		id: string;
-		travellerId?: string;
-		userId?: string;
-		traveller?: { id?: string; userId?: string };
-		[key: string]: unknown;
-	} | null;
-	shipmentId?: string;
-	reason?: string;
+export interface MatchCandidate {
+	tripId: string;
+	travellerId: string;
+	travellerUserId: string;
+	travellerName: string;
+	rating: number | null;
+	originCity: string;
+	destinationCity: string;
+	departureAt: string;
+	arrivalAt: string;
+	mode: string;
+	originDistanceKm: number;
+	destinationDistanceKm: number;
+	remainingCapacity: number;
+	matchScore: number;
+}
+
+export interface MatchOptionsResponse {
+	packageId: string;
+	recommendedTripId: string | null;
+	candidates: MatchCandidate[];
+	reason?: "no_compatible_trips";
+}
+
+export interface AssignTravellerParams {
+	packageId: string;
+	tripId: string;
+}
+
+export interface AssignTravellerResponse {
+	shipmentId: string;
+	status: string;
+	priceMinor: number;
+	currency: string;
 }
 
 export interface ShipmentDetails {
@@ -191,12 +215,22 @@ export const senderService = {
 		});
 	},
 
-	async autoAssign(packageId: string, accessToken: string) {
-		return apiRequest<AutoAssignResponse>(API_ENDPOINTS.matching.autoAssign(packageId), {
+	async getMatchOptions(packageId: string, accessToken: string) {
+		return apiRequest<MatchOptionsResponse>(API_ENDPOINTS.matching.autoAssign(packageId), {
 			method: "GET",
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
 			},
+		});
+	},
+
+	async assignTraveller(params: AssignTravellerParams, accessToken: string) {
+		return apiRequest<AssignTravellerResponse>(API_ENDPOINTS.matching.assign, {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+			},
+			body: params,
 		});
 	},
 

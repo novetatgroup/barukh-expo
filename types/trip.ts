@@ -3,8 +3,6 @@ export const TRIP_CATEGORIES = [
   "DOCUMENT",
   "CLOTHING",
   "FOOD",
-  "FRAGILE",
-  "BOOK",
   "OTHER",
 ] as const;
 
@@ -18,7 +16,5 @@ export const TRIP_CATEGORY_OPTIONS: {
   { label: "Documents", value: "DOCUMENT" },
   { label: "Clothing", value: "CLOTHING" },
   { label: "Food Items", value: "FOOD" },
-  { label: "Fragile Items", value: "FRAGILE" },
-  { label: "Books", value: "BOOK" },
   { label: "Other", value: "OTHER" },
 ];

@@ -26,6 +26,7 @@ export const API_ENDPOINTS = {
 	},
 	matching: {
 		autoAssign: (packageId: string) => `/matching/auto-assign/${packageId}`,
+		assign: "/matching/assign",
 	},
 	payments: {
 		initiateCharge: "/payments/initiate-charge",
@@ -56,10 +57,12 @@ export const API_ENDPOINTS = {
 	},
 } as const;
 
-interface ApiResponse<T> {
+export interface ApiResponse<T> {
 	data: T | null;
 	error: string | null;
 	ok: boolean;
+	status: number;
+	errorCode: string | null;
 }
 
 interface RequestOptions extends Omit<RequestInit, "body"> {
@@ -102,6 +105,17 @@ const getResponseMessage = (data: ParsedResponseBody): string => {
 	return "Request failed";
 };
 
+const getResponseErrorCode = (data: ParsedResponseBody): string | null => {
+	if (!data || typeof data !== "object" || Array.isArray(data)) {
+		return null;
+	}
+
+	const responseData = data as Record<string, unknown>;
+	const errorCode = responseData.errorCode || responseData.code;
+
+	return typeof errorCode === "string" ? errorCode : null;
+};
+
 export async function apiRequest<T>(
 	endpoint: string,
 	options: RequestOptions = {}
@@ -140,15 +154,25 @@ export async function apiRequest<T>(
 				data: null,
 				error: getResponseMessage(parsedResponseBody),
 				ok: false,
+				status: response.status,
+				errorCode: getResponseErrorCode(parsedResponseBody),
 			};
 		}
 
-		return { data, error: null, ok: true };
+		return {
+			data,
+			error: null,
+			ok: true,
+			status: response.status,
+			errorCode: null,
+		};
 	} catch {
 		return {
 			data: null,
 			error: "Network error. Please try again later.",
 			ok: false,
+			status: 0,
+			errorCode: null,
 		};
 	}
 }
