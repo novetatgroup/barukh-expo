@@ -45,35 +45,41 @@ const PackageDetailsScreen = () => {
     try {
       setIsSubmitting(true);
 
-      const userResult = await userService.getUser(userId, accessToken);
-      if (!userResult.ok || !userResult.data) {
-        Toast.error(userResult.error || "Unable to load your profile. Please try again.");
-        return;
-      }
-
-      const travellerResult = await travellerService.createTraveller(
-        {
-          userId,
-          firstName: userResult.data.firstName,
-          lastName: userResult.data.lastName,
-          email: userResult.data.email,
-        },
-        accessToken,
-      );
-      let resolvedTravellerId = travellerResult.data?.travellerId;
-
-      if (!travellerResult.ok || !resolvedTravellerId) {
-        const getResult = await travellerService.getTraveller(userId, accessToken);
-        if (!getResult.ok || !getResult.data?.travellerId) {
-          Toast.error(getResult.error || "Unable to retrieve your traveller profile. Please try again.");
+      const travellerResult = await travellerService.getTraveller(accessToken);
+      if (!travellerResult.ok || !travellerResult.data?.travellerId) {
+        if (travellerResult.status !== 404) {
+          Toast.error(
+            travellerResult.error || "Unable to retrieve your traveller profile. Please try again.",
+          );
           return;
         }
-        resolvedTravellerId = getResult.data.travellerId;
+
+        const userResult = await userService.getUser(userId, accessToken);
+        if (!userResult.ok || !userResult.data) {
+          Toast.error(userResult.error || "Unable to load your profile. Please try again.");
+          return;
+        }
+
+        const createTravellerResult = await travellerService.createTraveller(
+          {
+            userId,
+            firstName: userResult.data.firstName,
+            lastName: userResult.data.lastName,
+            email: userResult.data.email,
+          },
+          accessToken,
+        );
+
+        if (!createTravellerResult.ok || !createTravellerResult.data?.travellerId) {
+          Toast.error(
+            createTravellerResult.error || "Unable to set up your traveller profile. Please try again.",
+          );
+          return;
+        }
       }
 
       // Build trip payload
       const tripPayload: CreateTripParams = {
-        userId,
         allowedCategories: packageData.allowedCategories,
         maxWeightKg: Number(packageData.maxWeightKg) || 0,
         maxHeightCm: Number(packageData.maxHeightCm) || 0,

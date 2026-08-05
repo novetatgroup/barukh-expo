@@ -10,6 +10,7 @@ import {
 } from "@/types/payment";
 
 export type CreateBankAccountInput = {
+  userId: string;
   country: PayoutCountry;
   currency: PayoutCurrency;
   accountHolderName: string;

@@ -2,46 +2,44 @@ import TravellerMatchingScreen from "@/components/forms/sender/TravellerMatching
 import { AuthContext } from "@/context/AuthContext";
 import { useTravellerMatching } from "@/hooks/useTravellerMatching";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 
 const FindingTravellerScreen = () => {
-  const { packageId } = useLocalSearchParams<{ packageId?: string }>();
-  const { accessToken } = useContext(AuthContext);
-  const matching = useTravellerMatching({ packageId, accessToken });
+  const { packageId, senderId } = useLocalSearchParams<{
+    packageId?: string;
+    senderId?: string;
+  }>();
+  const { accessToken, userId } = useContext(AuthContext);
+  const matching = useTravellerMatching({ packageId, senderId, userId, accessToken });
 
-  const handleConfirm = async () => {
-    const confirmedMatch = await matching.confirmSelection();
-    if (!confirmedMatch) {
+  useEffect(() => {
+    if (!matching.confirmedMatch) {
       return;
     }
 
-    const { assignment, candidate } = confirmedMatch;
+    const { shipment, trip } = matching.confirmedMatch;
+    const travellerName = `${trip.travellerFirstName} ${trip.travellerLastName}`.trim();
+
     router.replace({
       pathname: "/(sender)/matchedTraveller",
       params: {
-        shipmentId: assignment.shipmentId,
+        shipmentId: shipment.id,
         packageId: packageId || "",
-        travellerUserId: candidate.travellerUserId,
-        travellerName: candidate.travellerName,
-        rating: candidate.rating === null ? "" : String(candidate.rating),
+        travellerUserId: shipment.traveller.userId,
+        travellerName,
       },
     });
-  };
+  }, [matching.confirmedMatch, packageId]);
 
   return (
     <TravellerMatchingScreen
       state={matching.state}
-      candidates={matching.candidates}
-      recommendedTripId={matching.recommendedTripId}
-      selectedTripId={matching.selectedTripId}
+      currentRadius={matching.currentRadius}
+      matchedTrip={matching.matchedTrip}
       errorMessage={matching.errorMessage}
-      noticeMessage={matching.noticeMessage}
-      assignmentError={matching.assignmentError}
-      isAssigning={matching.isAssigning}
-      onSelectCandidate={matching.selectCandidate}
-      onConfirm={handleConfirm}
-      onRetry={matching.retry}
-      onBack={() => router.back()}
+      shipmentMessage={matching.shipmentMessage}
+      onRetrySearch={matching.retrySearch}
+      onRetryShipment={matching.retryShipment}
       onGoHome={() => router.replace("/(tabs)/home")}
     />
   );

@@ -526,7 +526,6 @@ const ShipmentsScreen = () => {
 
     try {
       const travellerResult = await travellerService.getTraveller(
-        userId,
         accessToken
       );
 

@@ -13,9 +13,9 @@ export const API_ENDPOINTS = {
 	},
 	traveller: {
 		createTraveller: "/traveller/create-traveller",
-		createTrip: "/traveller/create-trip",
-		getTrips: (userId: string) => `/traveller/trips/${userId}`,
-		getTraveller: (userId: string) => `/traveller/${userId}`,
+		createTrip: "/traveller/create-trip-localized/me",
+		getTrips: "/traveller/get-trips/me",
+		getTraveller: "/traveller/get-traveller/me",
 		findTrip: (tripId: string) => `/traveller/find-trip/${tripId}`,
 	},
 	sender: {
@@ -26,7 +26,10 @@ export const API_ENDPOINTS = {
 	},
 	matching: {
 		autoAssign: (packageId: string) => `/matching/auto-assign/${packageId}`,
-		assign: "/matching/assign",
+	},
+	banks: {
+		getSupportedAccounts: (countryCode: string) =>
+			`/banks/get-supported-bank-accounts?country=${encodeURIComponent(countryCode)}`,
 	},
 	payments: {
 		initiateCharge: "/payments/initiate-charge",

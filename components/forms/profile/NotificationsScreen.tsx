@@ -234,11 +234,14 @@ const NotificationsScreen = () => {
 			getNotificationStringValue(notification, "packageId") ||
 			getNotificationStringValue(notification, "package_id");
 
-		if (packageId) {
-			router.push({
-				pathname: "/(sender)/findingTraveller",
-				params: { packageId },
-			});
+			if (packageId) {
+				const senderId =
+					getNotificationStringValue(notification, "senderId") ||
+					getNotificationStringValue(notification, "sender_id");
+				router.push({
+					pathname: "/(sender)/findingTraveller",
+					params: { packageId, ...(senderId ? { senderId } : {}) },
+				});
 			return;
 		}
 

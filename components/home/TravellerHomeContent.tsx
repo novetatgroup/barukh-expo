@@ -53,7 +53,7 @@ const TravellerHomeContent = () => {
     }
 
     setTripsLoading(true);
-    const { data, ok } = await travellerService.getTrips(userId, accessToken);
+    const { data, ok } = await travellerService.getTrips(accessToken);
     if (ok && data) {
       setTrips(data.data);
     }

@@ -279,7 +279,7 @@ const SenderHomeContent = () => {
                   onPress={() =>
                     router.push({
                       pathname: "/(sender)/findingTraveller",
-                      params: { packageId: item.id },
+                      params: { packageId: item.id, senderId: item.senderId },
                     })
                   }
                 >

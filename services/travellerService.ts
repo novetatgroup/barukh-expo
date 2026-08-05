@@ -22,7 +22,6 @@ export interface TravellerProfile {
 }
 
 export interface CreateTripParams {
-	userId: string;
 	allowedCategories: TripCategory[];
 	maxWeightKg: number;
 	maxHeightCm: number;
@@ -138,8 +137,8 @@ export const travellerService = {
 		});
 	},
 
-	async getTrips(userId: string, accessToken: string) {
-		return apiRequest<GetTripsResponse>(API_ENDPOINTS.traveller.getTrips(userId), {
+	async getTrips(accessToken: string) {
+		return apiRequest<GetTripsResponse>(API_ENDPOINTS.traveller.getTrips, {
 			method: "GET",
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
@@ -147,8 +146,8 @@ export const travellerService = {
 		});
 	},
 
-	async getTraveller(userId: string, accessToken: string) {
-		return apiRequest<TravellerProfile>(API_ENDPOINTS.traveller.getTraveller(userId), {
+	async getTraveller(accessToken: string) {
+		return apiRequest<TravellerProfile>(API_ENDPOINTS.traveller.getTraveller, {
 			method: "GET",
 			headers: {
 				Authorization: `Bearer ${accessToken}`,

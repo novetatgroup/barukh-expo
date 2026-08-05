@@ -7,20 +7,16 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const MatchedTravellerScreen = () => {
-  const { shipmentId, packageId, travellerUserId, travellerName, rating } =
+  const { shipmentId, packageId, travellerUserId, travellerName } =
     useLocalSearchParams<{
       shipmentId?: string;
       packageId?: string;
       travellerUserId?: string;
       travellerName?: string;
-      rating?: string;
     }>();
   const { userId } = useContext(AuthContext);
 
   const displayName = travellerName || "Your Traveller";
-  const parsedRating = rating ? Number(rating) : null;
-  const displayRating =
-    parsedRating !== null && Number.isFinite(parsedRating) ? parsedRating.toFixed(1) : null;
   const initials = displayName
     .trim()
     .split(/\s+/)
@@ -77,16 +73,7 @@ const MatchedTravellerScreen = () => {
             <Text style={styles.avatarInitials}>{initials}</Text>
           </View>
           <Text style={styles.nameText}>{displayName}</Text>
-          <View style={styles.ratingRow}>
-            {displayRating ? (
-              <>
-                <Ionicons name="star" size={15} color={Theme.colors.orange} />
-                <Text style={styles.ratingText}>{displayRating}</Text>
-              </>
-            ) : (
-              <Text style={styles.ratingText}>New traveller</Text>
-            )}
-          </View>
+          <Text style={styles.matchMeta}>Confirmed match</Text>
         </View>
 
         <View style={styles.iconActions}>
@@ -213,14 +200,8 @@ const styles = StyleSheet.create({
     fontFamily: "Inter-SemiBold",
     color: Theme.colors.text.dark,
   },
-  ratingRow: {
-    minHeight: 20,
-    flexDirection: "row",
-    alignItems: "center",
+  matchMeta: {
     marginTop: Theme.spacing.xs,
-  },
-  ratingText: {
-    marginLeft: Theme.spacing.xs,
     fontSize: 13,
     fontFamily: "Inter-Regular",
     color: Theme.colors.text.gray,

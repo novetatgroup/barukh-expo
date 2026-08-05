@@ -1,22 +1,37 @@
 import {
-  AssignTravellerResponse,
-  MatchCandidate,
-  MatchOptionsResponse,
+  AutoAssignedTrip,
+  AutoAssignResponse,
+  ShipmentDetails,
   senderService,
 } from "@/services/senderService";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-export type TravellerMatchingState = "loading" | "ready" | "empty" | "error";
+export type TravellerMatchingState =
+  | "searching"
+  | "resolving-shipment"
+  | "shipment-pending"
+  | "empty"
+  | "error";
 
 export interface ConfirmedTravellerMatch {
-  assignment: AssignTravellerResponse;
-  candidate: MatchCandidate;
+  trip: AutoAssignedTrip;
+  shipment: ShipmentDetails;
 }
 
 interface UseTravellerMatchingParams {
   packageId?: string;
+  senderId?: string;
+  userId?: string | null;
   accessToken: string | null;
 }
+
+const SEARCH_RADII_KM = [7, 8, 9, 10] as const;
+const SHIPMENT_RECOVERY_DELAYS_MS = [0, 750, 1500] as const;
+
+const wait = (durationMs: number) =>
+  new Promise<void>((resolve) => {
+    setTimeout(resolve, durationMs);
+  });
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -27,254 +42,230 @@ const isNonEmptyString = (value: unknown): value is string =>
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === "number" && Number.isFinite(value);
 
-const isValidDateString = (value: unknown): value is string =>
-  isNonEmptyString(value) && !Number.isNaN(Date.parse(value));
-
-const isMatchCandidate = (value: unknown): value is MatchCandidate => {
+const isAutoAssignedTrip = (value: unknown): value is AutoAssignedTrip => {
   if (!isRecord(value)) {
     return false;
   }
 
   return (
-    isNonEmptyString(value.tripId) &&
+    isNonEmptyString(value.id) &&
     isNonEmptyString(value.travellerId) &&
-    isNonEmptyString(value.travellerUserId) &&
-    isNonEmptyString(value.travellerName) &&
-    (value.rating === null ||
-      (isFiniteNumber(value.rating) && value.rating >= 0 && value.rating <= 5)) &&
-    isNonEmptyString(value.originCity) &&
-    isNonEmptyString(value.destinationCity) &&
-    isValidDateString(value.departureAt) &&
-    isValidDateString(value.arrivalAt) &&
-    isNonEmptyString(value.mode) &&
+    isNonEmptyString(value.travellerFirstName) &&
+    isNonEmptyString(value.travellerLastName) &&
+    isFiniteNumber(value.originLat) &&
+    isFiniteNumber(value.originLon) &&
+    isFiniteNumber(value.destinationLat) &&
+    isFiniteNumber(value.destinationLon) &&
     isFiniteNumber(value.originDistanceKm) &&
     value.originDistanceKm >= 0 &&
     isFiniteNumber(value.destinationDistanceKm) &&
     value.destinationDistanceKm >= 0 &&
     isFiniteNumber(value.remainingCapacity) &&
-    Number.isInteger(value.remainingCapacity) &&
     value.remainingCapacity >= 0 &&
-    isFiniteNumber(value.matchScore) &&
-    value.matchScore >= 0 &&
-    value.matchScore <= 1
+    isFiniteNumber(value.maxWeightKg) &&
+    value.maxWeightKg >= 0 &&
+    isFiniteNumber(value.maxLengthCm) &&
+    value.maxLengthCm >= 0 &&
+    isFiniteNumber(value.maxWidthCm) &&
+    value.maxWidthCm >= 0 &&
+    isFiniteNumber(value.maxHeightCm) &&
+    value.maxHeightCm >= 0
   );
 };
 
-const isMatchOptionsResponse = (value: unknown): value is MatchOptionsResponse => {
-  if (!isRecord(value) || !isNonEmptyString(value.packageId)) {
-    return false;
+const parseAutoAssignResponse = (value: unknown): AutoAssignResponse | null => {
+  if (!isRecord(value) || !("trip" in value)) {
+    return null;
   }
 
-  if (!Array.isArray(value.candidates) || value.candidates.length > 5) {
-    return false;
+  if (value.trip === null) {
+    return { trip: null };
   }
 
-  const candidates = value.candidates;
-  if (!candidates.every(isMatchCandidate)) {
-    return false;
-  }
-
-  const tripIds = candidates.map((candidate) => candidate.tripId);
-  if (new Set(tripIds).size !== tripIds.length) {
-    return false;
-  }
-
-  if (candidates.length === 0) {
-    return value.recommendedTripId === null;
-  }
-
-  return (
-    isNonEmptyString(value.recommendedTripId) &&
-    tripIds.includes(value.recommendedTripId)
-  );
-};
-
-const isAssignTravellerResponse = (value: unknown): value is AssignTravellerResponse => {
-  if (!isRecord(value)) {
-    return false;
-  }
-
-  return (
-    isNonEmptyString(value.shipmentId) &&
-    isNonEmptyString(value.status) &&
-    isFiniteNumber(value.priceMinor) &&
-    Number.isInteger(value.priceMinor) &&
-    value.priceMinor >= 0 &&
-    isNonEmptyString(value.currency)
-  );
+  return isAutoAssignedTrip(value.trip) ? { trip: value.trip } : null;
 };
 
 export const useTravellerMatching = ({
   packageId,
+  senderId,
+  userId,
   accessToken,
 }: UseTravellerMatchingParams) => {
-  const [state, setState] = useState<TravellerMatchingState>("loading");
-  const [candidates, setCandidates] = useState<MatchCandidate[]>([]);
-  const [recommendedTripId, setRecommendedTripId] = useState<string | null>(null);
-  const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
+  const [state, setState] = useState<TravellerMatchingState>("searching");
+  const [currentRadius, setCurrentRadius] = useState<number>(SEARCH_RADII_KM[0]);
+  const [matchedTrip, setMatchedTrip] = useState<AutoAssignedTrip | null>(null);
+  const [confirmedMatch, setConfirmedMatch] = useState<ConfirmedTravellerMatch | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
-  const [noticeMessage, setNoticeMessage] = useState("");
-  const [assignmentError, setAssignmentError] = useState("");
-  const [isAssigning, setIsAssigning] = useState(false);
+  const [shipmentMessage, setShipmentMessage] = useState("");
 
   const mountedRef = useRef(true);
   const requestVersionRef = useRef(0);
-  const assigningRef = useRef(false);
+  const resolvedSenderIdRef = useRef<string | null>(senderId ?? null);
 
-  const loadMatches = useCallback(
-    async (notice = "") => {
-      const requestVersion = ++requestVersionRef.current;
-
-      setState("loading");
-      setErrorMessage("");
-      setAssignmentError("");
-
+  const recoverShipment = useCallback(
+    async (trip: AutoAssignedTrip, activeSenderId: string, requestVersion: number) => {
       if (!packageId || !accessToken) {
-        setCandidates([]);
-        setRecommendedTripId(null);
-        setSelectedTripId(null);
-        setNoticeMessage("");
-        setErrorMessage("Missing package or authentication information.");
+        setErrorMessage("Missing package, sender, or authentication information.");
         setState("error");
         return;
       }
 
-      const result = await senderService.getMatchOptions(packageId, accessToken);
+      setState("resolving-shipment");
+      setShipmentMessage("");
+      let recoveryMessage = "Your match is confirmed, but shipment details are still being prepared.";
+
+      for (const delayMs of SHIPMENT_RECOVERY_DELAYS_MS) {
+        if (delayMs > 0) {
+          await wait(delayMs);
+        }
+
+        if (!mountedRef.current || requestVersion !== requestVersionRef.current) {
+          return;
+        }
+
+        const result = await senderService.getSenderShipments(activeSenderId, accessToken);
+
+        if (!mountedRef.current || requestVersion !== requestVersionRef.current) {
+          return;
+        }
+
+        if (result.ok && result.data) {
+          const shipments: ShipmentDetails[] = Array.isArray(result.data)
+            ? result.data
+            : result.data.data ?? [];
+          const shipment = shipments.find(
+            (item) => item.packageId === packageId && item.tripId === trip.id,
+          );
+
+          if (shipment) {
+            setConfirmedMatch({ trip, shipment });
+            return;
+          }
+        } else if (result.error) {
+          recoveryMessage = result.error;
+        }
+      }
+
+      setShipmentMessage(recoveryMessage);
+      setState("shipment-pending");
+    },
+    [accessToken, packageId],
+  );
+
+  const search = useCallback(async () => {
+    const requestVersion = ++requestVersionRef.current;
+
+    setState("searching");
+    setCurrentRadius(SEARCH_RADII_KM[0]);
+    setMatchedTrip(null);
+    setConfirmedMatch(null);
+    setErrorMessage("");
+    setShipmentMessage("");
+
+    if (!packageId || !accessToken) {
+      setErrorMessage("Missing package, sender, or authentication information.");
+      setState("error");
+      return;
+    }
+
+    let activeSenderId = senderId || resolvedSenderIdRef.current;
+    if (!activeSenderId) {
+      if (!userId) {
+        setErrorMessage("Missing sender information. Please return home and try again.");
+        setState("error");
+        return;
+      }
+
+      const senderResult = await senderService.getSender(userId, accessToken);
 
       if (!mountedRef.current || requestVersion !== requestVersionRef.current) {
         return;
       }
 
+      if (!senderResult.ok || !senderResult.data?.senderId) {
+        setErrorMessage(senderResult.error || "Unable to retrieve your sender profile.");
+        setState("error");
+        return;
+      }
+
+      activeSenderId = senderResult.data.senderId;
+      resolvedSenderIdRef.current = activeSenderId;
+    }
+
+    for (const radiusKm of SEARCH_RADII_KM) {
+      if (!mountedRef.current || requestVersion !== requestVersionRef.current) {
+        return;
+      }
+
+      setCurrentRadius(radiusKm);
+      const result = await senderService.autoAssign(packageId, radiusKm, accessToken);
+
+      if (!mountedRef.current || requestVersion !== requestVersionRef.current) {
+        return;
+      }
+
+      if (result.status === 404) {
+        continue;
+      }
+
       if (!result.ok) {
-        setCandidates([]);
-        setRecommendedTripId(null);
-        setSelectedTripId(null);
-        setNoticeMessage("");
-        setErrorMessage(result.error || "Unable to find compatible travellers.");
+        setErrorMessage(result.error || "Unable to search for a compatible traveller.");
         setState("error");
         return;
       }
 
-      if (!isMatchOptionsResponse(result.data) || result.data.packageId !== packageId) {
-        setCandidates([]);
-        setRecommendedTripId(null);
-        setSelectedTripId(null);
-        setNoticeMessage("");
-        setErrorMessage("The matching service returned an invalid response. Please try again.");
+      const response = parseAutoAssignResponse(result.data);
+      if (!response) {
+        setErrorMessage("The matching service returned an unsupported response. Please try again.");
         setState("error");
         return;
       }
 
-      setCandidates(result.data.candidates);
-      setRecommendedTripId(result.data.recommendedTripId);
-      setSelectedTripId(result.data.recommendedTripId);
-      setNoticeMessage(notice);
-
-      if (result.data.candidates.length === 0) {
-        setState("empty");
-        return;
+      if (!response.trip) {
+        continue;
       }
 
-      setState("ready");
-    },
-    [accessToken, packageId],
-  );
+      setMatchedTrip(response.trip);
+      await recoverShipment(response.trip, activeSenderId, requestVersion);
+      return;
+    }
+
+    setState("empty");
+  }, [accessToken, packageId, recoverShipment, senderId, userId]);
 
   useEffect(() => {
     mountedRef.current = true;
-    void loadMatches();
+    void search();
 
     return () => {
       mountedRef.current = false;
       requestVersionRef.current += 1;
     };
-  }, [loadMatches]);
+  }, [search]);
 
-  const selectedCandidate = useMemo(
-    () => candidates.find((candidate) => candidate.tripId === selectedTripId) ?? null,
-    [candidates, selectedTripId],
-  );
+  const retrySearch = useCallback(() => {
+    void search();
+  }, [search]);
 
-  const selectCandidate = useCallback(
-    (tripId: string) => {
-      if (isAssigning || !candidates.some((candidate) => candidate.tripId === tripId)) {
-        return;
-      }
-
-      setSelectedTripId(tripId);
-      setAssignmentError("");
-    },
-    [candidates, isAssigning],
-  );
-
-  const confirmSelection = useCallback(async (): Promise<ConfirmedTravellerMatch | null> => {
-    if (assigningRef.current || !selectedCandidate || !packageId || !accessToken) {
-      return null;
+  const retryShipment = useCallback(() => {
+    const activeSenderId = senderId || resolvedSenderIdRef.current;
+    if (!matchedTrip || !activeSenderId) {
+      return;
     }
 
-    assigningRef.current = true;
-    setIsAssigning(true);
-    setAssignmentError("");
-
-    try {
-      const result = await senderService.assignTraveller(
-        { packageId, tripId: selectedCandidate.tripId },
-        accessToken,
-      );
-
-      if (!mountedRef.current) {
-        return null;
-      }
-
-      const unavailable =
-        result.status === 409 || result.errorCode?.toLowerCase() === "candidate_unavailable";
-
-      if (unavailable) {
-        setIsAssigning(false);
-        assigningRef.current = false;
-        await loadMatches(
-          "That traveller is no longer available. We refreshed your compatible matches.",
-        );
-        return null;
-      }
-
-      if (!result.ok) {
-        setAssignmentError(result.error || "Unable to confirm this traveller. Please try again.");
-        return null;
-      }
-
-      if (!isAssignTravellerResponse(result.data)) {
-        setAssignmentError(
-          "The shipment could not be confirmed because the assignment response was incomplete.",
-        );
-        return null;
-      }
-
-      return { assignment: result.data, candidate: selectedCandidate };
-    } finally {
-      assigningRef.current = false;
-      if (mountedRef.current) {
-        setIsAssigning(false);
-      }
-    }
-  }, [accessToken, loadMatches, packageId, selectedCandidate]);
-
-  const retry = useCallback(() => {
-    void loadMatches();
-  }, [loadMatches]);
+    const requestVersion = ++requestVersionRef.current;
+    setConfirmedMatch(null);
+    void recoverShipment(matchedTrip, activeSenderId, requestVersion);
+  }, [matchedTrip, recoverShipment, senderId]);
 
   return {
     state,
-    candidates,
-    recommendedTripId,
-    selectedTripId,
-    selectedCandidate,
+    currentRadius,
+    matchedTrip,
+    confirmedMatch,
     errorMessage,
-    noticeMessage,
-    assignmentError,
-    isAssigning,
-    selectCandidate,
-    confirmSelection,
-    retry,
+    shipmentMessage,
+    retrySearch,
+    retryShipment,
   };
 };

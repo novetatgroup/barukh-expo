@@ -1,33 +1,30 @@
-import { PAYOUT_COUNTRIES, getPayoutCountryConfig } from "@/constants/payout";
+import { getPayoutCountryConfig } from "@/constants/payout";
 import { AuthContext } from "@/context/AuthContext";
+import { bankService, SupportedBank } from "@/services/bankService";
 import { getPaymentExecutionMode } from "@/services/paymentConfig";
 import { MOCK_PAYOUTS, paymentMockService } from "@/services/paymentMockService";
 import { paymentService } from "@/services/paymentService";
 import { MaskedBankAccount, PayoutCountry } from "@/types/payment";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useContext, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 type PayoutFormState = {
   country: PayoutCountry;
+  bankId: string;
+  bankCode: string;
   bankName: string;
   accountHolderName: string;
   accountNumber: string;
-  swiftCode: string;
-  routingNumber: string;
-  sortCode: string;
-  branchCode: string;
   isDefault: boolean;
 };
 
 const emptyForm = (): PayoutFormState => ({
   country: "Uganda",
-  bankName: PAYOUT_COUNTRIES[0].banks[0],
+  bankId: "",
+  bankCode: "",
+  bankName: "",
   accountHolderName: "",
   accountNumber: "",
-  swiftCode: "",
-  routingNumber: "",
-  sortCode: "",
-  branchCode: "",
   isDefault: false,
 });
 
@@ -43,7 +40,12 @@ export const usePayoutAccounts = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [supportedBanks, setSupportedBanks] = useState<SupportedBank[]>([]);
+  const [banksLoading, setBanksLoading] = useState(false);
+  const [banksError, setBanksError] = useState<string | null>(null);
 
+  const bankCacheRef = useRef<Record<string, SupportedBank[]>>({});
+  const bankRequestVersionRef = useRef(0);
   const countryConfig = useMemo(() => getPayoutCountryConfig(form.country), [form.country]);
 
   const load = useCallback(async () => {
@@ -63,6 +65,55 @@ export const usePayoutAccounts = () => {
     }, [load]),
   );
 
+  const loadSupportedBanks = useCallback(
+    async (country: PayoutCountry, force = false) => {
+      const config = getPayoutCountryConfig(country);
+      const requestVersion = ++bankRequestVersionRef.current;
+      const cached = bankCacheRef.current[config.countryCode];
+
+      if (cached && !force) {
+        setSupportedBanks(cached);
+        setBanksError(null);
+        setBanksLoading(false);
+        return;
+      }
+
+      setSupportedBanks([]);
+      setBanksError(null);
+
+      if (!accessToken) {
+        setBanksError("Your session is unavailable. Please log in again.");
+        setBanksLoading(false);
+        return;
+      }
+
+      setBanksLoading(true);
+      const result = await bankService.getSupportedBanks(config.countryCode, accessToken);
+
+      if (requestVersion !== bankRequestVersionRef.current) {
+        return;
+      }
+
+      if (!result.ok || !result.data) {
+        setBanksError(result.error || `Unable to load supported banks for ${country}.`);
+        setBanksLoading(false);
+        return;
+      }
+
+      bankCacheRef.current[config.countryCode] = result.data.data;
+      setSupportedBanks(result.data.data);
+      setBanksError(null);
+      setBanksLoading(false);
+    },
+    [accessToken],
+  );
+
+  useEffect(() => {
+    if (formVisible) {
+      void loadSupportedBanks(form.country);
+    }
+  }, [form.country, formVisible, loadSupportedBanks]);
+
   const updateField = <K extends keyof PayoutFormState>(
     field: K,
     value: PayoutFormState[K],
@@ -73,8 +124,29 @@ export const usePayoutAccounts = () => {
   };
 
   const updateCountry = (country: PayoutCountry) => {
-    const config = getPayoutCountryConfig(country);
-    setForm((current) => ({ ...current, country, bankName: config.banks[0] }));
+    bankRequestVersionRef.current += 1;
+    setSupportedBanks([]);
+    setBanksError(null);
+    setForm((current) => ({
+      ...current,
+      country,
+      bankId: "",
+      bankCode: "",
+      bankName: "",
+    }));
+    setError(null);
+    setSuccess(null);
+  };
+
+  const selectBank = (bank: SupportedBank) => {
+    setForm((current) => ({
+      ...current,
+      bankId: bank.id,
+      bankCode: bank.code,
+      bankName: bank.name,
+    }));
+    setError(null);
+    setSuccess(null);
   };
 
   const openCreate = () => {
@@ -90,13 +162,11 @@ export const usePayoutAccounts = () => {
     setEditingId(account.id);
     setForm({
       country: account.country,
+      bankId: `existing:${account.bankName}`,
+      bankCode: "",
       bankName: account.bankName,
       accountHolderName: account.accountHolderName,
       accountNumber: "",
-      swiftCode: account.swiftCode ?? "",
-      routingNumber: "",
-      sortCode: "",
-      branchCode: "",
       isDefault: account.isDefault,
     });
     setError(null);
@@ -105,24 +175,24 @@ export const usePayoutAccounts = () => {
   };
 
   const closeForm = () => {
+    bankRequestVersionRef.current += 1;
     setForm((current) => ({ ...current, accountNumber: "" }));
     setFormVisible(false);
     setEditingId(null);
+    setSupportedBanks([]);
+    setBanksError(null);
+    setBanksLoading(false);
   };
 
   const submit = async () => {
     if (submitting) return;
     const accountNumber = form.accountNumber.replace(/\s/g, "");
-    if (!form.accountHolderName.trim() || !form.bankName) {
-      setError("Account holder and bank are required.");
+    if (!form.accountHolderName.trim() || !form.bankId || !form.bankName) {
+      setError("Account holder and a supported bank are required.");
       return;
     }
     if ((!editingId || accountNumber) && !/^\d{6,24}$/.test(accountNumber)) {
       setError("Account number must contain 6 to 24 digits.");
-      return;
-    }
-    if (form.swiftCode && !/^[A-Za-z0-9]{8}([A-Za-z0-9]{3})?$/.test(form.swiftCode)) {
-      setError("SWIFT code must contain 8 or 11 letters and numbers.");
       return;
     }
     if (!userId) {
@@ -140,6 +210,16 @@ export const usePayoutAccounts = () => {
           setError("Bank-account update is disabled until the backend method is confirmed.");
           return;
         }
+        console.log("Updating bank account fixture for development:", {
+          userId,
+          id: editingId,
+          country: form.country,
+          currency: countryConfig.currency,
+          bankName: form.bankName,
+          accountHolderName: form.accountHolderName.trim(),
+          accountNumber,
+          isDefault: form.isDefault,
+        });
         await paymentMockService.saveBankAccount(userId, {
           id: editingId,
           country: form.country,
@@ -147,7 +227,6 @@ export const usePayoutAccounts = () => {
           bankName: form.bankName,
           accountHolderName: form.accountHolderName.trim(),
           accountNumber,
-          swiftCode: form.swiftCode.trim() || undefined,
           isDefault: form.isDefault,
         });
         setSuccess("Development account fixture updated.");
@@ -163,15 +242,12 @@ export const usePayoutAccounts = () => {
 
       const result = await paymentService.createBankAccount(
         {
+          userId,
           country: form.country,
           currency: countryConfig.currency,
           accountHolderName: form.accountHolderName.trim(),
           accountNumber,
           bankName: form.bankName,
-          ...(form.swiftCode.trim() ? { swiftCode: form.swiftCode.trim().toUpperCase() } : {}),
-          ...(form.routingNumber.trim() ? { routingNumber: form.routingNumber.trim() } : {}),
-          ...(form.sortCode.trim() ? { sortCode: form.sortCode.trim() } : {}),
-          ...(form.branchCode.trim() ? { branchCode: form.branchCode.trim() } : {}),
           isDefault: form.isDefault,
         },
         accessToken,
@@ -190,7 +266,6 @@ export const usePayoutAccounts = () => {
           bankName: form.bankName,
           accountHolderName: form.accountHolderName.trim(),
           accountNumber,
-          swiftCode: form.swiftCode.trim() || undefined,
           isDefault: form.isDefault || accounts.length === 0,
         });
         await load();
@@ -198,13 +273,7 @@ export const usePayoutAccounts = () => {
       setSuccess("Payout account created by the payment API.");
       setFormVisible(false);
     } finally {
-      setForm((current) => ({
-        ...current,
-        accountNumber: "",
-        routingNumber: "",
-        sortCode: "",
-        branchCode: "",
-      }));
+      setForm((current) => ({ ...current, accountNumber: "" }));
       setSubmitting(false);
     }
   };
@@ -237,9 +306,13 @@ export const usePayoutAccounts = () => {
     formVisible,
     editingId,
     currency: countryConfig.currency,
-    bankOptions: countryConfig.banks,
+    supportedBanks,
+    banksLoading,
+    banksError,
     updateField,
     updateCountry,
+    selectBank,
+    retrySupportedBanks: () => loadSupportedBanks(form.country, true),
     openCreate,
     openEdit,
     setDefault,

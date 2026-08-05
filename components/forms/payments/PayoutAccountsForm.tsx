@@ -1,4 +1,5 @@
 import CustomDropdown from "@/components/ui/Dropdown";
+import SupportedBankPicker from "@/components/forms/payments/SupportedBankPicker";
 import { PAYOUT_COUNTRIES } from "@/constants/payout";
 import { Theme } from "@/constants/Theme";
 import { usePayoutAccounts } from "@/hooks/usePayoutAccounts";
@@ -33,9 +34,13 @@ const PayoutAccountsForm = (props: Props) => {
     formVisible,
     editingId,
     currency,
-    bankOptions,
+    supportedBanks,
+    banksLoading,
+    banksError,
     updateField,
     updateCountry,
+    selectBank,
+    retrySupportedBanks,
     openCreate,
     openEdit,
     setDefault,
@@ -118,22 +123,20 @@ const PayoutAccountsForm = (props: Props) => {
                 />
                 <Text style={styles.label}>Currency</Text>
                 <View style={styles.readOnlyField}><Text style={styles.readOnlyText}>{currency}</Text></View>
-                <CustomDropdown
-                  label="Bank"
-                  value={form.bankName}
-                  options={bankOptions}
-                  onSelect={(value) => updateField("bankName", value)}
+                <SupportedBankPicker
+                  value={form.bankId}
+                  selectedBankName={form.bankName}
+                  banks={supportedBanks}
+                  loading={banksLoading}
+                  error={banksError}
+                  disabled={submitting}
+                  onRetry={() => void retrySupportedBanks()}
+                  onSelect={selectBank}
                 />
                 <Text style={styles.label}>Account holder name</Text>
                 <TextInput style={styles.input} value={form.accountHolderName} onChangeText={(value) => updateField("accountHolderName", value)} placeholder="Name on the bank account" placeholderTextColor={Theme.colors.text.lightGray} />
                 <Text style={styles.label}>Account number</Text>
                 <TextInput style={styles.input} value={form.accountNumber} onChangeText={(value) => updateField("accountNumber", value)} placeholder={editingId ? "Leave blank to keep masked account" : "Bank account number"} placeholderTextColor={Theme.colors.text.lightGray} keyboardType="number-pad" secureTextEntry />
-                <Text style={styles.label}>SWIFT / BIC (optional)</Text>
-                <TextInput style={styles.input} value={form.swiftCode} onChangeText={(value) => updateField("swiftCode", value.toUpperCase())} placeholder="8 or 11 characters" placeholderTextColor={Theme.colors.text.lightGray} autoCapitalize="characters" />
-                <Text style={styles.optionalTitle}>Other optional bank identifiers</Text>
-                <TextInput style={styles.input} value={form.branchCode} onChangeText={(value) => updateField("branchCode", value)} placeholder="Branch code" placeholderTextColor={Theme.colors.text.lightGray} />
-                <TextInput style={styles.input} value={form.routingNumber} onChangeText={(value) => updateField("routingNumber", value)} placeholder="Routing number" placeholderTextColor={Theme.colors.text.lightGray} />
-                <TextInput style={styles.input} value={form.sortCode} onChangeText={(value) => updateField("sortCode", value)} placeholder="Sort code" placeholderTextColor={Theme.colors.text.lightGray} />
                 <View style={styles.switchRow}>
                   <View style={styles.switchText}>
                     <Text style={styles.label}>Make default</Text>
@@ -224,7 +227,6 @@ const styles = StyleSheet.create({
   input: { minHeight: 50, borderWidth: 1, borderColor: Theme.colors.text.border, borderRadius: Theme.borderRadius.sm, paddingHorizontal: Theme.spacing.md, fontSize: 15, fontFamily: "Inter-Regular", color: Theme.colors.text.dark, marginBottom: Theme.spacing.sm },
   readOnlyField: { minHeight: 50, justifyContent: "center", borderRadius: Theme.borderRadius.sm, backgroundColor: Theme.colors.background.secondary, paddingHorizontal: Theme.spacing.md, marginBottom: Theme.spacing.sm },
   readOnlyText: { fontSize: 15, fontFamily: "Inter-SemiBold", color: Theme.colors.primary },
-  optionalTitle: { fontSize: 13, fontFamily: "Inter-SemiBold", color: Theme.colors.text.dark, marginTop: Theme.spacing.md, marginBottom: Theme.spacing.xs },
   switchRow: { flexDirection: "row", alignItems: "center", marginBottom: Theme.spacing.md },
   switchText: { flex: 1 },
   helpText: { fontSize: 12, lineHeight: 18, fontFamily: "Inter-Regular", color: Theme.colors.text.gray },
