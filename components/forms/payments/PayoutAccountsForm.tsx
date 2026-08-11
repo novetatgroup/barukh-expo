@@ -1,5 +1,5 @@
-import CustomDropdown from "@/components/ui/Dropdown";
 import SupportedBankPicker from "@/components/forms/payments/SupportedBankPicker";
+import CustomDropdown from "@/components/ui/Dropdown";
 import { PAYOUT_COUNTRIES } from "@/constants/payout";
 import { Theme } from "@/constants/Theme";
 import { usePayoutAccounts } from "@/hooks/usePayoutAccounts";
@@ -110,7 +110,7 @@ const PayoutAccountsForm = (props: Props) => {
             {formVisible ? (
               <View style={styles.formCard}>
                 <View style={styles.formHeader}>
-                  <Text style={styles.sectionTitle}>{editingId ? "Edit development account" : "Create payout account"}</Text>
+                  <Text style={styles.sectionTitle}>{editingId ? "Edit development account" : "Create payout account1"}</Text>
                   <TouchableOpacity onPress={closeForm} accessibilityLabel="Close payout form">
                     <Ionicons name="close" size={22} color={Theme.colors.text.gray} />
                   </TouchableOpacity>

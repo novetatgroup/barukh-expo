@@ -20,6 +20,7 @@ import {
 
 type TravellerStep = {
   key:
+    | "provideShipmentCharge"
     | "confirmPickUpCompleted"
     | "tripStarted"
     | "deliveryPhotoUploaded"
@@ -27,6 +28,7 @@ type TravellerStep = {
     | "completed";
   title: string;
   route?:
+    | "/(traveller)/provideShipmentCharge"
     | "/(traveller)/confirmPickUp"
     | "/(traveller)/startTrip"
     | "/(traveller)/verificationScreen"
@@ -36,11 +38,13 @@ type TravellerStep = {
 };
 
 const getTravellerSteps = (status?: string): TravellerStep[] => {
+  
   const pickedUp = hasReachedShipmentStage(status, "PICKED_UP");
   const inTransit = hasReachedShipmentStage(status, "IN_TRANSIT");
   const delivered = hasReachedShipmentStage(status, "DELIVERED");
 
   return [
+   
     {
       key: "confirmPickUpCompleted",
       title: "Confirm Pick Up (Code)",
@@ -133,6 +137,7 @@ const TravellerTrackingDetailsScreen = () => {
   );
 
   const handleStepPress = (step: TravellerStep) => {
+    console.log("handleStepPress", step);
     if (!step.route || step.completed) {
       return;
     }

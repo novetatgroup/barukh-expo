@@ -8,6 +8,29 @@ import {
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useContext, useState } from "react";
 
+const formatDate = (value?: string) => {
+  if (!value) return "Pending";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Pending";
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+  });
+};
+
+const formatCurrency = (priceMinor: number, currency: string) => {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+    }).format(priceMinor / 100);
+  } catch {
+    return `${currency} ${(priceMinor / 100).toFixed(2)}`;
+  }
+};
+
 const ShipmentDetailsScreen = () => {
   const router = useRouter();
   const { accessToken, userId } = useContext(AuthContext);
@@ -26,6 +49,8 @@ const ShipmentDetailsScreen = () => {
     receiverName?: string;
     senderUserId?: string;
     travellerUserId?: string;
+    requestedAt?: string;
+    shipmentCost?: string;
   }>();
   const shipmentId =
     (params.shipmentId as string | undefined) || (params.id as string | undefined);
@@ -96,6 +121,16 @@ const ShipmentDetailsScreen = () => {
       itemName={itemName}
       fromLocation={fromLocation}
       toLocation={toLocation}
+      requestedAt={
+        shipment?.requestedAt
+          ? formatDate(shipment.requestedAt)
+          : params.requestedAt || "Pending"
+      }
+      shipmentCost={
+        shipment
+          ? formatCurrency(shipment.priceMinor, shipment.currency)
+          : params.shipmentCost || "$0.00"
+      }
       status={status}
       progress={progress}
       deliveryPhotoUrl={deliveryPhotoUrl}

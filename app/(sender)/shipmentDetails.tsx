@@ -31,6 +31,7 @@ const SenderShipmentDetailsScreen = () => {
     orderId?: string;
     itemId?: string;
     itemName?: string;
+    status?: string;
     progress?: string;
     shipperName?: string;
     senderUserId?: string;
@@ -47,7 +48,8 @@ const SenderShipmentDetailsScreen = () => {
     ? `#${shipment.packageId.slice(0, 8).toUpperCase()}`
     : (params.itemId as string) || "#BK1624";
   const itemName = shipment?.package?.name || (params.itemName as string) || "MacBook Pro";
-  const progress = formatShipmentStatus(shipment?.status || params.progress || "PENDING");
+  const status = shipment?.status || params.status || params.progress || "PENDING";
+  const progress = formatShipmentStatus(status);
   const shipperName = (params.shipperName as string) || "James Lutalo";
   const recipientName = (params.recipientName as string) || "Sanyu Twine";
   const fromLocation =
@@ -93,7 +95,7 @@ const SenderShipmentDetailsScreen = () => {
         orderId,
         itemId,
         itemName,
-        status: shipment?.status || params.progress || "PENDING",
+        status,
         progress,
       },
     });

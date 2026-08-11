@@ -93,6 +93,7 @@ type TravellerShipment = {
   itemName: string;
   recipientCity: string;
   progress: string;
+  requestedAt: string;
   expectedDelivery: string;
   shipmentCost: string;
   insuranceFee: string;
@@ -227,6 +228,7 @@ const travellerShipments: TravellerShipment[] = [
     insuranceFee: "$1.80",
     serviceFee: "$1.20",
     fromLocation: 'ABC 001',
+    requestedAt: '2023-07-20',
   toLocation: 'XYZ 002',
   },
   {
@@ -245,6 +247,7 @@ const travellerShipments: TravellerShipment[] = [
     serviceFee: "$1.60",
     fromLocation: 'ABC 001',
   toLocation: 'XYZ 002',
+    requestedAt: '2023-07-20',
   },
 ];
 // sender archived tabs -> "Traveller Matches", "Traveller Requests"
@@ -307,8 +310,8 @@ const getCardModel = (item: CategoryListItem): CardModel => {
         icon: "cube-outline",
         iconBackground: Theme.colors.yellow,
         title: item.packageId,
-        subtitle: item.itemName,
-        detail: `${item.fromLocation} - ${item.toLocation}`,
+        subtitle: `${item.itemName}\nCharge: ${item.shipmentCost}`,
+        detail: `${item.fromLocation} → ${item.toLocation}`,
         meta: item.progress,
         statusStage: normalizeShipmentStatus(item.progress),
       };
@@ -318,7 +321,7 @@ const getCardModel = (item: CategoryListItem): CardModel => {
         iconBackground: "#EBF2F1",
         title: item.senderName,
         subtitle: item.packageName,
-        detail: `${item.pickupCity} - ${item.destinationCity}`,
+        detail: `${item.pickupCity} → ${item.destinationCity}`,
         meta: item.reward,
       };
     case "travellerAccepted":
@@ -335,8 +338,8 @@ const getCardModel = (item: CategoryListItem): CardModel => {
         icon: "airplane-outline",
         iconBackground: "#EBF2F1",
         title: item.packageId,
-        subtitle: item.itemName,
-        detail: `To ${item.recipientCity}`,
+        subtitle: `${item.itemName}\nCharge: ${item.shipmentCost}`,
+        detail: `${item.fromLocation} → ${item.recipientCity}`,
         meta: item.progress,
         statusStage: normalizeShipmentStatus(item.progress),
       };
@@ -425,6 +428,7 @@ const mapTravellerShipment = (shipment: ShipmentDetails): TravellerShipment => (
   progress: formatShipmentStatus(shipment.status),
   expectedDelivery: formatDate(shipment.travel.arrivalAt),
   shipmentCost: formatMoney(shipment.priceMinor, shipment.currency),
+  requestedAt: formatDate(shipment.requestedAt),
   insuranceFee: "$0.00",
   serviceFee: "$0.00",
   fromLocation: shipment.package.originCity || shipment.travel.originCity,
@@ -680,8 +684,11 @@ const ShipmentsScreen = () => {
             progress: item.progress,
             expectedDelivery: item.expectedDelivery,
             shipmentCost: item.shipmentCost,
+            requestedAt: item.requestedAt,
             insuranceFee: item.insuranceFee,
             serviceFee: item.serviceFee,
+            fromLocation: item.fromLocation,
+            toLocation: item.toLocation,
           },
         });
         break;

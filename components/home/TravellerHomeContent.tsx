@@ -101,10 +101,11 @@ const TravellerHomeContent = () => {
   };
 
   const handleCreateTrip = () => {
-    if (!userProfile?.isActive) {
-      router.push("/(KYC)/KYCLanding");
-      return;
-    }
+    // fixme: check if user is active before allowing to create trip
+    // if (!userProfile?.isActive) {
+    //   router.push("/(KYC)/KYCLanding");
+    //   return;
+    // }
     router.push("/(traveller)/packageDetails");
   };
 

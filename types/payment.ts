@@ -65,7 +65,7 @@ export type PaymentHistoryItem = {
 };
 
 export type PayoutCountry = "Uganda" | "Kenya" | "Tanzania" | "Rwanda";
-export type PayoutCurrency = "UGX" | "KES" | "TZS" | "RWF";
+export type PayoutCurrency = "UGX" | "KES" | "TZS" | "RWF" | "USD";
 
 export type MaskedBankAccount = {
   id: string;
