@@ -11,7 +11,15 @@
       "Bash(npx tsc *)",
       "Bash(grep -ri \"\\\\$0\\\\.00\\\\|cus_IpH7CKCUtD\\\\|pmd_wlVhaYmkl2\\\\|bkh-transfer\\\\|mock-shipment\\\\|mock-sender\\\\|mock-traveller\\\\|mock-card\" /Users/juliusjuniorkazibwe/Documents/GitHub/barukh-expo --include=\"*.ts\" --include=\"*.tsx\")",
       "Bash(grep -rn \"James Lutalo\\\\|Sanyu Twine\\\\|MacBook Pro\\\\|#BK1624\\\\|ABC 001\\\\|XYZ 002\\\\|\\\\$0\\\\.00\\\\|Macbook Pro\" app/ components/)",
-      "Bash(grep -rn '|| \"Ontario, Canada\"\\\\|\"Kampala, Uganda\"\\\\||| \"Assigned\"\\\\||| \"\\\\$0\\\\.00\"\\\\|\"ABC 001\"\\\\|\"XYZ 002\"' app/ components/)"
+      "Bash(grep -rn '|| \"Ontario, Canada\"\\\\|\"Kampala, Uganda\"\\\\||| \"Assigned\"\\\\||| \"\\\\$0\\\\.00\"\\\\|\"ABC 001\"\\\\|\"XYZ 002\"' app/ components/)",
+      "Bash(command -v eas)",
+      "Bash(eas --version)",
+      "Bash(command -v node)",
+      "Bash(chmod +x scripts/build-android-apk.sh)",
+      "Bash(bash -n scripts/build-android-apk.sh)",
+      "Bash(grep -c \"^build/$\\\\|^/build/$\\\\|^build$\" .gitignore)",
+      "Bash(bash scripts/build-android-apk.sh --help)",
+      "Bash(bash scripts/build-android-apk.sh --bogus)"
     ]
   }
 }
