@@ -10,6 +10,11 @@ export const API_ENDPOINTS = {
 		get: (userId: string) => `/users/${userId}`,
 		update: (userId: string) => `/users/update/${userId}`,
 		createBankAccount: "/users/create-bank-account",
+		listBankAccounts: "/users/bank-accounts",
+		updateBankAccount: (id: string) => `/users/bank-accounts/${id}`,
+		deleteBankAccount: (id: string) => `/users/bank-accounts/${id}`,
+		setDefaultBankAccount: (id: string) => `/users/bank-accounts/${id}/default`,
+		createPaymentCard: "/users/create-payment-card",
 	},
 	traveller: {
 		createTraveller: "/traveller/create-traveller",
@@ -53,6 +58,9 @@ export const API_ENDPOINTS = {
 		update: (shipmentId: string) => `/shipments/${shipmentId}`,
 		listByRole: (actorId: string, role: "SENDER" | "TRAVELLER") =>
 			`/shipments/${actorId}/?role=${role}`,
+		submitReview: "/shipments/submit-review",
+		travellerConfirm: (shipmentId: string) =>
+			`/shipments/${shipmentId}/traveller-confirm`,
 	},
 	pushNotifications: {
 		me: (page: number, limit: number) =>

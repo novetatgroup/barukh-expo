@@ -46,22 +46,22 @@ const SenderShipmentDetailsScreen = () => {
   const orderId = (params.orderId as string) || "#01-BK1624";
   const itemId = shipment?.packageId
     ? `#${shipment.packageId.slice(0, 8).toUpperCase()}`
-    : (params.itemId as string) || "#BK1624";
-  const itemName = shipment?.package?.name || (params.itemName as string) || "MacBook Pro";
+    : (params.itemId as string) || "—";
+  const itemName = shipment?.package?.name || (params.itemName as string) || "—";
   const status = shipment?.status || params.status || params.progress || "PENDING";
   const progress = formatShipmentStatus(status);
-  const shipperName = (params.shipperName as string) || "James Lutalo";
-  const recipientName = (params.recipientName as string) || "Sanyu Twine";
+  const shipperName = (params.shipperName as string) || "—";
+  const recipientName = (params.recipientName as string) || "—";
   const fromLocation =
     shipment?.package?.originCity ||
     shipment?.travel?.originCity ||
     (params.fromLocation as string) ||
-    "Ontario, Canada";
+    "—";
   const toLocation =
     shipment?.package?.destinationCity ||
     shipment?.travel?.destinationCity ||
     (params.toLocation as string) ||
-    "Kampala, Uganda";
+    "—";
   const deliveryPhotoUrl = getShipmentDeliveryPhotoUrl(shipment);
 
   const fetchShipment = useCallback(async () => {

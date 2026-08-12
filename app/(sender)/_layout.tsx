@@ -21,6 +21,9 @@ export default function SenderLayout() {
       <Stack.Screen name="travellerMatchDetails" />
       <Stack.Screen name="travellerRequestDetails" />
       <Stack.Screen name="uploadReceipt" />
+      <Stack.Screen name="addPaymentCard" />
+      <Stack.Screen name="rateCounterparty" />
+      <Stack.Screen name="raiseDispute" />
     </Stack>
   );
 }

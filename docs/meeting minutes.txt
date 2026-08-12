@@ -326,3 +326,85 @@ Thanks for this update, i will definitely proceed with updating the payment modu
 Are we still using websockets, am asking just to be sure.izaiah  [3:54 PM]
 Yes, we are
 Everything is the same, we're just updating how we call them
+
+Hey @kazibwe julius
+I added the priceMinor  to the matching endpoint, so when you match the price is attached as well
+
+then this is the review endpoint, both Sender and Travellers hit the same endpoint, BE resolves.
+
+POST
+{{url}}/shipments/submit-review 
+
+
+{
+  "shipmentId": "BK-000",
+  "rating": 2,
+  "comment": "Terriblleee"
+} 
+
+
+the response looks like so
+
+
+{
+  "message": "Traveller has been reviewed, Thank you."
+  "review_id": "rr-100"
+}
+
+@kazibwe julius  CustomerId is returned on a user profile endpoint that you have been hitting, when you call the profile endpoint it returns the customerID
+Here is a sample response.
+
+
+{
+  "id": "3411e6ad-d75a-425a-bbc9-36c34a8e3aa7",
+  "firstName": "Super",
+  "lastName": "Admin",
+  "email": "novetatgroup@gmail.com",
+  "role": "USER",
+  "isActive": true,
+  "profilePicture": "",
+  "phoneNumber": "",
+  "addressLineA": "",
+  "isPhoneVerified": true,
+  "emergencyContact": "",
+  "addressLineB": "",
+  "state": "",
+  "flwCustomerObject": {
+    "flwCustomerId": "cus_idriowe",
+    "flwPaymentCardLast4": "",
+    "flwPaymentCardHolderName": "",
+    "flwPaymentCardIsDefault": false
+  }
+}
+
+the field is inside the flwCustomerObject  and it's called flwCustomerId
+
+
+So, Still on that profile endpoint in the flwCustomerObject  the payment method ID is also returned in the same object
+it is called flwPaymentCardId  the reason why its not showing up in the response I have shared above is cause for the superadmin He is not registered a card, so he doesn't have
+but yeah, that is where the payment_method_id is and that is what its called
+
+I have added a payment Method for your sender account
+
+(`kazibwejuliusjunior@gmail.com[sender]).`)
+
+
+It is a card from Flutterwave that tests pin
+so if you are asked for Pin, here is the value
+
+PIN:
+3310
+
+the OTP shall be
+12345
+
+
+---
+We have two emulator one uses a sender (kazibwejuliusjunior@gmail) and ther is a traveller (juliusjuniorkazibwe@gmail.com). 
+The first method is to ensure that the sender is able to make payments to the traveler and the traveler is able to receive payments. The biggest thing to look at is to provide screens that enable the sender to pay the money and work with the payment methods that we have. We have the part where it allows one to initiate a charge, and what happens to it is the next action, depending on what the card requirements or the bank requirements require.
+
+Secondly, allow the traveler to receive money from the sender, that is, to their default payout account, the bank accounts that they had registered with the system. Enable both the sender and the traveler to add bank details that are going to be debited by the system. Add self-functionality where the sender can confirm that they'll be able to transport the item before the sender is able to commit to pay.
+
+Thirdly, we shall add a screen that enables the sender to rate the traveler. Also, do the same for the traveler, so both of them should be able to rate each other.
+
+Lastly, we add a screen that enables the sender and the traveler to raise a dispute. Most of the time, the traveler should be able to raise a dispute. Those are the core functionalities that we need to add into the system. 

@@ -49,9 +49,9 @@ const MyShipmentsForm: React.FC<MyShipmentsFormProps> = ({
           matchedUserName: (shipment as UserShipment).name,
           matchedUserImage: (shipment as UserShipment).avatar,
           itemName: (shipment as UserShipment).item,
-          category: "Personal Electronics",
-          fromLocation: "Ontario, Canada",
-          toLocation: "Kampala, Uganda",
+          category: (shipment as UserShipment).item ?? "",
+          fromLocation: "",
+          toLocation: "",
         },
       });
     }

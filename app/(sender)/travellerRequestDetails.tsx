@@ -20,7 +20,7 @@ const TravellerRequestDetailsScreen = () => {
       rows={[
         { label: "Request ID :", value: (params.requestId as string) || "N/A" },
         { label: "Pickup :", value: (params.proposedPickup as string) || "Unknown" },
-        { label: "Payout Offer :", value: (params.payoutOffer as string) || "$0.00" },
+        { label: "Payout Offer :", value: (params.payoutOffer as string) || "" },
         { label: "Request Type :", value: "Traveller Request" },
       ]}
       onBack={() => router.back()}

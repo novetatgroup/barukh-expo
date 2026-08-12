@@ -222,6 +222,32 @@ export const senderService = {
 		});
 	},
 
+	// TODO(izaiah): confirm the exact endpoint/status transition contract for
+	// traveller-confirms-transport. Placeholder until backend responds.
+	async travellerConfirmShipment(shipmentId: string, accessToken: string) {
+		return apiRequest<{ message?: string; status?: string }>(
+			API_ENDPOINTS.shipments.travellerConfirm(shipmentId),
+			{
+				method: "POST",
+				headers: { Authorization: `Bearer ${accessToken}` },
+			},
+		);
+	},
+
+	async submitReview(
+		input: { shipmentId: string; rating: number; comment: string },
+		accessToken: string,
+	) {
+		return apiRequest<{ message?: string; review_id?: string }>(
+			API_ENDPOINTS.shipments.submitReview,
+			{
+				method: "POST",
+				headers: { Authorization: `Bearer ${accessToken}` },
+				body: input,
+			},
+		);
+	},
+
 	async getPickupCode(shipmentId: string, accessToken: string) {
 		return apiRequest<ShipmentCodeResponse>(
 			API_ENDPOINTS.shipments.getItemPickupCode(shipmentId),

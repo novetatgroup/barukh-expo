@@ -1,6 +1,7 @@
 import ShipmentDetailsForm from "@/components/forms/traveller/ShipmentDetailsForm";
 import { AuthContext } from "@/context/AuthContext";
 import { senderService, ShipmentDetails } from "@/services/senderService";
+import { formatMoney } from "@/utils/formatting";
 import {
   formatShipmentStatus,
   getShipmentDeliveryPhotoUrl,
@@ -18,17 +19,6 @@ const formatDate = (value?: string) => {
     month: "short",
     day: "2-digit",
   });
-};
-
-const formatCurrency = (priceMinor: number, currency: string) => {
-  try {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-    }).format(priceMinor / 100);
-  } catch {
-    return `${currency} ${(priceMinor / 100).toFixed(2)}`;
-  }
 };
 
 const ShipmentDetailsScreen = () => {
@@ -56,19 +46,19 @@ const ShipmentDetailsScreen = () => {
     (params.shipmentId as string | undefined) || (params.id as string | undefined);
   const itemId = shipment?.packageId
     ? `#${shipment.packageId.slice(0, 8).toUpperCase()}`
-    : (params.itemId as string) || "#BK1624";
-  const itemName = shipment?.package?.name || (params.itemName as string) || "MacBook Pro";
+    : (params.itemId as string) || "—";
+  const itemName = shipment?.package?.name || (params.itemName as string) || "—";
   const fromLocation =
     shipment?.package?.originCity ||
     shipment?.travel?.originCity ||
     (params.fromLocation as string) ||
-    "Ontario, Canada";
+    "—";
   const toLocation =
     shipment?.package?.destinationCity ||
     shipment?.travel?.destinationCity ||
     (params.toLocation as string) ||
-    "Kampala, Uganda";
-  const status = shipment?.status || (params.status as string) || "Assigned";
+    "—";
+  const status = shipment?.status || (params.status as string) || "";
   const progress = formatShipmentStatus(shipment?.status || (params.progress as string) || status);
   const deliveryPhotoUrl = getShipmentDeliveryPhotoUrl(shipment);
 
@@ -116,8 +106,8 @@ const ShipmentDetailsScreen = () => {
       headerTitle={(params.title as string) || "Shipment Details"}
       shipmentId={shipmentId}
       itemId={itemId}
-      shipperName={(params.shipperName as string) || "James Lutalo"}
-      receiverName={(params.receiverName as string) || "Sanyu Twine"}
+      shipperName={(params.shipperName as string) || "—"}
+      receiverName={(params.receiverName as string) || "—"}
       itemName={itemName}
       fromLocation={fromLocation}
       toLocation={toLocation}
@@ -128,8 +118,8 @@ const ShipmentDetailsScreen = () => {
       }
       shipmentCost={
         shipment
-          ? formatCurrency(shipment.priceMinor, shipment.currency)
-          : params.shipmentCost || "$0.00"
+          ? formatMoney(shipment.priceMinor, shipment.currency)
+          : params.shipmentCost || ""
       }
       status={status}
       progress={progress}

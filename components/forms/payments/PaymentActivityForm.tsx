@@ -1,10 +1,11 @@
+import SampleDataBanner from "@/components/ui/SampleDataBanner";
 import { Theme } from "@/constants/Theme";
 import { usePaymentActivity } from "@/hooks/usePaymentActivity";
-import { PaymentStatus } from "@/types/payment";
+import { PaymentHistoryItem, PaymentStatus } from "@/types/payment";
+import { formatMoney } from "@/utils/formatting";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   StyleSheet,
   Text,
@@ -15,6 +16,45 @@ import {
 type Props = ReturnType<typeof usePaymentActivity>;
 type Tab = "activity" | "cards";
 
+const SAMPLE_HISTORY: PaymentHistoryItem[] = [
+  {
+    reference: "sample-captured",
+    shipmentId: "sample-shipment-1",
+    amountMinor: 4860,
+    currency: "USD",
+    status: "CAPTURED",
+    createdAt: "2026-07-29T09:30:00.000Z",
+    maskedMethod: {
+      id: "sample-card-1",
+      brand: "VISA",
+      last4: "4242",
+      expiryMonth: "09",
+      expiryYear: "29",
+      cardholderName: "Sample User",
+      isDefault: true,
+    },
+    description: "Documents to Kampala",
+  },
+  {
+    reference: "sample-refunded",
+    shipmentId: "sample-shipment-2",
+    amountMinor: 3275,
+    currency: "USD",
+    status: "REFUNDED",
+    createdAt: "2026-07-20T14:15:00.000Z",
+    maskedMethod: {
+      id: "sample-card-2",
+      brand: "MASTERCARD",
+      last4: "4444",
+      expiryMonth: "04",
+      expiryYear: "30",
+      cardholderName: "Sample User",
+      isDefault: false,
+    },
+    description: "Camera lens to Entebbe",
+  },
+];
+
 const statusColor = (status: PaymentStatus) => {
   if (status === "CAPTURED") return Theme.colors.success;
   if (status === "FAILED") return Theme.colors.error;
@@ -22,15 +62,7 @@ const statusColor = (status: PaymentStatus) => {
   return Theme.colors.text.gray;
 };
 
-const PaymentActivityForm = ({
-  mode,
-  history,
-  cards,
-  loading,
-  openDetails,
-  resume,
-  back,
-}: Props) => {
+const PaymentActivityForm = ({ openDetails, back }: Props) => {
   const [tab, setTab] = useState<Tab>("activity");
 
   return (
@@ -57,27 +89,15 @@ const PaymentActivityForm = ({
         ))}
       </View>
 
-      {mode === "mock" ? (
-        <View style={styles.mockBadge}>
-          <Ionicons name="flask-outline" size={15} color={Theme.colors.primary} />
-          <Text style={styles.mockBadgeText}>Development fixtures</Text>
-        </View>
-      ) : (
-        <View style={styles.notice}>
-          <Text style={styles.noticeText}>
-            Payment history and saved-card listing are disabled until their API contracts are supplied.
-          </Text>
-        </View>
-      )}
+      <View style={styles.bannerWrap}>
+        <SampleDataBanner />
+      </View>
 
-      {loading ? (
-        <ActivityIndicator color={Theme.colors.primary} style={styles.loader} />
-      ) : tab === "activity" ? (
+      {tab === "activity" ? (
         <FlatList
-          data={history}
+          data={SAMPLE_HISTORY}
           keyExtractor={(item) => item.reference}
           contentContainerStyle={styles.list}
-          ListEmptyComponent={<Text style={styles.emptyText}>No payment activity available.</Text>}
           renderItem={({ item }) => (
             <TouchableOpacity style={styles.card} onPress={() => openDetails(item)}>
               <View style={styles.iconCircle}>
@@ -88,51 +108,20 @@ const PaymentActivityForm = ({
                 <Text style={styles.cardMeta}>
                   {new Date(item.createdAt).toLocaleDateString()} - {item.maskedMethod.brand} {item.maskedMethod.last4}
                 </Text>
-                {item.status === "PENDING" ? (
-                  <TouchableOpacity
-                    onPress={(event) => {
-                      event.stopPropagation();
-                      resume(item);
-                    }}
-                    style={styles.resumeButton}
-                  >
-                    <Text style={styles.resumeText}>Resume pending</Text>
-                  </TouchableOpacity>
-                ) : null}
               </View>
               <View style={styles.rightColumn}>
-                <Text style={styles.amount}>USD {(item.amountMinor / 100).toFixed(2)}</Text>
+                <Text style={styles.amount}>{formatMoney(item.amountMinor, item.currency)}</Text>
                 <Text style={[styles.status, { color: statusColor(item.status) }]}>{item.status}</Text>
               </View>
             </TouchableOpacity>
           )}
         />
       ) : (
-        <FlatList
-          data={cards}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          ListHeaderComponent={
-            <View style={styles.notice}>
-              <Text style={styles.noticeText}>
-                Add card is disabled until secure Flutterwave v4 collection is approved.
-              </Text>
-            </View>
-          }
-          ListEmptyComponent={<Text style={styles.emptyText}>No saved cards available.</Text>}
-          renderItem={({ item }) => (
-            <View style={styles.card}>
-              <View style={styles.iconCircle}>
-                <Ionicons name="card-outline" size={22} color={Theme.colors.primary} />
-              </View>
-              <View style={styles.mainText}>
-                <Text style={styles.cardTitle}>{item.brand} ending {item.last4}</Text>
-                <Text style={styles.cardMeta}>Expires {item.expiryMonth}/{item.expiryYear}</Text>
-              </View>
-              {item.isDefault ? <Text style={styles.defaultText}>Default</Text> : null}
-            </View>
-          )}
-        />
+        <View style={styles.list}>
+          <Text style={styles.emptyText}>
+            Manage your saved card from the checkout screen.
+          </Text>
+        </View>
       )}
     </View>
   );
@@ -148,11 +137,7 @@ const styles = StyleSheet.create({
   activeTab: { backgroundColor: Theme.colors.yellow },
   tabText: { fontSize: 13, fontFamily: "Inter-Regular", color: Theme.colors.text.gray },
   activeTabText: { fontFamily: "Inter-SemiBold", color: Theme.colors.primary },
-  mockBadge: { alignSelf: "flex-start", flexDirection: "row", gap: Theme.spacing.sm, backgroundColor: Theme.colors.yellow, borderRadius: Theme.borderRadius.xl, paddingHorizontal: Theme.spacing.md, paddingVertical: Theme.spacing.sm, marginHorizontal: Theme.screenPadding.horizontal, marginTop: Theme.spacing.md },
-  mockBadgeText: { fontSize: 12, fontFamily: "Inter-SemiBold", color: Theme.colors.primary },
-  notice: { backgroundColor: Theme.colors.white, borderRadius: Theme.borderRadius.sm, padding: Theme.spacing.md, marginHorizontal: Theme.screenPadding.horizontal, marginTop: Theme.spacing.md },
-  noticeText: { fontSize: 12, lineHeight: 18, fontFamily: "Inter-Regular", color: Theme.colors.text.gray },
-  loader: { marginTop: Theme.spacing.xl },
+  bannerWrap: { paddingHorizontal: Theme.screenPadding.horizontal, paddingTop: Theme.spacing.md },
   list: { padding: Theme.screenPadding.horizontal, paddingBottom: Theme.spacing.xxxxxl, gap: Theme.spacing.sm },
   card: { flexDirection: "row", alignItems: "center", backgroundColor: Theme.colors.white, borderRadius: Theme.borderRadius.md, padding: Theme.spacing.md, minHeight: 82 },
   iconCircle: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center", backgroundColor: Theme.colors.background.border, marginRight: Theme.spacing.sm },
@@ -162,9 +147,6 @@ const styles = StyleSheet.create({
   rightColumn: { alignItems: "flex-end", marginLeft: Theme.spacing.sm },
   amount: { fontSize: 12, fontFamily: "Inter-SemiBold", color: Theme.colors.text.dark },
   status: { fontSize: 10, fontFamily: "Inter-Bold", marginTop: Theme.spacing.xs },
-  resumeButton: { alignSelf: "flex-start", paddingTop: Theme.spacing.sm, paddingRight: Theme.spacing.md },
-  resumeText: { fontSize: 11, fontFamily: "Inter-SemiBold", color: Theme.colors.primary },
-  defaultText: { fontSize: 11, fontFamily: "Inter-SemiBold", color: Theme.colors.primary, backgroundColor: Theme.colors.yellow, paddingHorizontal: Theme.spacing.sm, paddingVertical: Theme.spacing.xs, borderRadius: Theme.borderRadius.xl },
   emptyText: { fontSize: 13, fontFamily: "Inter-Regular", color: Theme.colors.text.gray, textAlign: "center", marginTop: Theme.spacing.xl },
 });
 

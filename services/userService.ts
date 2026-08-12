@@ -21,6 +21,14 @@ export interface UpdateUserResponse {
 	message?: string;
 }
 
+export interface FlwCustomerObject {
+	flwCustomerId: string;
+	flwPaymentCardId?: string;
+	flwPaymentCardLast4?: string;
+	flwPaymentCardHolderName?: string;
+	flwPaymentCardIsDefault?: boolean;
+}
+
 export interface UserProfile {
 	id: string;
 	firstName: string;
@@ -38,6 +46,7 @@ export interface UserProfile {
 	city: string;
 	country: string;
 	isKycVerified: boolean;
+	flwCustomerObject?: FlwCustomerObject;
 }
 
 export const userService = {

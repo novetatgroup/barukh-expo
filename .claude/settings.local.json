@@ -8,7 +8,10 @@
       "Bash(xargs grep:*)",
       "Bash(xargs sed:*)",
       "Bash(ip -4 addr show)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(grep -ri \"\\\\$0\\\\.00\\\\|cus_IpH7CKCUtD\\\\|pmd_wlVhaYmkl2\\\\|bkh-transfer\\\\|mock-shipment\\\\|mock-sender\\\\|mock-traveller\\\\|mock-card\" /Users/juliusjuniorkazibwe/Documents/GitHub/barukh-expo --include=\"*.ts\" --include=\"*.tsx\")",
+      "Bash(grep -rn \"James Lutalo\\\\|Sanyu Twine\\\\|MacBook Pro\\\\|#BK1624\\\\|ABC 001\\\\|XYZ 002\\\\|\\\\$0\\\\.00\\\\|Macbook Pro\" app/ components/)",
+      "Bash(grep -rn '|| \"Ontario, Canada\"\\\\|\"Kampala, Uganda\"\\\\||| \"Assigned\"\\\\||| \"\\\\$0\\\\.00\"\\\\|\"ABC 001\"\\\\|\"XYZ 002\"' app/ components/)"
     ]
   }
 }

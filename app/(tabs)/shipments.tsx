@@ -1,9 +1,9 @@
 import { Theme } from "@/constants/Theme";
 import { AuthContext } from "@/context/AuthContext";
 import { useRole } from "@/context/RoleContext";
-import { getPaymentExecutionMode } from "@/services/paymentConfig";
 import { senderService, ShipmentDetails } from "@/services/senderService";
 import { travellerService } from "@/services/travellerService";
+import { formatMoney } from "@/utils/formatting";
 import {
   formatShipmentStatus,
   normalizeShipmentStatus,
@@ -121,168 +121,15 @@ type CardModel = {
   statusStage?: ShipmentStage;
 };
 
-const senderTravellerMatches: SenderTravellerMatch[] = [
-  {
-    kind: "senderTravellerMatch",
-    id: "1",
-    travellerName: "Miles Zawedde",
-    parcelName: "MacBook Pro",
-    route: "Toronto - Kampala",
-    matchScore: "96%",
-    rating: "5.0",
-    departureWindow: "Jul 21, 9:00 AM",
-  },
-  {
-    kind: "senderTravellerMatch",
-    id: "2",
-    travellerName: "Amina Clarke",
-    parcelName: "Camera Lens",
-    route: "London - Entebbe",
-    matchScore: "91%",
-    rating: "4.8",
-    departureWindow: "Jul 24, 2:30 PM",
-  },
-];
-
-const senderTravellerRequests: SenderTravellerRequest[] = [
-  {
-    kind: "senderTravellerRequest",
-    id: "3",
-    requestId: "TR-2041",
-    travellerName: "Noah Kim",
-    requestedItem: "JBL Speaker",
-    proposedPickup: "Mississauga Hub",
-    payoutOffer: "$18.00",
-    requestStatus: "New",
-  },
-  {
-    kind: "senderTravellerRequest",
-    id: "4",
-    requestId: "TR-2042",
-    travellerName: "Sarah Mensah",
-    requestedItem: "iPhone 15",
-    proposedPickup: "Heathrow T3",
-    payoutOffer: "$24.00",
-    requestStatus: "Pending",
-  },
-];
-
-const travellerMatchRequests: TravellerMatchRequest[] = [
-  {
-    kind: "travellerMatchRequest",
-    id: "7",
-    senderName: "John Doe",
-    packageName: "MacBook Pro",
-    pickupCity: "Ontario",
-    destinationCity: "Kampala",
-    reward: "$28.00",
-    weightKg: "2.1 kg",
-  },
-  {
-    kind: "travellerMatchRequest",
-    id: "8",
-    senderName: "Alice Brown",
-    packageName: "Camera Lens",
-    pickupCity: "London",
-    destinationCity: "Entebbe",
-    reward: "$19.00",
-    weightKg: "0.8 kg",
-  },
-];
-
-const travellerAccepted: TravellerAccepted[] = [
-  {
-    kind: "travellerAccepted",
-    id: "9",
-    acceptanceCode: "AC-1180",
-    senderName: "Jane Smith",
-    packageName: "iPhone 15",
-    handoffDate: "Jul 22",
-    pickupPoint: "Pearson Airport",
-    status: "Accepted",
-  },
-  {
-    kind: "travellerAccepted",
-    id: "10",
-    acceptanceCode: "AC-1181",
-    senderName: "Bob Wilson",
-    packageName: "JBL Speaker",
-    handoffDate: "Jul 25",
-    pickupPoint: "Downtown Toronto",
-    status: "Ready",
-  },
-];
-
-const travellerShipments: TravellerShipment[] = [
-  {
-    kind: "travellerShipment",
-    id: "11",
-    orderId: "#01-TV9012",
-    packageId: "#PK43905",
-    itemId: "#TV9012",
-    itemName: "Documents",
-    recipientCity: "Kampala",
-    progress: "In Transit",
-    expectedDelivery: "Jul 29",
-    shipmentCost: "$9.00",
-    insuranceFee: "$1.80",
-    serviceFee: "$1.20",
-    fromLocation: 'ABC 001',
-    requestedAt: '2023-07-20',
-  toLocation: 'XYZ 002',
-  },
-  {
-    kind: "travellerShipment",
-    id: "12",
-    orderId: "#01-TV9013",
-    itemId: "#TV9013",
-    packageId:"#PK329040",
-
-    itemName: "Smart Watch",
-    recipientCity: "Entebbe",
-    progress: "Delivered",
-    expectedDelivery: "Aug 01",
-    shipmentCost: "$13.00",
-    insuranceFee: "$2.70",
-    serviceFee: "$1.60",
-    fromLocation: 'ABC 001',
-  toLocation: 'XYZ 002',
-    requestedAt: '2023-07-20',
-  },
-];
-// sender archived tabs -> "Traveller Matches", "Traveller Requests"
-// traveller archived tabs -> "Matches Requests", "Accepted"
-const senderTabs = [ "Shipments"] as const;
-const travellerTabs = [ "Shipments"] as const;
+const senderTabs = ["Shipments"] as const;
+const travellerTabs = ["Shipments"] as const;
 
 const getCategoryItems = (
   isTraveller: boolean,
-  activeTab: string,
+  _activeTab: string,
   senderShipments: SenderShipment[],
-  travellerShipmentItems: TravellerShipment[]
-): CategoryListItem[] => {
-  if (isTraveller) {
-    switch (activeTab) {
-      case "Matches Requests":
-        return travellerMatchRequests;
-      case "Accepted":
-        return travellerAccepted;
-      case "Shipments":
-      default:
-        return travellerShipmentItems;
-    }
-  }
-
-  switch (activeTab) {
-    case "Traveller Requests":
-      return senderTravellerRequests;
-    case "Shipments":
-      return senderShipments;
-    case "Traveller Matches":
-    default:
-      return senderTravellerMatches;
-  }
-};
+  travellerShipmentItems: TravellerShipment[],
+): CategoryListItem[] => (isTraveller ? travellerShipmentItems : senderShipments);
 
 const getCardModel = (item: CategoryListItem): CardModel => {
   switch (item.kind) {
@@ -377,17 +224,6 @@ const formatDate = (value?: string) => {
     month: "short",
     day: "2-digit",
   });
-};
-
-const formatMoney = (priceMinor: number, currency: string) => {
-  try {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-    }).format(priceMinor / 100);
-  } catch {
-    return `${currency} ${(priceMinor / 100).toFixed(2)}`;
-  }
 };
 
 const mapSenderShipment = (shipment: ShipmentDetails): SenderShipment => ({
@@ -600,8 +436,7 @@ const ShipmentsScreen = () => {
           pathname: "/(sender)/travellerMatchCategoryDetails",
           params: {
             id:item.id,
-            shipmentId:
-              getPaymentExecutionMode() === "mock" ? `mock-shipment-${item.id}` : "",
+            shipmentId: "",
             travellerName: item.travellerName,
             parcelName: item.parcelName,
             route: item.route,

@@ -102,8 +102,8 @@ const TrackingDetailsScreen = () => {
   const status = shipment?.status || params.status || params.progress || "PENDING";
   const itemId = shipment?.packageId
     ? `#${shipment.packageId.slice(0, 8).toUpperCase()}`
-    : params.itemId || "#BK1624";
-  const itemName = shipment?.package?.name || params.itemName || "MacBook Pro";
+    : params.itemId || "—";
+  const itemName = shipment?.package?.name || params.itemName || "—";
   const checklistSteps = useMemo(() => getSenderSteps(status), [status]);
 
   const baseParams = {

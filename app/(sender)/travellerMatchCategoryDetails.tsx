@@ -1,5 +1,4 @@
 import { Theme } from "@/constants/Theme";
-import { getPaymentExecutionMode } from "@/services/paymentConfig";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -14,14 +13,13 @@ import {
 const TravellerMatchCategoryDetailsScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const mode = getPaymentExecutionMode();
   const [paymentMessage, setPaymentMessage] = useState<string | null>(null);
 
-  const travellerName = (params.travellerName as string) || "Traveller";
-  const route = (params.route as string) || "Ontario - Kampala";
-  const rating = (params.rating as string) || "5.0";
-  const remainingSpace = (params.remainingSpace as string) || "45kgs";
-  const travelDate = (params.travelDate as string) || "23 Sept 2025";
+  const travellerName = (params.travellerName as string) || "—";
+  const route = (params.route as string) || "—";
+  const rating = (params.rating as string) || "—";
+  const remainingSpace = (params.remainingSpace as string) || "—";
+  const travelDate = (params.travelDate as string) || "—";
   const initials = travellerName
     .split(" ")
     .map((part) => part[0])
@@ -31,11 +29,10 @@ const TravellerMatchCategoryDetailsScreen = () => {
 
 
   const handleConfirm = () => {
-    const suppliedShipmentId = params.shipmentId as string | undefined;
-    const shipmentId = suppliedShipmentId || (mode === "mock" ? "mock-shipment-001" : "");
+    const shipmentId = (params.shipmentId as string | undefined) || "";
     if (!shipmentId) {
       setPaymentMessage(
-        "Payment cannot continue because this real match has no shipment ID.",
+        "Payment cannot continue because this match has no shipment ID.",
       );
       return;
     }

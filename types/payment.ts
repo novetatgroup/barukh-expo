@@ -16,7 +16,7 @@ export type PaymentUiPhase =
   | "complete"
   | "error";
 
-export type PaymentExecutionMode = "mock" | "api" | "blocked";
+export type PaymentExecutionMode = "api" | "blocked";
 
 export type PaymentAdditionalField =
   | "billingZip"
@@ -95,16 +95,6 @@ export type PayoutState =
       updatedAt: string;
       guidance: string;
     };
-
-export type PaymentMockScenario =
-  | "direct_capture"
-  | "pin_to_otp"
-  | "additional_fields"
-  | "three_ds_return"
-  | "pending"
-  | "decline"
-  | "cancellation"
-  | "server_failure";
 
 export type SafePaymentRecovery = {
   userId: string;

@@ -2,21 +2,10 @@ import { PaymentExecutionMode } from "@/types/payment";
 
 const configuredMode = process.env.EXPO_PUBLIC_PAYMENT_MODE?.toLowerCase();
 
-export const getPaymentExecutionMode = (): PaymentExecutionMode => {
-  if (!__DEV__) {
-    return configuredMode === "api" ? "api" : "blocked";
-  }
+export const getPaymentExecutionMode = (): PaymentExecutionMode =>
+  configuredMode === "blocked" ? "blocked" : "api";
 
-  if (configuredMode === "api" || configuredMode === "blocked") {
-    return configuredMode;
-  }
-
-  return "mock";
-};
-
-// These contracts are still missing: amount units, customer/card ID retrieval,
-// redirect allowlisting, failed retry rules, and payment status recovery.
-export const isChargeExecutionReady = false;
+export const isChargeExecutionReady = true;
 
 const configuredRedirectHosts = process.env.EXPO_PUBLIC_PAYMENT_REDIRECT_HOSTS
   ?.split(",")
@@ -26,7 +15,14 @@ const configuredRedirectHosts = process.env.EXPO_PUBLIC_PAYMENT_REDIRECT_HOSTS
 const allowedRedirectHosts = new Set(
   configuredRedirectHosts?.length
     ? configuredRedirectHosts
-    : ["checkout.flutterwave.com", "staging.api.barukhconnector.com"],
+    : [
+        "checkout.flutterwave.com",
+        "checkout-v2.flutterwave.com",
+        "ravemodal-dev.herokuapp.com",
+        "staging.api.barukhconnector.com",
+        "api.barukhconnector.com",
+        "barukhconnector.com",
+      ],
 );
 
 export const isAllowedPaymentRedirect = (redirectUrl: string): boolean => {

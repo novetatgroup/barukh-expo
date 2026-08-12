@@ -15,6 +15,9 @@ export default function TravellerLayout() {
       <Stack.Screen name="startTrip" />
       <Stack.Screen name="verificationScreen" />
       <Stack.Screen name="deliveryUpload" />
+      <Stack.Screen name="provideShipmentCharge" />
+      <Stack.Screen name="rateCounterparty" />
+      <Stack.Screen name="raiseDispute" />
     </Stack>
   );
 }

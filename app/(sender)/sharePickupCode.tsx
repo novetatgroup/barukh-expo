@@ -25,8 +25,8 @@ const SharePickupCodeRoute = () => {
   const trackingParams = {
     shipmentId: params.shipmentId || "",
     orderId: params.orderId || "#01-BK1624",
-    itemId: params.itemId || "#BK1624",
-    itemName: params.itemName || "MacBook Pro",
+    itemId: params.itemId || "—",
+    itemName: params.itemName || "—",
     receiptUploaded: params.receiptUploaded || "false",
     trackingEntered: params.trackingEntered || "false",
     pickupCodeShared: params.pickupCodeShared || "false",
