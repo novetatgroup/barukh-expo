@@ -1,8 +1,9 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
+  Animated,
   Dimensions,
-  FlatList,
   StatusBar,
   StyleSheet,
   Text,
@@ -37,12 +38,46 @@ const onboardingData = [
   },
 ];
 
+type OnboardingSlideTextProps = {
+  item: (typeof onboardingData)[0];
+  index: number;
+  scrollX: Animated.Value;
+};
+
+const OnboardingSlideText = ({ item, index, scrollX }: OnboardingSlideTextProps) => {
+  const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
+  const opacity = scrollX.interpolate({
+    inputRange,
+    outputRange: [0, 1, 0],
+    extrapolate: "clamp",
+  });
+  const translateY = scrollX.interpolate({
+    inputRange,
+    outputRange: [12, 0, -12],
+    extrapolate: "clamp",
+  });
+
+  return (
+    <Animated.View
+      style={[
+        StyleSheet.absoluteFillObject,
+        fixedStyles.textStack,
+        { opacity, transform: [{ translateY }] },
+      ]}
+    >
+      <Text style={styles.title}>{item.title}</Text>
+      <Text style={styles.subtitle}>{item.subtitle}</Text>
+    </Animated.View>
+  );
+};
+
 export default function OnboardingScreen() {
   const [currentStep, setCurrentStep] = useState(0);
-  const flatListRef = useRef<FlatList>(null);
   const router = useRouter();
+  const scrollX = useRef(new Animated.Value(0)).current;
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
+    await AsyncStorage.setItem("hasCompletedOnboarding", "true");
     router.replace("/(auth)");
   };
 
@@ -58,40 +93,39 @@ export default function OnboardingScreen() {
     itemVisiblePercentThreshold: 50,
   }).current;
 
-  const renderItem = ({ item }: { item: (typeof onboardingData)[0] }) => (
-    <View style={[styles.content, { width }]}>
-      {item.ImageComponent && (
-        <View style={{ marginTop: 325, marginBottom: 20 }}>
-          <item.ImageComponent width={45} height={45} />
-        </View>
-      )}
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.subtitle}>{item.subtitle}</Text>
-
-      <View style={styles.dotsContainer}>
-        {onboardingData.map((_, dotIndex) => (
-          <View
-            key={dotIndex}
-            style={[
-              styles.dot,
-              dotIndex === currentStep ? styles.activeDot : styles.inactiveDot,
-            ]}
-          />
-        ))}
-      </View>
-    </View>
-  );
-
   const isLastStep = currentStep === onboardingData.length - 1;
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0A5D52" />
 
-      <FlatList
-        ref={flatListRef}
+      <View style={styles.content} pointerEvents="none">
+        <View style={{ marginTop: 325, marginBottom: 20 }}>
+          <Logo width={45} height={45} />
+        </View>
+
+        <View style={fixedStyles.textStackWrapper}>
+          {onboardingData.map((item, index) => (
+            <OnboardingSlideText key={item.id} item={item} index={index} scrollX={scrollX} />
+          ))}
+        </View>
+
+        <View style={styles.dotsContainer}>
+          {onboardingData.map((_, dotIndex) => (
+            <View
+              key={dotIndex}
+              style={[
+                styles.dot,
+                dotIndex === currentStep ? styles.activeDot : styles.inactiveDot,
+              ]}
+            />
+          ))}
+        </View>
+      </View>
+
+      <Animated.FlatList
         data={onboardingData}
-        renderItem={renderItem}
+        renderItem={() => <View style={{ width }} />}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -99,7 +133,12 @@ export default function OnboardingScreen() {
         keyExtractor={(item) => item.id}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+          { useNativeDriver: true }
+        )}
         scrollEventThrottle={16}
+        style={StyleSheet.absoluteFillObject}
       />
 
       <View style={[styles.buttonContainer, fixedStyles.buttonContainerFixed]}>
@@ -122,5 +161,13 @@ export default function OnboardingScreen() {
 const fixedStyles = StyleSheet.create({
   buttonContainerFixed: {
     minHeight: 130,
+  },
+  textStackWrapper: {
+    width: "100%",
+    minHeight: 155,
+    justifyContent: "center",
+  },
+  textStack: {
+    alignItems: "center",
   },
 });

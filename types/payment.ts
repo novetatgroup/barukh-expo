@@ -69,6 +69,7 @@ export type PayoutCurrency = "UGX" | "KES" | "TZS" | "RWF" | "USD";
 
 export type MaskedBankAccount = {
   id: string;
+  bankAccountId?: string;
   country: PayoutCountry;
   currency: PayoutCurrency;
   bankName: string;

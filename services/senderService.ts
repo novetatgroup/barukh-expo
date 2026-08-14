@@ -1,7 +1,6 @@
 import { API_ENDPOINTS, apiRequest } from "./api";
 
 export interface CreateSenderParams {
-	userId: string;
 	firstName: string;
 	lastName: string;
 	email: string;
@@ -107,6 +106,7 @@ export interface ShipmentDetails {
 	sender: { id: string; userId: string };
 	traveller: { id: string; userId: string };
 	deliveryPhotoUrl?: string | null;
+	referenceNumber: string;
 }
 
 export interface GetShipmentsResponse {
@@ -121,9 +121,21 @@ export interface GetShipmentsResponse {
 	};
 }
 
+// The shipments-list endpoint has been observed returning either the
+// { data, meta } envelope or a bare array. Normalize defensively, mirroring
+// the same handling already used in hooks/useTravellerMatching.ts.
+export const extractShipmentsList = (
+	data: GetShipmentsResponse | ShipmentDetails[] | null | undefined
+): ShipmentDetails[] => {
+	if (!data) return [];
+	if (Array.isArray(data)) return data;
+	return data.data ?? [];
+};
+
 export interface GetSenderResponse {
 	senderId: string;
 	userId: string;
+	senderNumber: string;
 }
 
 export interface ShipmentCodeResponse {
@@ -163,8 +175,8 @@ export interface GetPackagesResponse {
 }
 
 export const senderService = {
-	async getSender(userId: string, accessToken: string) {
-		return apiRequest<GetSenderResponse>(API_ENDPOINTS.sender.getSender(userId), {
+	async getSender(_userId: string, accessToken: string) {
+		return apiRequest<GetSenderResponse>(API_ENDPOINTS.sender.getSender, {
 			method: "GET",
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
@@ -192,8 +204,17 @@ export const senderService = {
 		});
 	},
 
-	async getPackages(userId: string, accessToken: string) {
-		return apiRequest<GetPackagesResponse>(API_ENDPOINTS.sender.getPackages(userId), {
+	async getPackages(_userId: string, accessToken: string) {
+		return apiRequest<GetPackagesResponse>(API_ENDPOINTS.sender.getPackages, {
+			method: "GET",
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+			},
+		});
+	},
+
+	async getPackage(packageId: string, accessToken: string) {
+		return apiRequest<Package>(API_ENDPOINTS.sender.getPackage(packageId), {
 			method: "GET",
 			headers: {
 				Authorization: `Bearer ${accessToken}`,

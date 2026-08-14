@@ -7,27 +7,39 @@ export const API_ENDPOINTS = {
 		verifyOtp: "/auth/verify-otp",
 	},
 	users: {
-		get: (userId: string) => `/users/${userId}`,
-		update: (userId: string) => `/users/update/${userId}`,
+		get: "/users/profile/me",
+		update: "/users/update/profile/me",
+
+		// Bank and Card stuff.
 		createBankAccount: "/users/create-bank-account",
-		listBankAccounts: "/users/bank-accounts",
-		updateBankAccount: (id: string) => `/users/bank-accounts/${id}`,
-		deleteBankAccount: (id: string) => `/users/bank-accounts/${id}`,
-		setDefaultBankAccount: (id: string) => `/users/bank-accounts/${id}/default`,
+		listBankAccounts: "/users/bank-accounts/me",
+		updateBankAccount: (bankAccountId: string) => `/users/update-bank-account/me/${bankAccountId}`,
+		deleteBankAccount: (bankAccountId: string) => `/users/delete-bank-accounts/me/${bankAccountId}`,
+		setDefaultBankAccount: (bankAccountId: string) => `/users/update-bank-account/me/${bankAccountId}`,
 		createPaymentCard: "/users/create-payment-card",
+		getPaymentCards: "/users/user-cards/me",
+		deletePaymentCard: (id: string) => `/users/delete-payment-card/${id}`,
+
+		// To be implemented on BE
+		createAddress: "/users/create-address",
+		updateAddress: "/users/update-address",
+		getAddresses: "/users/get-addresses/me",
+		getSingleAddress: (id: string) => `/users/get-address/${id}`,
+		deleteAddress: (id: string) => `/users/delete-address/${id}`
 	},
 	traveller: {
-		createTraveller: "/traveller/create-traveller",
-		createTrip: "/traveller/create-trip-localized/me",
-		getTrips: "/traveller/get-trips/me",
-		getTraveller: "/traveller/get-traveller/me",
-		findTrip: (tripId: string) => `/traveller/find-trip/${tripId}`,
+		createTraveller: "/travellers/create-traveller-localized/me",
+		createTrip: "/travellers/create-trip-localized/me",
+		getTrips: "/travellers/get-trips/me",
+		getTraveller: "/travellers/get-traveller/me",
+		findTrip: (tripId: string) => `/travellers/find-trip/${tripId}`,
 	},
 	sender: {
-		createSender: "/sender/create-sender",
-		getSender: (userId: string) => `/sender/${userId}`,
-		createPackage: "/sender/create-package",
-		getPackages: (userId: string) => `/sender/${userId}/packages/all`,
+		createSender: "/senders/create-sender-localized/me",
+		getSender: "/senders/get-sender/me",
+		createPackage: "/senders/create-package-localized/me",
+		getPackages: "/senders/packages/me",
+		getPackage: (packageId: string) => `/senders/get-package/${packageId}`
 	},
 	matching: {
 		autoAssign: (packageId: string) => `/matching/auto-assign/${packageId}`,
@@ -35,6 +47,7 @@ export const API_ENDPOINTS = {
 	banks: {
 		getSupportedAccounts: (countryCode: string) =>
 			`/banks/get-supported-bank-accounts?country=${encodeURIComponent(countryCode)}`,
+		getBankBranchesInfo: (supportedBankId: number) => `/banks/get-supported-bank-branches/${supportedBankId}`
 	},
 	payments: {
 		initiateCharge: "/payments/initiate-charge",
@@ -44,6 +57,8 @@ export const API_ENDPOINTS = {
 		getUploadUrls: (userId: string) => `/smile-id/upload-urls/${userId}`,
 		submitVerification: "/smile-id/document-verification",
 		getJobStatus: "/smile-id/get-job-status",
+		kycVerifyOtp: "/kyc/verify-otp",
+		requestPhoneNumberOtpKyc: "/kyc/request-otp",
 	},
 	shipments: {
 		findOne: (shipmentId: string) => `/shipments/find-one/${shipmentId}`,
@@ -65,7 +80,11 @@ export const API_ENDPOINTS = {
 	pushNotifications: {
 		me: (page: number, limit: number) =>
 			`/push-notifications/me?page=${page}&limit=${limit}`,
+		markNotificationsAsRead: "/push-notifications/mark-read"
 	},
+	complaints: {
+		submitComplaint: '/users/submit-complaint'
+	}
 } as const;
 
 export interface ApiResponse<T> {

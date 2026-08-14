@@ -31,6 +31,12 @@ const KYCVerificationScreen: React.FC<KYCVerificationScreenProps> = ({ onBeginKY
           onPress={() => router.push("/(KYC)/verifyPhoneNoScreen")}
           style={styles.button}
         />
+        <CustomButton
+          title="Go Home"
+          variant="secondary"
+          onPress={() => router.replace("/(tabs)/home")}
+          style={styles.button}
+        />
       </View>
     </View>
   );

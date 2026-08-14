@@ -56,7 +56,7 @@ export const usePayoutAccounts = () => {
     const result = await paymentService.listBankAccounts(accessToken);
     if (result.ok && result.data) {
       const list = Array.isArray(result.data) ? result.data : result.data.data;
-      setAccounts(list || []);
+      setAccounts((list || []).map((account) => ({ ...account, id: account.id ?? account.bankAccountId ?? "" })));
     } else {
       setError(result.error || "Unable to load payout accounts.");
       setAccounts([]);

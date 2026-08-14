@@ -62,7 +62,6 @@ const PackageDetailsScreen = () => {
 
         const createTravellerResult = await travellerService.createTraveller(
           {
-            userId,
             firstName: userResult.data.firstName,
             lastName: userResult.data.lastName,
             email: userResult.data.email,

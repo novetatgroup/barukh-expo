@@ -3,7 +3,6 @@ import type { GetShipmentsResponse } from "./senderService";
 import { TripCategory } from "@/types/trip";
 
 export interface CreateTravellerParams {
-	userId: string;
 	firstName: string;
 	lastName: string;
 	email: string;
@@ -19,6 +18,7 @@ export interface TravellerProfile {
 	travellerId: string;
 	userId: string;
 	status: string;
+	travellerNumber: string;
 }
 
 export interface CreateTripParams {
@@ -49,20 +49,22 @@ export interface CreateTripResponse {
 
 export interface Trip {
 	id: string;
-	userId: string;
-	originCountry: string;
-	originCity: string;
-	destinationCountry: string;
-	destinationCity: string;
-	departureAt: string;
-	arrivalAt: string;
-	mode: string;
+	travellerId: string;
 	status: string;
-	maxWeightKg: number;
+	mode: string;
+	originCountry: string;
+	destinationCountry: string;
+	// The list endpoint (get-trips/me) does not currently return these —
+	// only findTrip's richer TripDetails response is guaranteed to have them.
+	originCity?: string;
+	destinationCity?: string;
+	departureAt?: string;
+	arrivalAt?: string;
+	maxWeightKg?: number;
 	flightNumber?: string;
 	vehiclePlate?: string;
-	createdAt: string;
-	updatedAt: string;
+	createdAt?: string;
+	updatedAt?: string;
 }
 
 export interface TripDetails {
