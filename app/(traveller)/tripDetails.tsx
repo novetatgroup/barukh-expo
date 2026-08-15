@@ -1,6 +1,5 @@
 import { Theme } from "@/constants/Theme";
 import { AuthContext } from "@/context/AuthContext";
-import { extractShipmentsList } from "@/services/senderService";
 import { travellerService, TripDetails } from "@/services/travellerService";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
@@ -43,20 +42,9 @@ const TripDetailsScreen = () => {
     setTrip(result.data);
 
     if (!params.matchedShipmentId) {
-      const travellerResult = await travellerService.getTraveller(accessToken);
-      if (travellerResult.ok && travellerResult.data?.travellerId) {
-        const shipmentsResult = await travellerService.getTravellerShipments(
-          travellerResult.data.travellerId,
-          accessToken
-        );
-        if (shipmentsResult.ok && shipmentsResult.data) {
-          const matched = extractShipmentsList(shipmentsResult.data).find(
-            (item) => item.tripId === tripId
-          );
-          if (matched) {
-            setMatchedShipmentId(matched.id);
-          }
-        }
+      const shipmentsResult = await travellerService.findShipmentsByTrip(tripId, accessToken, 1, 1);
+      if (shipmentsResult.ok && shipmentsResult.data?.data?.[0]) {
+        setMatchedShipmentId(shipmentsResult.data.data[0].id);
       }
     }
   }, [accessToken, tripId, params.matchedShipmentId]);
@@ -78,7 +66,7 @@ const TripDetailsScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
+        <TouchableOpacity onPress={() => router.dismissTo("/(tabs)/shipments")} style={styles.headerButton}>
           <Ionicons name="chevron-back" size={26} color={Theme.colors.black} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Trip Details</Text>

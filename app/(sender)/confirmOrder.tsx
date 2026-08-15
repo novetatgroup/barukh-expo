@@ -91,10 +91,7 @@ const ConfirmOrderScreen = () => {
   };
 
   const handleReject = () => {
-    router.replace({
-      pathname: "/(sender)/trackingDetails",
-      params: trackingParams,
-    });
+    router.back();
   };
 
   const handleConfirm = () => {

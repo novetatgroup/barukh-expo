@@ -44,10 +44,7 @@ const UploadReceiptScreen = () => {
   };
 
   const handleBack = () => {
-    router.replace({
-      pathname: "/(sender)/trackingDetails",
-      params: trackingParams,
-    });
+    router.back();
   };
 
   const pickImage = async () => {

@@ -104,7 +104,7 @@ export interface ShipmentDetails {
 		mode: string;
 	};
 	sender: { id: string; userId: string };
-	traveller: { id: string; userId: string };
+	traveller: { id: string; userId: string; rating?: number };
 	deliveryPhotoUrl?: string | null;
 	referenceNumber: string;
 }
@@ -296,6 +296,23 @@ export const senderService = {
 	async getSenderShipments(senderId: string, accessToken: string) {
 		return apiRequest<GetShipmentsResponse>(
 			API_ENDPOINTS.shipments.listByRole(senderId, "SENDER"),
+			{
+				method: "GET",
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			}
+		);
+	},
+
+	async findShipmentsByPackage(
+		packageId: string,
+		accessToken: string,
+		page: number = 1,
+		limit: number = 10
+	) {
+		return apiRequest<GetShipmentsResponse>(
+			API_ENDPOINTS.shipments.findByPackage(packageId, page, limit),
 			{
 				method: "GET",
 				headers: {

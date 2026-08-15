@@ -252,7 +252,9 @@ const TravellerTripsList = () => {
 
                 <View style={styles.cardText}>
                   <Text style={styles.name}>
-                    {item.originCity || item.originCountry} → {item.destinationCity || item.destinationCountry}
+                    {item.originCity || item.originCountry}
+                    <Text style={styles.nameConnector}> to </Text>
+                    {item.destinationCity || item.destinationCountry}
                   </Text>
                   <Text style={styles.item}>{item.mode}</Text>
                   <Text style={styles.detail}>{item.status}</Text>
@@ -351,6 +353,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Theme.colors.text.dark,
     marginBottom: 2,
+  },
+  nameConnector: {
+    fontFamily: "Inter-Regular",
   },
   item: {
     color: Theme.colors.text.gray,

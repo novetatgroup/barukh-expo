@@ -178,6 +178,23 @@ export const travellerService = {
 		);
 	},
 
+	async findShipmentsByTrip(
+		tripId: string,
+		accessToken: string,
+		page: number = 1,
+		limit: number = 10
+	) {
+		return apiRequest<GetShipmentsResponse>(
+			API_ENDPOINTS.shipments.findByTrip(tripId, page, limit),
+			{
+				method: "GET",
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			}
+		);
+	},
+
 	async updateShipmentStatus(
 		shipmentId: string,
 		params: UpdateShipmentStatusParams,

@@ -73,6 +73,10 @@ export const API_ENDPOINTS = {
 		update: (shipmentId: string) => `/shipments/${shipmentId}`,
 		listByRole: (actorId: string, role: "SENDER" | "TRAVELLER") =>
 			`/shipments/${actorId}/?role=${role}`,
+		findByTrip: (tripId: string, page: number = 1, limit: number = 10) =>
+			`/shipments/find-by-trip/${tripId}?page=${page}&limit=${limit}`,
+		findByPackage: (packageId: string, page: number = 1, limit: number = 10) =>
+			`/shipments/find-by-package/${packageId}?page=${page}&limit=${limit}`,
 		submitReview: "/shipments/submit-review",
 		travellerConfirm: (shipmentId: string) =>
 			`/shipments/${shipmentId}/traveller-confirm`,

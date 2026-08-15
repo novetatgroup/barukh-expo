@@ -28,6 +28,7 @@ const ShipmentDetailsScreen = () => {
   const params = useLocalSearchParams<{
     id?: string;
     shipmentId?: string;
+    orderId?: string;
     itemId?: string;
     itemName?: string;
     fromLocation?: string;
@@ -47,6 +48,8 @@ const ShipmentDetailsScreen = () => {
   const itemId = shipment?.packageId
     ? `#${shipment.packageId.slice(0, 8).toUpperCase()}`
     : (params.itemId as string) || "—";
+  const referenceNumber =
+    shipment?.referenceNumber || (params.orderId as string) || itemId;
   const itemName = shipment?.package?.name || (params.itemName as string) || "—";
   const fromLocation =
     shipment?.package?.originCity ||
@@ -79,7 +82,7 @@ const ShipmentDetailsScreen = () => {
   );
 
   const handleBack = () => {
-    router.replace("/(tabs)/shipments");
+    router.back();
   };
 
   const handleOpenChat = () => {
@@ -105,7 +108,7 @@ const ShipmentDetailsScreen = () => {
     <ShipmentDetailsForm
       headerTitle={(params.title as string) || "Shipment Details"}
       shipmentId={shipmentId}
-      itemId={itemId}
+      itemId={referenceNumber}
       shipperName={(params.shipperName as string) || "—"}
       receiverName={(params.receiverName as string) || "—"}
       itemName={itemName}

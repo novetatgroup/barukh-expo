@@ -44,6 +44,7 @@ const SenderShipmentDetailsScreen = () => {
   const shipmentId = params.shipmentId || params.id || "";
   const id = shipmentId;
   const orderId = (params.orderId as string) || "#01-BK1624";
+  const referenceNumber = shipment?.referenceNumber || orderId;
   const itemId = shipment?.packageId
     ? `#${shipment.packageId.slice(0, 8).toUpperCase()}`
     : (params.itemId as string) || "—";
@@ -131,7 +132,7 @@ const SenderShipmentDetailsScreen = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => router.replace("/(tabs)/shipments")}
+          onPress={() => router.back()}
           style={styles.headerButton}
         >
           <Ionicons name="chevron-back" size={26} color={Theme.colors.black} />
@@ -171,7 +172,7 @@ const SenderShipmentDetailsScreen = () => {
             </View>
 
             <View style={styles.packageText}>
-              <Text style={styles.itemId}>{itemId}</Text>
+              <Text style={styles.itemId}>{referenceNumber}</Text>
               <Text style={styles.itemName}>{itemName}</Text>
             </View>
 

@@ -148,13 +148,7 @@ const TrackingDetailsScreen = () => {
   };
 
   const handleGoToShipmentDetails = () => {
-    router.replace({
-      pathname: "/(sender)/shipmentDetails",
-      params: {
-        id: shipmentId,
-        ...baseParams,
-      },
-    });
+    router.back();
   };
 
   return (

@@ -62,10 +62,7 @@ const EnterTrackingNumberScreen = () => {
   };
 
   const handleBack = () => {
-    router.replace({
-      pathname: "/(sender)/trackingDetails",
-      params: trackingParams,
-    });
+    router.back();
   };
 
   return (

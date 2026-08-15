@@ -79,7 +79,7 @@ const ProfileScreen = () => {
       : role === "SENDER"
         ? [{ icon: "card-outline" as const, label: "My Payments", route: "/(profile)/payments" as Href }]
         : []),
-    { icon: "cube-outline", label: "My Shipments", route: "/(tabs)/shipments" },
+    { icon: "briefcase-outline", label: "My Shipments", route: "/allShipments" },
 
     { icon: "help-circle-outline", label: "Help & Support", route: null },
     { icon: "settings-outline", label: "Settings", route: null },

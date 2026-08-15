@@ -51,9 +51,9 @@ const OnboardingSlideText = ({ item, index, scrollX }: OnboardingSlideTextProps)
     outputRange: [0, 1, 0],
     extrapolate: "clamp",
   });
-  const translateY = scrollX.interpolate({
+  const translateX = scrollX.interpolate({
     inputRange,
-    outputRange: [12, 0, -12],
+    outputRange: [60, 0, -60],
     extrapolate: "clamp",
   });
 
@@ -62,7 +62,7 @@ const OnboardingSlideText = ({ item, index, scrollX }: OnboardingSlideTextProps)
       style={[
         StyleSheet.absoluteFillObject,
         fixedStyles.textStack,
-        { opacity, transform: [{ translateY }] },
+        { opacity, transform: [{ translateX }] },
       ]}
     >
       <Text style={styles.title}>{item.title}</Text>

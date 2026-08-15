@@ -151,13 +151,7 @@ const TravellerTrackingDetailsScreen = () => {
   };
 
   const handleGoToShipmentDetails = () => {
-    router.replace({
-      pathname: "/(traveller)/shipmentDetails",
-      params: {
-        id: shipmentId,
-        ...baseParams,
-      },
-    });
+    router.back();
   };
 
   return (

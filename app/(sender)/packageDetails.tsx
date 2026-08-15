@@ -1,6 +1,6 @@
 import { Theme } from "@/constants/Theme";
 import { AuthContext } from "@/context/AuthContext";
-import { extractShipmentsList, Package, senderService } from "@/services/senderService";
+import { Package, senderService } from "@/services/senderService";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useContext, useState } from "react";
@@ -47,18 +47,12 @@ const PackageDetailsScreen = () => {
     setPackage(result.data);
 
     if (!params.matchedShipmentId) {
-      const senderId = params.senderId || result.data.senderId;
-      const shipmentsResult = await senderService.getSenderShipments(senderId, accessToken);
-      if (shipmentsResult.ok && shipmentsResult.data) {
-        const matched = extractShipmentsList(shipmentsResult.data).find(
-          (item) => item.packageId === packageId
-        );
-        if (matched) {
-          setMatchedShipmentId(matched.id);
-        }
+      const shipmentsResult = await senderService.findShipmentsByPackage(packageId, accessToken, 1, 1);
+      if (shipmentsResult.ok && shipmentsResult.data?.data?.[0]) {
+        setMatchedShipmentId(shipmentsResult.data.data[0].id);
       }
     }
-  }, [accessToken, packageId, params.matchedShipmentId, params.senderId]);
+  }, [accessToken, packageId, params.matchedShipmentId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -84,7 +78,7 @@ const PackageDetailsScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
+        <TouchableOpacity onPress={() => router.dismissTo("/(tabs)/shipments")} style={styles.headerButton}>
           <Ionicons name="chevron-back" size={26} color={Theme.colors.black} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Package Details</Text>

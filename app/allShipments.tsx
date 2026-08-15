@@ -1,9 +1,11 @@
 import ShipmentCard, { getShipmentDetailsRoute } from "@/components/shipments/ShipmentCard";
 import { Theme } from "@/constants/Theme";
+import { AuthContext } from "@/context/AuthContext";
 import { useShipments } from "@/hooks/useShipments";
+import { userService } from "@/services/userService";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -15,16 +17,43 @@ import {
 
 const AllShipmentsScreen = () => {
   const router = useRouter();
+  const { userId, accessToken } = useContext(AuthContext);
   const { shipments, loading, error, isTraveller, refresh } = useShipments();
+  const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (!userId || !accessToken) return;
+      const { data, ok } = await userService.getUser(userId, accessToken);
+      if (ok && data) {
+        setIsActive(data.isActive);
+      }
+    };
+    fetchUser();
+  }, [userId, accessToken]);
+
+  const handleCreatePress = () => {
+    if (!isActive) {
+      router.push("/(KYC)/KYCLanding");
+      return;
+    }
+
+    if (isTraveller) {
+      router.push("/(traveller)/packageDetails");
+    } else {
+      router.push({ pathname: "/(sender)/createShipment", params: { senderId: "" } });
+    }
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
-          <Ionicons name="chevron-back" size={26} color={Theme.colors.black} />
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color={Theme.colors.text.dark} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Shipments</Text>
-        <View style={styles.headerButton} />
+        <Text style={styles.title}>
+          My <Text style={styles.titleHighlight}>Shipments</Text>
+        </Text>
       </View>
 
       {loading && shipments.length === 0 ? (
@@ -51,7 +80,22 @@ const AllShipmentsScreen = () => {
               <View style={styles.emptyIconContainer}>
                 <Ionicons name="briefcase-outline" size={36} color={Theme.colors.primary} />
               </View>
-              <Text style={styles.emptyText}>{error || "No shipments found."}</Text>
+              <Text style={styles.emptyTitle}>No shipments yet</Text>
+              <Text style={styles.emptySubtext}>
+                {error ||
+                  (isTraveller
+                    ? "You haven't been matched with a shipment yet. "
+                    : "You haven't sent any packages yet. ")}
+                {!error ? (
+                  <>
+                    But you can create a new {isTraveller ? "trip" : "package"}{" "}
+                    <Text style={styles.emptyLink} onPress={handleCreatePress}>
+                      here
+                    </Text>
+                    .
+                  </>
+                ) : null}
+              </Text>
             </View>
           }
         />
@@ -66,24 +110,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Theme.colors.background.secondary,
-    paddingHorizontal: Theme.screenPadding.horizontal / 1.5,
+    paddingHorizontal: Theme.screenPadding.horizontal,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 96,
-    paddingBottom: Theme.spacing.xl,
+    paddingTop: Theme.spacing.xxxxl,
+    marginTop: Theme.spacing.lg,
+    marginBottom: Theme.spacing.xl,
   },
-  headerButton: {
-    width: 32,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
+  backButton: {
+    marginRight: Theme.spacing.md,
   },
-  headerTitle: {
-    fontSize: 17,
-    fontFamily: "Inter-SemiBold",
+  title: {
+    fontSize: 28,
+    fontFamily: "Inter-Regular",
+    color: Theme.colors.text.dark,
+  },
+  titleHighlight: {
+    fontFamily: "Inter-Bold",
     color: Theme.colors.text.dark,
   },
   loadingContainer: {
@@ -92,25 +137,39 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   listContent: {
+    flexGrow: 1,
     paddingBottom: 100,
   },
   emptyStateContainer: {
+    flexGrow: 1,
     alignItems: "center",
-    marginTop: Theme.spacing.xxl,
+    justifyContent: "center",
+    paddingHorizontal: Theme.spacing.xl,
   },
   emptyIconContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     backgroundColor: Theme.colors.background.border,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: Theme.spacing.md,
   },
-  emptyText: {
-    textAlign: "center",
-    color: Theme.colors.text.gray,
+  emptyTitle: {
+    fontSize: 18,
+    fontFamily: "Inter-Bold",
+    color: Theme.colors.text.dark,
+    marginBottom: Theme.spacing.sm,
+  },
+  emptySubtext: {
     fontSize: 14,
     fontFamily: "Inter-Regular",
+    color: Theme.colors.text.gray,
+    textAlign: "center",
+    lineHeight: 22,
+  },
+  emptyLink: {
+    color: Theme.colors.secondary,
+    fontFamily: "Inter-SemiBold",
   },
 });
