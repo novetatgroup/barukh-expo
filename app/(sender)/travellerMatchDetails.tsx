@@ -84,7 +84,7 @@ const TravellerMatchDetailsScreen = () => {
     fetchMatch();
   }, [shipmentId, accessToken]);
 
-  const displayItemName = itemName || "Macbook Pro";
+  const displayItemName = itemName || "—";
 
   const handleMakePayment = () => {
     router.push({

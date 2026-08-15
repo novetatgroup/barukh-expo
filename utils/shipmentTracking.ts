@@ -1,12 +1,14 @@
 import type { ShipmentDetails } from "@/services/senderService";
 
-export type ShipmentStage = "PENDING" | "PICKED_UP" | "IN_TRANSIT" | "DELIVERED";
+export type ShipmentStage = "PENDING" |  "QUOTE_INITIATED"  | "QUOTE_SENT" | "PICKED_UP" | "IN_TRANSIT" | "DELIVERED";
 
 const stageRank: Record<ShipmentStage, number> = {
   PENDING: 0,
-  PICKED_UP: 1,
-  IN_TRANSIT: 2,
-  DELIVERED: 3,
+  QUOTE_INITIATED: 1,
+  QUOTE_SENT: 2,
+  PICKED_UP: 3,
+  IN_TRANSIT: 4,
+  DELIVERED: 5,
 };
 
 export const normalizeShipmentStatus = (status?: string | null): ShipmentStage => {

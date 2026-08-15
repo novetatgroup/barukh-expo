@@ -31,6 +31,7 @@ const SenderShipmentDetailsScreen = () => {
     orderId?: string;
     itemId?: string;
     itemName?: string;
+    status?: string;
     progress?: string;
     shipperName?: string;
     senderUserId?: string;
@@ -43,23 +44,25 @@ const SenderShipmentDetailsScreen = () => {
   const shipmentId = params.shipmentId || params.id || "";
   const id = shipmentId;
   const orderId = (params.orderId as string) || "#01-BK1624";
+  const referenceNumber = shipment?.referenceNumber || orderId;
   const itemId = shipment?.packageId
     ? `#${shipment.packageId.slice(0, 8).toUpperCase()}`
-    : (params.itemId as string) || "#BK1624";
-  const itemName = shipment?.package?.name || (params.itemName as string) || "MacBook Pro";
-  const progress = formatShipmentStatus(shipment?.status || params.progress || "PENDING");
-  const shipperName = (params.shipperName as string) || "James Lutalo";
-  const recipientName = (params.recipientName as string) || "Sanyu Twine";
+    : (params.itemId as string) || "—";
+  const itemName = shipment?.package?.name || (params.itemName as string) || "—";
+  const status = shipment?.status || params.status || params.progress || "PENDING";
+  const progress = formatShipmentStatus(status);
+  const shipperName = (params.shipperName as string) || "—";
+  const recipientName = (params.recipientName as string) || "—";
   const fromLocation =
     shipment?.package?.originCity ||
     shipment?.travel?.originCity ||
     (params.fromLocation as string) ||
-    "Ontario, Canada";
+    "—";
   const toLocation =
     shipment?.package?.destinationCity ||
     shipment?.travel?.destinationCity ||
     (params.toLocation as string) ||
-    "Kampala, Uganda";
+    "—";
   const deliveryPhotoUrl = getShipmentDeliveryPhotoUrl(shipment);
 
   const fetchShipment = useCallback(async () => {
@@ -93,7 +96,7 @@ const SenderShipmentDetailsScreen = () => {
         orderId,
         itemId,
         itemName,
-        status: shipment?.status || params.progress || "PENDING",
+        status,
         progress,
       },
     });
@@ -129,7 +132,7 @@ const SenderShipmentDetailsScreen = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => router.replace("/(tabs)/shipments")}
+          onPress={() => router.back()}
           style={styles.headerButton}
         >
           <Ionicons name="chevron-back" size={26} color={Theme.colors.black} />
@@ -169,7 +172,7 @@ const SenderShipmentDetailsScreen = () => {
             </View>
 
             <View style={styles.packageText}>
-              <Text style={styles.itemId}>{itemId}</Text>
+              <Text style={styles.itemId}>{referenceNumber}</Text>
               <Text style={styles.itemName}>{itemName}</Text>
             </View>
 

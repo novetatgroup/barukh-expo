@@ -23,18 +23,12 @@ const statusIcon = (status: PaymentStatus | null) => {
   }
 };
 
-const PaymentReturnForm = ({ mode, loading, message, paymentStatus, continueToPayment }: Props) => {
+const PaymentReturnForm = ({ loading, message, paymentStatus, continueToPayment }: Props) => {
   const presentation = statusIcon(paymentStatus);
 
   return (
     <View style={styles.container} accessibilityLiveRegion="polite">
       <View style={styles.card}>
-        {mode === "mock" ? (
-          <View style={styles.mockBadge}>
-            <Ionicons name="flask-outline" size={15} color={Theme.colors.primary} />
-            <Text style={styles.mockBadgeText}>Development mock</Text>
-          </View>
-        ) : null}
         {loading ? (
           <ActivityIndicator size="large" color={Theme.colors.primary} />
         ) : (
@@ -66,21 +60,6 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.white,
     borderRadius: Theme.borderRadius.md,
     padding: Theme.spacing.xl,
-  },
-  mockBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Theme.spacing.sm,
-    borderRadius: Theme.borderRadius.xl,
-    paddingHorizontal: Theme.spacing.md,
-    paddingVertical: Theme.spacing.sm,
-    backgroundColor: Theme.colors.yellow,
-    marginBottom: Theme.spacing.md,
-  },
-  mockBadgeText: {
-    fontSize: 12,
-    fontFamily: "Inter-SemiBold",
-    color: Theme.colors.primary,
   },
   title: {
     fontSize: 19,

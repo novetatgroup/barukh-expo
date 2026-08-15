@@ -1,7 +1,5 @@
 import { AuthContext } from "@/context/AuthContext";
 import { usePayment } from "@/context/PaymentContext";
-import { getPaymentExecutionMode } from "@/services/paymentConfig";
-import { paymentMockService } from "@/services/paymentMockService";
 import { paymentService } from "@/services/paymentService";
 import { PaymentStatus } from "@/types/payment";
 import { useRouter } from "expo-router";
@@ -15,14 +13,6 @@ const statusMessages: Record<PaymentStatus, string> = {
   REFUNDED: "The payment service confirmed that the payment was refunded.",
 };
 
-const mockStatusMessages: Record<PaymentStatus, string> = {
-  CAPTURED: "The development scenario reconciled as captured. No real charge was made.",
-  PENDING: "The simulated payment remains pending. Redirect values were not used as proof of success.",
-  FAILED: "The development scenario reconciled as failed.",
-  CANCELLED: "The development scenario reconciled as cancelled.",
-  REFUNDED: "The development fixture reconciled as refunded.",
-};
-
 export const usePaymentReturn = () => {
   const router = useRouter();
   const { userId, accessToken } = useContext(AuthContext);
@@ -33,7 +23,6 @@ export const usePaymentReturn = () => {
     isRestoring,
     updateSafePayment,
   } = usePayment();
-  const mode = getPaymentExecutionMode();
   const [message, setMessage] = useState("Checking the saved payment reference...");
   const [loading, setLoading] = useState(true);
   const ranRef = useRef(false);
@@ -42,46 +31,59 @@ export const usePaymentReturn = () => {
     if (isRestoring || ranRef.current) return;
     ranRef.current = true;
 
+    const POLL_INTERVAL_MS = 3000;
+    const MAX_ATTEMPTS = 20;
+
+    const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
     const reconcile = async () => {
-      if (!reference || !shipmentId || !userId) {
+      if (!reference || !shipmentId || !userId || !accessToken) {
         setMessage("No saved payment is available to reconcile.");
         setLoading(false);
         return;
       }
 
       await updateSafePayment({ uiPhase: "recovering" });
-      const result =
-        mode === "mock"
-          ? await paymentMockService.reconcile(userId, reference)
-          : accessToken
-            ? (await paymentService.getPaymentStatus(reference, accessToken)).data
-            : null;
 
-      if (!result) {
-        setMessage(
-          mode === "mock"
-            ? "The simulated payment could not be recovered."
-            : "Authoritative payment status recovery is not available yet.",
-        );
-        setLoading(false);
-        return;
+      for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
+        const result = (await paymentService.getPaymentStatus(reference, accessToken)).data;
+
+        if (!result) {
+          setMessage("Authoritative payment status recovery is not available yet.");
+          setLoading(false);
+          return;
+        }
+
+        if (result.paymentStatus !== "PENDING") {
+          await updateSafePayment({
+            reference: result.reference,
+            paymentStatus: result.paymentStatus,
+            uiPhase: "complete",
+          });
+          setMessage(statusMessages[result.paymentStatus]);
+          setLoading(false);
+          return;
+        }
+
+        await updateSafePayment({
+          reference: result.reference,
+          paymentStatus: result.paymentStatus,
+          uiPhase: "recovering",
+        });
+
+        if (attempt < MAX_ATTEMPTS - 1) {
+          await wait(POLL_INTERVAL_MS);
+        }
       }
 
-      await updateSafePayment({
-        reference: result.reference,
-        paymentStatus: result.paymentStatus,
-        uiPhase: result.paymentStatus === "PENDING" ? "recovering" : "complete",
-      });
       setMessage(
-        mode === "mock"
-          ? mockStatusMessages[result.paymentStatus]
-          : statusMessages[result.paymentStatus],
+        "The payment is still processing. We'll notify you as soon as it's confirmed — safe to close this screen.",
       );
       setLoading(false);
     };
 
     void reconcile();
-  }, [accessToken, isRestoring, mode, reference, shipmentId, updateSafePayment, userId]);
+  }, [accessToken, isRestoring, reference, shipmentId, updateSafePayment, userId]);
 
   const continueToPayment = () => {
     if (!shipmentId) {
@@ -94,5 +96,5 @@ export const usePaymentReturn = () => {
     });
   };
 
-  return { mode, loading, message, paymentStatus, continueToPayment };
+  return { loading, message, paymentStatus, continueToPayment };
 };

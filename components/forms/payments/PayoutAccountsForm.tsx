@@ -1,8 +1,10 @@
-import CustomDropdown from "@/components/ui/Dropdown";
 import SupportedBankPicker from "@/components/forms/payments/SupportedBankPicker";
+import CustomDropdown from "@/components/ui/Dropdown";
+import SampleDataBanner from "@/components/ui/SampleDataBanner";
 import { PAYOUT_COUNTRIES } from "@/constants/payout";
 import { Theme } from "@/constants/Theme";
 import { usePayoutAccounts } from "@/hooks/usePayoutAccounts";
+import { PayoutState } from "@/types/payment";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
@@ -20,12 +22,31 @@ import {
 type Props = ReturnType<typeof usePayoutAccounts>;
 type Tab = "accounts" | "payouts";
 
+const SAMPLE_PAYOUTS: PayoutState[] = [
+  {
+    status: "PROCESSING",
+    shipmentId: "SAMPLE-payout-1",
+    updatedAt: "2026-08-02T11:00:00.000Z",
+  },
+  {
+    status: "PAID",
+    shipmentId: "SAMPLE-payout-2",
+    updatedAt: "2026-07-28T08:45:00.000Z",
+    maskedAccount: "**** 1208",
+  },
+  {
+    status: "REJECTED",
+    shipmentId: "SAMPLE-payout-3",
+    updatedAt: "2026-07-24T16:20:00.000Z",
+    guidance:
+      "Check your bank details and contact support. Payout retry is handled by the operations team after the account issue is resolved.",
+  },
+];
+
 const PayoutAccountsForm = (props: Props) => {
   const [tab, setTab] = useState<Tab>("accounts");
   const {
-    mode,
     accounts,
-    payouts,
     loading,
     submitting,
     error,
@@ -52,8 +73,8 @@ const PayoutAccountsForm = (props: Props) => {
 
   const confirmDelete = (accountId: string) => {
     Alert.alert(
-      "Delete development account?",
-      "This removes only the local masked fixture.",
+      "Delete payout account?",
+      "This account will no longer receive future payouts. Existing payouts are unaffected.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -86,15 +107,6 @@ const PayoutAccountsForm = (props: Props) => {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        {mode === "mock" ? (
-          <View style={styles.mockNotice}>
-            <Ionicons name="flask-outline" size={18} color={Theme.colors.primary} />
-            <Text style={styles.mockNoticeText}>
-              Lists and edits are development fixtures. Creating a new account calls the real bank-account API and never falls back to mock success.
-            </Text>
-          </View>
-        ) : null}
-
         {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
         {success ? <Text style={styles.successBanner}>{success}</Text> : null}
 
@@ -110,7 +122,7 @@ const PayoutAccountsForm = (props: Props) => {
             {formVisible ? (
               <View style={styles.formCard}>
                 <View style={styles.formHeader}>
-                  <Text style={styles.sectionTitle}>{editingId ? "Edit development account" : "Create payout account"}</Text>
+                  <Text style={styles.sectionTitle}>{editingId ? "Edit payout account" : "Create payout account"}</Text>
                   <TouchableOpacity onPress={closeForm} accessibilityLabel="Close payout form">
                     <Ionicons name="close" size={22} color={Theme.colors.text.gray} />
                   </TouchableOpacity>
@@ -145,7 +157,7 @@ const PayoutAccountsForm = (props: Props) => {
                   <Switch value={form.isDefault} onValueChange={(value) => updateField("isDefault", value)} trackColor={{ true: Theme.colors.yellow, false: Theme.colors.text.border }} thumbColor={Theme.colors.primary} />
                 </View>
                 <TouchableOpacity style={[styles.primaryButton, submitting && styles.disabled]} disabled={submitting} onPress={() => void submit()}>
-                  {submitting ? <ActivityIndicator color={Theme.colors.white} /> : <Text style={styles.primaryButtonText}>{editingId ? "Save development changes" : "Create payout account"}</Text>}
+                  {submitting ? <ActivityIndicator color={Theme.colors.white} /> : <Text style={styles.primaryButtonText}>{editingId ? "Save changes" : "Create payout account"}</Text>}
                 </TouchableOpacity>
               </View>
             ) : null}
@@ -162,29 +174,32 @@ const PayoutAccountsForm = (props: Props) => {
                   <Text style={styles.accountMeta}>{account.maskedAccountNumber} - {account.currency}</Text>
                   {account.swiftCode ? <Text style={styles.accountMeta}>SWIFT {account.swiftCode}</Text> : null}
                 </View>
-                {mode === "mock" ? (
-                  <View style={styles.accountActions}>
-                    {!account.isDefault ? (
-                      <TouchableOpacity onPress={() => void setDefault(account.id)} style={styles.actionIcon} accessibilityLabel="Make default account">
-                        <Ionicons name="star-outline" size={18} color={Theme.colors.primary} />
-                      </TouchableOpacity>
-                    ) : null}
-                    <TouchableOpacity onPress={() => openEdit(account)} style={styles.actionIcon} accessibilityLabel="Edit account">
-                      <Ionicons name="create-outline" size={19} color={Theme.colors.primary} />
+                <View style={styles.accountActions}>
+                  {!account.isDefault ? (
+                    <TouchableOpacity onPress={() => void setDefault(account.id)} style={styles.actionIcon} accessibilityLabel="Make default account">
+                      <Ionicons name="star-outline" size={18} color={Theme.colors.primary} />
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => confirmDelete(account.id)} style={styles.actionIcon} accessibilityLabel="Delete account">
-                      <Ionicons name="trash-outline" size={18} color={Theme.colors.error} />
-                    </TouchableOpacity>
-                  </View>
-                ) : null}
+                  ) : null}
+                  <TouchableOpacity onPress={() => openEdit(account)} style={styles.actionIcon} accessibilityLabel="Edit account">
+                    <Ionicons name="create-outline" size={19} color={Theme.colors.primary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => confirmDelete(account.id)} style={styles.actionIcon} accessibilityLabel="Delete account">
+                    <Ionicons name="trash-outline" size={18} color={Theme.colors.error} />
+                  </TouchableOpacity>
+                </View>
               </View>
             ))}
 
-            {mode !== "mock" ? <View style={styles.disabledNotice}><Text style={styles.helpText}>Bank listing, update, default switching, and deletion are disabled until backend contracts are supplied.</Text></View> : null}
+            {!loading && accounts.length === 0 ? (
+              <View style={styles.disabledNotice}>
+                <Text style={styles.helpText}>No payout accounts yet. Add one to receive payments.</Text>
+              </View>
+            ) : null}
           </>
         ) : (
           <>
-            {payouts.map((payout) => (
+            <SampleDataBanner />
+            {SAMPLE_PAYOUTS.map((payout) => (
               <View key={payout.shipmentId} style={styles.payoutCard}>
                 <View style={styles.payoutHeader}>
                   <Text style={styles.accountTitle}>{payout.shipmentId}</Text>
@@ -196,7 +211,6 @@ const PayoutAccountsForm = (props: Props) => {
                 {payout.status === "REJECTED" ? <View style={styles.rejectedGuide}><Text style={styles.helpText}>{payout.guidance}</Text><Text style={styles.noRetry}>No payout retry is available in the app.</Text></View> : null}
               </View>
             ))}
-            {payouts.length === 0 ? <View style={styles.disabledNotice}><Text style={styles.helpText}>Payout status is disabled until the backend status contract is supplied.</Text></View> : null}
           </>
         )}
       </ScrollView>
@@ -215,8 +229,6 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 13, fontFamily: "Inter-Regular", color: Theme.colors.text.gray },
   activeTabText: { fontFamily: "Inter-SemiBold", color: Theme.colors.primary },
   content: { padding: Theme.screenPadding.horizontal, paddingBottom: Theme.spacing.xxxxxl, gap: Theme.spacing.md },
-  mockNotice: { flexDirection: "row", alignItems: "flex-start", gap: Theme.spacing.sm, backgroundColor: Theme.colors.yellow, borderRadius: Theme.borderRadius.sm, padding: Theme.spacing.md },
-  mockNoticeText: { flex: 1, fontSize: 12, lineHeight: 18, fontFamily: "Inter-Regular", color: Theme.colors.primary },
   primaryButton: { minHeight: 52, flexDirection: "row", gap: Theme.spacing.sm, alignItems: "center", justifyContent: "center", backgroundColor: Theme.colors.primary, borderRadius: Theme.borderRadius.xl, paddingHorizontal: Theme.spacing.md },
   primaryButtonText: { fontSize: 14, fontFamily: "Inter-SemiBold", color: Theme.colors.white, textAlign: "center" },
   disabled: { opacity: 0.5 },

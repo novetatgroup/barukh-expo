@@ -1,17 +1,14 @@
-import React, { useContext, useState } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
 import MatchDetailsForm from '@/components/forms/traveller/MatchDetailsForm';
 import { AuthContext } from '@/context/AuthContext';
-import { getPaymentExecutionMode } from '@/services/paymentConfig';
-import { paymentMockService } from '@/services/paymentMockService';
+import { senderService } from '@/services/senderService';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useContext, useState } from 'react';
 
 const MatchDetailsScreen = () => {
   const router = useRouter();
-  const { userId } = useContext(AuthContext);
+  const { accessToken } = useContext(AuthContext);
   const params = useLocalSearchParams();
-  const mode = getPaymentExecutionMode();
-  const suppliedShipmentId = params.shipmentId as string | undefined;
-  const shipmentId = suppliedShipmentId || (mode === "mock" ? "mock-shipment-001" : "");
+  const shipmentId = (params.shipmentId as string | undefined) || "";
   const [actionMessage, setActionMessage] = useState<string | null>(
     shipmentId ? null : "This match is missing the shipment ID required for acceptance.",
   );
@@ -25,26 +22,25 @@ const MatchDetailsScreen = () => {
       setActionMessage("This match is missing the shipment ID required for acceptance.");
       return;
     }
-    if (mode !== "mock") {
-      setActionMessage(
-        "Real acceptance is blocked until the backend shipment-status contract is confirmed.",
-      );
-      return;
-    }
-    if (!userId) {
+    if (!accessToken) {
       setActionMessage("Your session is unavailable. Please log in again.");
       return;
     }
-    await paymentMockService.markShipmentAccepted(userId, shipmentId);
+    // TODO(izaiah): confirm the canonical accept-shipment endpoint.
+    // Currently uses the traveller-confirm-transport endpoint as a placeholder.
+    const result = await senderService.travellerConfirmShipment(shipmentId, accessToken);
+    if (!result.ok) {
+      setActionMessage(result.error || "Unable to accept this shipment.");
+      return;
+    }
     router.replace({
       pathname: "/(traveller)/acceptedShipmentDetails",
       params: {
         id: shipmentId,
         status: "Accepted",
-        senderName: (params.matchedUserName as string) || "Sender",
-        packageName: (params.itemName as string) || "Package",
-        acceptanceCode: `MOCK-${shipmentId.slice(-4).toUpperCase()}`,
-        pickupPoint: (params.fromLocation as string) || "Pickup point",
+        senderName: (params.matchedUserName as string) || "—",
+        packageName: (params.itemName as string) || "—",
+        pickupPoint: (params.fromLocation as string) || "—",
         handoffDate: "Pending",
       },
     });
@@ -55,26 +51,18 @@ const MatchDetailsScreen = () => {
       setActionMessage("This match is missing the shipment ID required for decline.");
       return;
     }
-    if (mode === "mock") {
-      if (userId) {
-        await paymentMockService.clearShipmentAcceptance(userId, shipmentId);
-      }
-      router.back();
-      return;
-    }
-    setActionMessage(
-      "Real decline is blocked until the backend shipment-status contract is confirmed.",
-    );
+    // TODO(izaiah): backend contract for match decline not yet defined.
+    router.back();
   };
 
   return (
     <MatchDetailsForm
-      matchedUserName={(params.matchedUserName as string) || 'Unknown User'}
+      matchedUserName={(params.matchedUserName as string) || '—'}
       matchedUserImage={params.matchedUserImage as string}
-      itemName={(params.itemName as string) || 'No Item'}
-      category={(params.category as string) || 'Uncategorized'}
-      fromLocation={(params.fromLocation as string) || 'Unknown'}
-      toLocation={(params.toLocation as string) || 'Unknown'}
+      itemName={(params.itemName as string) || '—'}
+      category={(params.category as string) || '—'}
+      fromLocation={(params.fromLocation as string) || '—'}
+      toLocation={(params.toLocation as string) || '—'}
       onBack={handleBack}
       onConfirm={() => void handleConfirm()}
       onDecline={() => void handleDecline()}

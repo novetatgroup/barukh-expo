@@ -4,13 +4,9 @@ import { useLocalSearchParams } from "expo-router";
 import React from "react";
 
 const ModeOfPaymentScreen = () => {
-  const params = useLocalSearchParams<{
-    shipmentId?: string;
-    accepted?: string;
-  }>();
+  const params = useLocalSearchParams<{ shipmentId?: string }>();
   const checkout = usePaymentCheckout({
     shipmentId: params.shipmentId ?? "",
-    acceptedParam: params.accepted,
   });
 
   return <PaymentCheckoutForm {...checkout} />;

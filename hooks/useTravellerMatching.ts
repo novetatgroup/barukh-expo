@@ -25,7 +25,7 @@ interface UseTravellerMatchingParams {
   accessToken: string | null;
 }
 
-const SEARCH_RADII_KM = [7, 8, 9, 10] as const;
+export const SEARCH_RADII_KM = [7, 8, 9, 10] as const;
 const SHIPMENT_RECOVERY_DELAYS_MS = [0, 750, 1500] as const;
 
 const wait = (durationMs: number) =>

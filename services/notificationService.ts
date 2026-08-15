@@ -31,6 +31,11 @@ export interface NotificationsMeta {
 export interface GetNotificationsResponse {
 	data: PushNotification[];
 	meta: NotificationsMeta;
+	unreadCount?: number;
+}
+
+export interface MarkNotificationsAsReadResponse {
+	message?: string;
 }
 
 export const notificationService = {
@@ -42,6 +47,19 @@ export const notificationService = {
 				headers: {
 					Authorization: `Bearer ${accessToken}`,
 				},
+			}
+		);
+	},
+
+	async markAsRead(notificationIds: string[], accessToken: string) {
+		return apiRequest<MarkNotificationsAsReadResponse>(
+			API_ENDPOINTS.pushNotifications.markNotificationsAsRead,
+			{
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+				body: { notificationIds },
 			}
 		);
 	},

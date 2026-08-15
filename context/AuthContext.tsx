@@ -162,7 +162,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 			userId: null,
 		});
 
-		router.replace("/(onboarding)"); 
+		router.replace("/(auth)");
 	};
 	return (
 		<AuthContext.Provider

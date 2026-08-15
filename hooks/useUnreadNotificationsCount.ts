@@ -24,7 +24,11 @@ export const useUnreadNotificationsCount = () => {
 
     if (!ok || !data) return;
 
-    setUnreadCount(data.data.filter(isUnreadNotification).length);
+    setUnreadCount(
+      typeof data.unreadCount === "number"
+        ? data.unreadCount
+        : data.data.filter(isUnreadNotification).length
+    );
   }, [accessToken]);
 
   useFocusEffect(

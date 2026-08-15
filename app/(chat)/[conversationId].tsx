@@ -232,7 +232,7 @@ const ChatScreen = () => {
     >
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.replace("/(tabs)/chat")} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.dismissTo("/(tabs)/chat")} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={Theme.colors.primary} />
         </TouchableOpacity>
         <View style={styles.headerAvatar}>

@@ -21,6 +21,14 @@ export interface UpdateUserResponse {
 	message?: string;
 }
 
+export interface FlwCustomerObject {
+	flwCustomerId: string;
+	flwPaymentCardId?: string;
+	flwPaymentCardLast4?: string;
+	flwPaymentCardHolderName?: string;
+	flwPaymentCardIsDefault?: boolean;
+}
+
 export interface UserProfile {
 	id: string;
 	firstName: string;
@@ -38,11 +46,12 @@ export interface UserProfile {
 	city: string;
 	country: string;
 	isKycVerified: boolean;
+	flwCustomerObject?: FlwCustomerObject;
 }
 
 export const userService = {
-	async getUser(userId: string, accessToken: string) {
-		return apiRequest<UserProfile>(API_ENDPOINTS.users.get(userId), {
+	async getUser(_userId: string, accessToken: string) {
+		return apiRequest<UserProfile>(API_ENDPOINTS.users.get, {
 			method: "GET",
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
@@ -50,8 +59,8 @@ export const userService = {
 		});
 	},
 
-	async updateProfile(userId: string, params: UpdateProfileParams, accessToken: string) {
-		return apiRequest<UpdateUserResponse>(API_ENDPOINTS.users.update(userId), {
+	async updateProfile(_userId: string, params: UpdateProfileParams, accessToken: string) {
+		return apiRequest<UpdateUserResponse>(API_ENDPOINTS.users.update, {
 			method: "PATCH",
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
@@ -60,8 +69,8 @@ export const userService = {
 		});
 	},
 
-	async updateRole(userId: string, role: Role, accessToken: string) {
-		return apiRequest<UpdateUserResponse>(API_ENDPOINTS.users.update(userId), {
+	async updateRole(_userId: string, role: Role, accessToken: string) {
+		return apiRequest<UpdateUserResponse>(API_ENDPOINTS.users.update, {
 			method: "PATCH",
 			headers: {
 				Authorization: `Bearer ${accessToken}`,

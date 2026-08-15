@@ -18,6 +18,10 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# APK build output (from scripts/build-android-apk.sh)
+build/
+android/
+
 # Metro
 .metro-health-check*
 
@@ -45,3 +49,4 @@ settings.local.json
 .codex
 testapis
 .claude
+docs/shippment_payments.json

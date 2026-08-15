@@ -49,7 +49,7 @@ const SwitchProfileScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.replace("/(tabs)/profile")} style={styles.headerSide}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.headerSide}>
           <Ionicons name="arrow-back" size={24} color={Theme.colors.text.dark} />
         </TouchableOpacity>
         <Text style={styles.title}>Switch Profile</Text>
@@ -72,7 +72,7 @@ const SwitchProfileScreen = () => {
         <View style={styles.buttonRow}>
           <TouchableOpacity
             style={styles.cancelButton}
-            onPress={() => router.replace("/(tabs)/profile")}
+            onPress={() => router.back()}
             disabled={isLoading}
           >
             <Text style={styles.cancelText}>Cancel</Text>

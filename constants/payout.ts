@@ -2,7 +2,7 @@ import { PayoutCountry, PayoutCurrency } from "@/types/payment";
 
 export type PayoutCountryConfig = {
   country: PayoutCountry;
-  countryCode: "UG" | "KE" | "TZ" | "RW";
+  countryCode: "UG" | "KE" | "TZ" | "RW" ;
   currency: PayoutCurrency;
 };
 
@@ -10,22 +10,22 @@ export const PAYOUT_COUNTRIES: PayoutCountryConfig[] = [
   {
     country: "Uganda",
     countryCode: "UG",
-    currency: "UGX",
+    currency: "USD",
   },
   {
     country: "Kenya",
     countryCode: "KE",
-    currency: "KES",
+    currency: "USD",
   },
   {
     country: "Tanzania",
     countryCode: "TZ",
-    currency: "TZS",
+    currency: "USD",
   },
   {
     country: "Rwanda",
     countryCode: "RW",
-    currency: "RWF",
+    currency: "USD",
   },
 ];
 

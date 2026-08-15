@@ -1,8 +1,6 @@
 import { getPayoutCountryConfig } from "@/constants/payout";
 import { AuthContext } from "@/context/AuthContext";
 import { bankService, SupportedBank } from "@/services/bankService";
-import { getPaymentExecutionMode } from "@/services/paymentConfig";
-import { MOCK_PAYOUTS, paymentMockService } from "@/services/paymentMockService";
 import { paymentService } from "@/services/paymentService";
 import { MaskedBankAccount, PayoutCountry } from "@/types/payment";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -31,7 +29,6 @@ const emptyForm = (): PayoutFormState => ({
 export const usePayoutAccounts = () => {
   const router = useRouter();
   const { userId, accessToken } = useContext(AuthContext);
-  const mode = getPaymentExecutionMode();
   const [accounts, setAccounts] = useState<MaskedBankAccount[]>([]);
   const [form, setForm] = useState<PayoutFormState>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -49,15 +46,23 @@ export const usePayoutAccounts = () => {
   const countryConfig = useMemo(() => getPayoutCountryConfig(form.country), [form.country]);
 
   const load = useCallback(async () => {
-    if (!userId || mode !== "mock") {
+    if (!userId || !accessToken) {
       setAccounts([]);
       setLoading(false);
       return;
     }
     setLoading(true);
-    setAccounts(await paymentMockService.getBankAccounts(userId));
+
+    const result = await paymentService.listBankAccounts(accessToken);
+    if (result.ok && result.data) {
+      const list = Array.isArray(result.data) ? result.data : result.data.data;
+      setAccounts((list || []).map((account) => ({ ...account, id: account.id ?? account.bankAccountId ?? "" })));
+    } else {
+      setError(result.error || "Unable to load payout accounts.");
+      setAccounts([]);
+    }
     setLoading(false);
-  }, [mode, userId]);
+  }, [accessToken, userId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -158,7 +163,6 @@ export const usePayoutAccounts = () => {
   };
 
   const openEdit = (account: MaskedBankAccount) => {
-    if (mode !== "mock") return;
     setEditingId(account.id);
     setForm({
       country: account.country,
@@ -195,7 +199,7 @@ export const usePayoutAccounts = () => {
       setError("Account number must contain 6 to 24 digits.");
       return;
     }
-    if (!userId) {
+    if (!userId || !accessToken) {
       setError("Your session is unavailable. Please log in again.");
       return;
     }
@@ -206,37 +210,25 @@ export const usePayoutAccounts = () => {
 
     try {
       if (editingId) {
-        if (mode !== "mock") {
-          setError("Bank-account update is disabled until the backend method is confirmed.");
+        const updateResult = await paymentService.updateBankAccount(
+          editingId,
+          {
+            country: form.country,
+            currency: countryConfig.currency,
+            bankName: form.bankName,
+            accountHolderName: form.accountHolderName.trim(),
+            ...(accountNumber ? { accountNumber } : {}),
+            isDefault: form.isDefault,
+          },
+          accessToken,
+        );
+        if (!updateResult.ok) {
+          setError(updateResult.error || "Unable to update the payout account.");
           return;
         }
-        console.log("Updating bank account fixture for development:", {
-          userId,
-          id: editingId,
-          country: form.country,
-          currency: countryConfig.currency,
-          bankName: form.bankName,
-          accountHolderName: form.accountHolderName.trim(),
-          accountNumber,
-          isDefault: form.isDefault,
-        });
-        await paymentMockService.saveBankAccount(userId, {
-          id: editingId,
-          country: form.country,
-          currency: countryConfig.currency,
-          bankName: form.bankName,
-          accountHolderName: form.accountHolderName.trim(),
-          accountNumber,
-          isDefault: form.isDefault,
-        });
-        setSuccess("Development account fixture updated.");
+        setSuccess("Payout account updated.");
         await load();
         setFormVisible(false);
-        return;
-      }
-
-      if (!accessToken) {
-        setError("Your session is unavailable. Please log in again.");
         return;
       }
 
@@ -257,20 +249,8 @@ export const usePayoutAccounts = () => {
         setError(result.error || "Unable to create the payout account.");
         return;
       }
-
-      if (mode === "mock") {
-        await paymentMockService.saveBankAccount(userId, {
-          id: result.data?.bankAccountId || result.data?.id,
-          country: form.country,
-          currency: countryConfig.currency,
-          bankName: form.bankName,
-          accountHolderName: form.accountHolderName.trim(),
-          accountNumber,
-          isDefault: form.isDefault || accounts.length === 0,
-        });
-        await load();
-      }
-      setSuccess("Payout account created by the payment API.");
+      setSuccess("Payout account created.");
+      await load();
       setFormVisible(false);
     } finally {
       setForm((current) => ({ ...current, accountNumber: "" }));
@@ -279,25 +259,31 @@ export const usePayoutAccounts = () => {
   };
 
   const setDefault = async (accountId: string) => {
-    if (mode !== "mock" || !userId) return;
-    await paymentMockService.setDefaultBankAccount(userId, accountId);
-    setSuccess("Development default account updated.");
+    if (!userId || !accessToken) return;
     setError(null);
+    const result = await paymentService.setDefaultBankAccount(accountId, accessToken);
+    if (!result.ok) {
+      setError(result.error || "Unable to set default account.");
+      return;
+    }
+    setSuccess("Default account updated.");
     await load();
   };
 
   const deleteAccount = async (accountId: string) => {
-    if (mode !== "mock" || !userId) return;
-    await paymentMockService.deleteBankAccount(userId, accountId);
-    setSuccess("Development account fixture deleted.");
+    if (!userId || !accessToken) return;
     setError(null);
+    const result = await paymentService.deleteBankAccount(accountId, accessToken);
+    if (!result.ok) {
+      setError(result.error || "Unable to delete account.");
+      return;
+    }
+    setSuccess("Account removed.");
     await load();
   };
 
   return {
-    mode,
     accounts,
-    payouts: mode === "mock" ? MOCK_PAYOUTS : [],
     loading,
     submitting,
     error,

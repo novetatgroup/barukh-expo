@@ -1,7 +1,6 @@
 import { API_ENDPOINTS, apiRequest } from "./api";
 
 export interface CreateSenderParams {
-	userId: string;
 	firstName: string;
 	lastName: string;
 	email: string;
@@ -105,8 +104,9 @@ export interface ShipmentDetails {
 		mode: string;
 	};
 	sender: { id: string; userId: string };
-	traveller: { id: string; userId: string };
+	traveller: { id: string; userId: string; rating?: number };
 	deliveryPhotoUrl?: string | null;
+	referenceNumber: string;
 }
 
 export interface GetShipmentsResponse {
@@ -121,9 +121,21 @@ export interface GetShipmentsResponse {
 	};
 }
 
+// The shipments-list endpoint has been observed returning either the
+// { data, meta } envelope or a bare array. Normalize defensively, mirroring
+// the same handling already used in hooks/useTravellerMatching.ts.
+export const extractShipmentsList = (
+	data: GetShipmentsResponse | ShipmentDetails[] | null | undefined
+): ShipmentDetails[] => {
+	if (!data) return [];
+	if (Array.isArray(data)) return data;
+	return data.data ?? [];
+};
+
 export interface GetSenderResponse {
 	senderId: string;
 	userId: string;
+	senderNumber: string;
 }
 
 export interface ShipmentCodeResponse {
@@ -163,8 +175,8 @@ export interface GetPackagesResponse {
 }
 
 export const senderService = {
-	async getSender(userId: string, accessToken: string) {
-		return apiRequest<GetSenderResponse>(API_ENDPOINTS.sender.getSender(userId), {
+	async getSender(_userId: string, accessToken: string) {
+		return apiRequest<GetSenderResponse>(API_ENDPOINTS.sender.getSender, {
 			method: "GET",
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
@@ -192,8 +204,17 @@ export const senderService = {
 		});
 	},
 
-	async getPackages(userId: string, accessToken: string) {
-		return apiRequest<GetPackagesResponse>(API_ENDPOINTS.sender.getPackages(userId), {
+	async getPackages(_userId: string, accessToken: string) {
+		return apiRequest<GetPackagesResponse>(API_ENDPOINTS.sender.getPackages, {
+			method: "GET",
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+			},
+		});
+	},
+
+	async getPackage(packageId: string, accessToken: string) {
+		return apiRequest<Package>(API_ENDPOINTS.sender.getPackage(packageId), {
 			method: "GET",
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
@@ -220,6 +241,32 @@ export const senderService = {
 				Authorization: `Bearer ${accessToken}`,
 			},
 		});
+	},
+
+	// TODO(izaiah): confirm the exact endpoint/status transition contract for
+	// traveller-confirms-transport. Placeholder until backend responds.
+	async travellerConfirmShipment(shipmentId: string, accessToken: string) {
+		return apiRequest<{ message?: string; status?: string }>(
+			API_ENDPOINTS.shipments.travellerConfirm(shipmentId),
+			{
+				method: "POST",
+				headers: { Authorization: `Bearer ${accessToken}` },
+			},
+		);
+	},
+
+	async submitReview(
+		input: { shipmentId: string; rating: number; comment: string },
+		accessToken: string,
+	) {
+		return apiRequest<{ message?: string; review_id?: string }>(
+			API_ENDPOINTS.shipments.submitReview,
+			{
+				method: "POST",
+				headers: { Authorization: `Bearer ${accessToken}` },
+				body: input,
+			},
+		);
 	},
 
 	async getPickupCode(shipmentId: string, accessToken: string) {
@@ -249,6 +296,23 @@ export const senderService = {
 	async getSenderShipments(senderId: string, accessToken: string) {
 		return apiRequest<GetShipmentsResponse>(
 			API_ENDPOINTS.shipments.listByRole(senderId, "SENDER"),
+			{
+				method: "GET",
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			}
+		);
+	},
+
+	async findShipmentsByPackage(
+		packageId: string,
+		accessToken: string,
+		page: number = 1,
+		limit: number = 10
+	) {
+		return apiRequest<GetShipmentsResponse>(
+			API_ENDPOINTS.shipments.findByPackage(packageId, page, limit),
 			{
 				method: "GET",
 				headers: {

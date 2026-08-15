@@ -6,24 +6,24 @@ import {
   isAllowedPaymentRedirect,
   isChargeExecutionReady,
 } from "@/services/paymentConfig";
-import { MOCK_CARDS, paymentMockService } from "@/services/paymentMockService";
 import { paymentService } from "@/services/paymentService";
 import { senderService, ShipmentDetails } from "@/services/senderService";
 import { UserProfile, userService } from "@/services/userService";
 import {
+  MaskedSavedCard,
   PaymentChallenge,
-  PaymentMockScenario,
   PaymentNextAction,
   PaymentResponse,
   PaymentStatus,
 } from "@/types/payment";
 import * as Linking from "expo-linking";
-import { Href, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AppState } from "react-native";
 
 const ACCEPTED_SHIPMENT_STATUSES = new Set([
   "ACCEPTED",
+  "TRAVELLER_CONFIRMED",
   "PICKED_UP",
   "INTRANSIT",
   "IN_TRANSIT",
@@ -33,13 +33,9 @@ const ACCEPTED_SHIPMENT_STATUSES = new Set([
 
 type UsePaymentCheckoutInput = {
   shipmentId: string;
-  acceptedParam?: string;
 };
 
-export const usePaymentCheckout = ({
-  shipmentId,
-  acceptedParam,
-}: UsePaymentCheckoutInput) => {
+export const usePaymentCheckout = ({ shipmentId }: UsePaymentCheckoutInput) => {
   const router = useRouter();
   const { accessToken, userId } = useContext(AuthContext);
   const { role } = useRole();
@@ -52,7 +48,6 @@ export const usePaymentCheckout = ({
     isRestoring,
     beginPayment,
     updateSafePayment,
-    clearPayment,
   } = payment;
   const mode = getPaymentExecutionMode();
   const [shipment, setShipment] = useState<ShipmentDetails | null>(null);
@@ -62,15 +57,26 @@ export const usePaymentCheckout = ({
   const [actionError, setActionError] = useState<string | null>(null);
   const [nextAction, setNextAction] = useState<PaymentNextAction | null>(null);
   const [status, setStatus] = useState<PaymentStatus | null>(null);
-  const [selectedCardId, setSelectedCardId] = useState(MOCK_CARDS[0].id);
-  const [scenario, setScenarioState] =
-    useState<PaymentMockScenario>("direct_capture");
-  const [mockKycVerified, setMockKycVerified] = useState(true);
-  const [mockAccepted, setMockAccepted] = useState(acceptedParam === "true");
+  const [selectedCardId, setSelectedCardId] = useState<string>("");
   const inFlightRef = useRef(false);
   const reconciledReferenceRef = useRef<string | null>(null);
 
-  const cards = mode === "mock" ? MOCK_CARDS : [];
+  const cards = useMemo<MaskedSavedCard[]>(() => {
+    const flw = profile?.flwCustomerObject;
+    if (!flw?.flwPaymentCardId || !flw.flwPaymentCardLast4) return [];
+    return [
+      {
+        id: flw.flwPaymentCardId,
+        brand: "OTHER",
+        last4: flw.flwPaymentCardLast4,
+        expiryMonth: "",
+        expiryYear: "",
+        cardholderName: flw.flwPaymentCardHolderName ?? "",
+        isDefault: flw.flwPaymentCardIsDefault ?? true,
+      },
+    ];
+  }, [profile]);
+
   const selectedCard =
     cards.find((card) => card.id === selectedCardId) ?? cards[0] ?? null;
   const returnUri = Linking.createURL("/(sender)/paymentReturn");
@@ -85,25 +91,7 @@ export const usePaymentCheckout = ({
       return;
     }
 
-    if (!userId) {
-      setLoadError("Your session is unavailable. Please log in again.");
-      setLoading(false);
-      return;
-    }
-
-    if (mode === "mock") {
-      const mockShipment = await paymentMockService.getShipment(
-        userId,
-        shipmentId,
-        acceptedParam === undefined ? undefined : acceptedParam === "true",
-      );
-      setShipment(mockShipment);
-      setMockAccepted(ACCEPTED_SHIPMENT_STATUSES.has(mockShipment.status.toUpperCase()));
-      setLoading(false);
-      return;
-    }
-
-    if (!accessToken) {
+    if (!userId || !accessToken) {
       setLoadError("Your session is unavailable. Please log in again.");
       setLoading(false);
       return;
@@ -129,7 +117,7 @@ export const usePaymentCheckout = ({
     setShipment(shipmentResult.data);
     setProfile(profileResult.data);
     setLoading(false);
-  }, [acceptedParam, accessToken, mode, shipmentId, userId]);
+  }, [accessToken, shipmentId, userId]);
 
   useEffect(() => {
     void load();
@@ -167,27 +155,12 @@ export const usePaymentCheckout = ({
   );
 
   const reconcile = useCallback(async () => {
-    if (!paymentReference || !userId || inFlightRef.current) return;
+    if (!paymentReference || !accessToken || inFlightRef.current) return;
     inFlightRef.current = true;
     setActionError(null);
     await updateSafePayment({ uiPhase: "recovering" });
 
     try {
-      if (mode === "mock") {
-        const response = await paymentMockService.reconcile(userId, paymentReference);
-        if (!response) {
-          setActionError("The simulated payment could not be recovered.");
-          return;
-        }
-        await applyResponse(response);
-        return;
-      }
-
-      if (!accessToken) {
-        setActionError("Your session is unavailable. Please log in again.");
-        return;
-      }
-
       const result = await paymentService.getPaymentStatus(paymentReference, accessToken);
       if (!result.ok || !result.data) {
         setActionError(result.error);
@@ -197,7 +170,7 @@ export const usePaymentCheckout = ({
     } finally {
       inFlightRef.current = false;
     }
-  }, [accessToken, applyResponse, mode, paymentReference, updateSafePayment, userId]);
+  }, [accessToken, applyResponse, paymentReference, updateSafePayment]);
 
   useEffect(() => {
     if (
@@ -228,11 +201,10 @@ export const usePaymentCheckout = ({
     return () => subscription.remove();
   }, [nextAction, paymentReference, paymentStatus, reconcile]);
 
-  const isKycVerified = mode === "mock" ? mockKycVerified : Boolean(profile?.isKycVerified);
-  const isAccepted =
-    mode === "mock"
-      ? mockAccepted
-      : Boolean(shipment && ACCEPTED_SHIPMENT_STATUSES.has(shipment.status.toUpperCase()));
+  const isKycVerified = Boolean(profile?.isKycVerified);
+  const isAccepted = Boolean(
+    shipment && ACCEPTED_SHIPMENT_STATUSES.has(shipment.status.toUpperCase()),
+  );
   const isUsd = shipment?.currency === "USD";
   const hasOtherPendingPayment = Boolean(
     paymentReference &&
@@ -244,19 +216,22 @@ export const usePaymentCheckout = ({
   const blockedReason = useMemo(() => {
     if (role !== "SENDER") return "Only the sender can pay for a shipment.";
     if (!isKycVerified) return "Complete identity verification before paying.";
-    if (!isAccepted) return "Payment unlocks after the traveller accepts the shipment.";
+    if (!isAccepted) return "Waiting for traveller confirmation before payment can be made.";
     if (!isUsd) return "This checkout supports authoritative USD shipments only.";
     if (hasOtherPendingPayment) {
       return "Resume the pending payment before starting another one.";
     }
     if (mode === "blocked") {
-      return "Payments are blocked in this build. No simulated success is available.";
+      return "Payments are temporarily unavailable. Please try again later.";
     }
-    if (mode === "api" && !isChargeExecutionReady) {
+    if (!isChargeExecutionReady) {
       return "Live charge execution is waiting for the remaining backend readiness contracts.";
     }
+    if (!profile?.flwCustomerObject?.flwCustomerId) {
+      return "Your payment profile is not ready. Please complete KYC and try again.";
+    }
     if (!selectedCard) {
-      return "Saved-card listing is unavailable. Secure card setup is still pending approval.";
+      return "Add a card to continue with the payment.";
     }
     return null;
   }, [
@@ -265,6 +240,7 @@ export const usePaymentCheckout = ({
     isKycVerified,
     isUsd,
     mode,
+    profile,
     role,
     selectedCard,
   ]);
@@ -276,20 +252,34 @@ export const usePaymentCheckout = ({
     await updateSafePayment({ uiPhase: "submitting", maskedMethod: selectedCard });
 
     try {
-      if (mode !== "mock") {
-        setActionError("Live charge execution is not enabled in this build.");
+      if (!accessToken || !profile?.flwCustomerObject?.flwCustomerId) {
+        setActionError("Payment customer profile is not ready.");
         await updateSafePayment({ uiPhase: "error" });
         return;
       }
 
-      const result = await paymentMockService.initiate(
-        userId,
-        shipment,
-        selectedCard,
-        scenario,
+      const senderName = `${profile.firstName} ${profile.lastName}`.trim() || profile.email;
+      const result = await paymentService.initiateCharge(
+        {
+          currency: "USD",
+          shipmentId: shipment.id,
+          customerId: profile.flwCustomerObject.flwCustomerId,
+          paymentMethodId: selectedCard.id,
+          amount: shipment.priceMinor,
+          redirectUrl: returnUri,
+          meta: {
+            senderId: shipment.senderId,
+            travellerId: shipment.travellerId,
+            senderName,
+            travellerName: shipment.traveller.userId,
+            sourceDestination: `${shipment.package.originCity}_${shipment.package.destinationCity}`,
+          },
+        },
+        accessToken,
       );
-      if (!result.ok) {
-        setActionError(result.error);
+
+      if (!result.ok || !result.data) {
+        setActionError(result.error || "Failed to initiate payment.");
         await updateSafePayment({ uiPhase: "error" });
         return;
       }
@@ -298,10 +288,11 @@ export const usePaymentCheckout = ({
       inFlightRef.current = false;
     }
   }, [
+    accessToken,
     applyResponse,
     blockedReason,
-    mode,
-    scenario,
+    profile,
+    returnUri,
     selectedCard,
     shipment,
     updateSafePayment,
@@ -312,11 +303,11 @@ export const usePaymentCheckout = ({
     async (challenge: PaymentChallenge) => {
       if (
         inFlightRef.current ||
-        mode !== "mock" ||
         !shipment ||
         !selectedCard ||
         !userId ||
-        !paymentReference
+        !paymentReference ||
+        !accessToken
       ) {
         return;
       }
@@ -325,19 +316,21 @@ export const usePaymentCheckout = ({
       setActionError(null);
       await updateSafePayment({ uiPhase: "submitting" });
       try {
-        const response = await paymentMockService.submitChallenge(
-          userId,
-          shipment,
-          selectedCard,
-          challenge,
-          paymentReference,
+        const result = await paymentService.submitNextAction(
+          { reference: paymentReference, data: challenge },
+          accessToken,
         );
-        await applyResponse(response);
+        if (!result.ok || !result.data) {
+          setActionError(result.error || "Failed to submit challenge.");
+          await updateSafePayment({ uiPhase: "error" });
+          return;
+        }
+        await applyResponse(result.data);
       } finally {
         inFlightRef.current = false;
       }
     },
-    [applyResponse, mode, paymentReference, selectedCard, shipment, updateSafePayment, userId],
+    [accessToken, applyResponse, paymentReference, selectedCard, shipment, updateSafePayment, userId],
   );
 
   const openRedirect = useCallback(async () => {
@@ -355,42 +348,12 @@ export const usePaymentCheckout = ({
     await Linking.openURL(nextAction.url);
   }, [nextAction, paymentReference, updateSafePayment]);
 
-  const simulateReturn = useCallback(() => {
-    if (mode !== "mock" || !paymentReference) return;
-    router.push({
-      pathname: "/(sender)/paymentReturn",
-      params: { source: "mock" },
-    } as unknown as Href);
-  }, [mode, paymentReference, router]);
-
-  const setScenario = useCallback(
-    async (nextScenario: PaymentMockScenario) => {
-      setScenarioState(nextScenario);
-      setStatus(null);
-      setNextAction(null);
-      setActionError(null);
-      reconciledReferenceRef.current = null;
-      if (userId && shipment) {
-        await paymentMockService.resetShipmentPayment(userId, shipment.id);
-        await clearPayment();
-        beginPayment({ shipmentId: shipment.id, maskedMethod: selectedCard });
-      }
-    },
-    [beginPayment, clearPayment, selectedCard, shipment, userId],
-  );
-
-  const retryMock = useCallback(() => {
-    void setScenario(scenario);
-  }, [scenario, setScenario]);
-
   return {
     mode,
     shipment,
     cards,
-    selectedCardId,
+    selectedCardId: selectedCard?.id ?? "",
     setSelectedCardId,
-    scenario,
-    setScenario,
     status,
     nextAction,
     uiPhase,
@@ -402,15 +365,9 @@ export const usePaymentCheckout = ({
     blockedReason,
     isKycVerified,
     isAccepted,
-    mockKycVerified,
-    setMockKycVerified,
-    mockAccepted,
-    setMockAccepted,
     pay,
     submitChallenge,
     openRedirect,
-    simulateReturn,
-    retryMock,
     reload: load,
     openVerification: () => router.push("/(KYC)/KYCLanding"),
     back: () => router.back(),

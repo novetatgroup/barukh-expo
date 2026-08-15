@@ -1,12 +1,25 @@
 import ShipmentDetailsForm from "@/components/forms/traveller/ShipmentDetailsForm";
 import { AuthContext } from "@/context/AuthContext";
 import { senderService, ShipmentDetails } from "@/services/senderService";
+import { formatMoney } from "@/utils/formatting";
 import {
   formatShipmentStatus,
   getShipmentDeliveryPhotoUrl,
 } from "@/utils/shipmentTracking";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useContext, useState } from "react";
+
+const formatDate = (value?: string) => {
+  if (!value) return "Pending";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Pending";
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+  });
+};
 
 const ShipmentDetailsScreen = () => {
   const router = useRouter();
@@ -15,6 +28,7 @@ const ShipmentDetailsScreen = () => {
   const params = useLocalSearchParams<{
     id?: string;
     shipmentId?: string;
+    orderId?: string;
     itemId?: string;
     itemName?: string;
     fromLocation?: string;
@@ -26,24 +40,28 @@ const ShipmentDetailsScreen = () => {
     receiverName?: string;
     senderUserId?: string;
     travellerUserId?: string;
+    requestedAt?: string;
+    shipmentCost?: string;
   }>();
   const shipmentId =
     (params.shipmentId as string | undefined) || (params.id as string | undefined);
   const itemId = shipment?.packageId
     ? `#${shipment.packageId.slice(0, 8).toUpperCase()}`
-    : (params.itemId as string) || "#BK1624";
-  const itemName = shipment?.package?.name || (params.itemName as string) || "MacBook Pro";
+    : (params.itemId as string) || "—";
+  const referenceNumber =
+    shipment?.referenceNumber || (params.orderId as string) || itemId;
+  const itemName = shipment?.package?.name || (params.itemName as string) || "—";
   const fromLocation =
     shipment?.package?.originCity ||
     shipment?.travel?.originCity ||
     (params.fromLocation as string) ||
-    "Ontario, Canada";
+    "—";
   const toLocation =
     shipment?.package?.destinationCity ||
     shipment?.travel?.destinationCity ||
     (params.toLocation as string) ||
-    "Kampala, Uganda";
-  const status = shipment?.status || (params.status as string) || "Assigned";
+    "—";
+  const status = shipment?.status || (params.status as string) || "";
   const progress = formatShipmentStatus(shipment?.status || (params.progress as string) || status);
   const deliveryPhotoUrl = getShipmentDeliveryPhotoUrl(shipment);
 
@@ -64,7 +82,7 @@ const ShipmentDetailsScreen = () => {
   );
 
   const handleBack = () => {
-    router.replace("/(tabs)/shipments");
+    router.back();
   };
 
   const handleOpenChat = () => {
@@ -90,12 +108,22 @@ const ShipmentDetailsScreen = () => {
     <ShipmentDetailsForm
       headerTitle={(params.title as string) || "Shipment Details"}
       shipmentId={shipmentId}
-      itemId={itemId}
-      shipperName={(params.shipperName as string) || "James Lutalo"}
-      receiverName={(params.receiverName as string) || "Sanyu Twine"}
+      itemId={referenceNumber}
+      shipperName={(params.shipperName as string) || "—"}
+      receiverName={(params.receiverName as string) || "—"}
       itemName={itemName}
       fromLocation={fromLocation}
       toLocation={toLocation}
+      requestedAt={
+        shipment?.requestedAt
+          ? formatDate(shipment.requestedAt)
+          : params.requestedAt || "Pending"
+      }
+      shipmentCost={
+        shipment
+          ? formatMoney(shipment.priceMinor, shipment.currency)
+          : params.shipmentCost || ""
+      }
       status={status}
       progress={progress}
       deliveryPhotoUrl={deliveryPhotoUrl}

@@ -10,6 +10,8 @@ interface shipmentDetailsFormProps {
     shipmentId?: string;
     itemId: string;
     shipperName: string;
+    shipmentCost?: string;
+    requestedAt?: string;
     receiverName: string;
     itemName: string;
     fromLocation: string;
@@ -23,7 +25,8 @@ interface shipmentDetailsFormProps {
 
 const ShipmentDetailsForm: React.FC<shipmentDetailsFormProps> = ({
     headerTitle,
-    
+    shipmentCost,
+    requestedAt,
     shipmentId,
     itemId,
     shipperName,
@@ -115,6 +118,24 @@ const ShipmentDetailsForm: React.FC<shipmentDetailsFormProps> = ({
                                 <Text style={styles.detailLabel}>To :</Text>
                                 <Text style={styles.detailValue}>{toLocation}</Text>
                             </View>
+                        </View>
+
+                        <View style={styles.lineContainer}>
+                            <View style={styles.line} />
+                        </View>
+
+                        <View style={styles.detailItem}>
+                            <Text style={styles.detailLabel}>Requested At :</Text>
+                            <Text style={styles.detailValue}>{requestedAt}</Text>
+                        </View>
+
+                        <View style={styles.lineContainer}>
+                            <View style={styles.line} />
+                        </View>
+
+                        <View style={styles.detailItem}>
+                            <Text style={styles.detailLabel}>Shipment Cost :</Text>
+                            <Text style={styles.detailValue}>{shipmentCost}</Text>
                         </View>
                     </View>
 

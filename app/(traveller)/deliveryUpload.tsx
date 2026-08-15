@@ -79,8 +79,8 @@ const DeliveryUploadScreen = () => {
                 pathname: "/(traveller)/trackingDetails",
                 params: {
                     shipmentId: params.shipmentId,
-                    itemId: params.itemId || "#BK1624",
-                    itemName: params.itemName || "MacBook Pro",
+                    itemId: params.itemId || "—",
+                    itemName: params.itemName || "—",
                     progress: params.progress || "In Transit",
                     packageUploaded: params.packageUploaded || "false",
                     confirmPickUpCompleted: params.confirmPickUpCompleted || "false",

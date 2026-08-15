@@ -1,6 +1,6 @@
 import CustomButton from "@/components/ui/CustomButton";
 import { Theme } from "@/constants/Theme";
-import { TravellerMatchingState } from "@/hooks/useTravellerMatching";
+import { SEARCH_RADII_KM, TravellerMatchingState } from "@/hooks/useTravellerMatching";
 import { AutoAssignedTrip } from "@/services/senderService";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef } from "react";
@@ -78,10 +78,12 @@ const SearchAnimation = ({
   title,
   subtitle,
   resolving,
+  radiusKm,
 }: {
   title: string;
   subtitle: string;
   resolving: boolean;
+  radiusKm?: number;
 }) => {
   const pulse = useRef(new Animated.Value(0)).current;
 
@@ -122,7 +124,46 @@ const SearchAnimation = ({
       </View>
       <Text style={styles.loadingTitle}>{title}</Text>
       <Text style={styles.loadingSubtitle}>{subtitle}</Text>
+      {typeof radiusKm === "number" ? <SearchRadiusProgress currentRadius={radiusKm} /> : null}
       <LoadingDots />
+    </View>
+  );
+};
+
+const SearchRadiusProgress = ({ currentRadius }: { currentRadius: number }) => {
+  const stepIndex = SEARCH_RADII_KM.indexOf(currentRadius as (typeof SEARCH_RADII_KM)[number]);
+  const totalSteps = SEARCH_RADII_KM.length;
+  const activeStep = stepIndex === -1 ? 1 : stepIndex + 1;
+  const progress = activeStep / totalSteps;
+  const widthAnim = useRef(new Animated.Value(progress)).current;
+
+  useEffect(() => {
+    Animated.timing(widthAnim, {
+      toValue: progress,
+      duration: 400,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: false,
+    }).start();
+  }, [progress, widthAnim]);
+
+  return (
+    <View style={styles.progressWrapper}>
+      <View style={styles.progressTrack}>
+        <Animated.View
+          style={[
+            styles.progressFill,
+            {
+              width: widthAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: ["0%", "100%"],
+              }),
+            },
+          ]}
+        />
+      </View>
+      <Text style={styles.progressLabel}>
+        Step {activeStep} of {totalSteps} · searching up to {currentRadius} km
+      </Text>
     </View>
   );
 };
@@ -243,6 +284,7 @@ const TravellerMatchingScreen = ({
               : "Checking nearby trips for route and package compatibility."
           }
           resolving={false}
+          radiusKm={currentRadius}
         />
       </SafeAreaView>
     );
@@ -349,6 +391,30 @@ const styles = StyleSheet.create({
     fontFamily: "Inter-Regular",
     color: Theme.colors.text.gray,
     textAlign: "center",
+  },
+  progressWrapper: {
+    width: "100%",
+    maxWidth: 280,
+    marginTop: Theme.spacing.lg,
+    alignItems: "center",
+  },
+  progressTrack: {
+    width: "100%",
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Theme.colors.background.border,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 3,
+    backgroundColor: Theme.colors.yellow,
+  },
+  progressLabel: {
+    marginTop: Theme.spacing.xs,
+    fontSize: 12,
+    fontFamily: "Inter-Regular",
+    color: Theme.colors.text.gray,
   },
   dotsRow: {
     flexDirection: "row",
