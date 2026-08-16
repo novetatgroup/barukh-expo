@@ -73,7 +73,11 @@ const ProfileScreen = () => {
   }[] = [
     { icon: "swap-horizontal-outline", label: switchModeLabel, route: "/(profile)/switchProfile" },
     { icon: "notifications-outline", label: "Notifications", route: "/(profile)/notifications" },
-    { icon: "shield-checkmark-outline", label: "Verification", route: "/(KYC)/KYCLanding" },
+    {
+      icon: "shield-checkmark-outline",
+      label: "Verification",
+      route: userProfile?.isActive ? "/(KYC)/verifiedScreen" : "/(KYC)/KYCLanding",
+    },
     ...(role === "TRAVELLER"
       ? [{ icon: "business-outline" as const, label: "Payout Accounts", route: "/(profile)/payoutAccounts" as Href }]
       : role === "SENDER"

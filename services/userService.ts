@@ -14,6 +14,7 @@ export interface UpdateProfileParams {
 	addressLineB?: string;
 	postalCode?: string;
 	city?: string;
+	state?: string;
 	country?: string;
 }
 
@@ -44,6 +45,7 @@ export interface UserProfile {
 	addressLineB: string;
 	postalCode: string;
 	city: string;
+	state: string;
 	country: string;
 	isKycVerified: boolean;
 	flwCustomerObject?: FlwCustomerObject;

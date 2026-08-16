@@ -89,28 +89,14 @@ const SenderHomeContent = () => {
 
     try {
       setIsSending(true);
-      const result = await senderService.createSender(
-        {
-          firstName: userProfile.firstName,
-          lastName: userProfile.lastName,
-          email: userProfile.email,
-        },
-        accessToken,
-      );
+      const getResult = await senderService.getSender(userId, accessToken);
 
-      let resolvedSenderId = result.data?.senderId;
-
-      if (!result.ok || !resolvedSenderId) {
-        const getResult = await senderService.getSender(userId, accessToken);
-
-        if (!getResult.ok || !getResult.data?.senderId) {
-          Toast.error(getResult.error || "Unable to retrieve your sender profile. Please try again.");
-          return;
-        }
-
-        resolvedSenderId = getResult.data.senderId;
+      if (!getResult.ok || !getResult.data?.senderId) {
+        Toast.error(getResult.error || "Unable to retrieve your sender profile. Please try again.");
+        return;
       }
 
+      const resolvedSenderId = getResult.data.senderId;
       setSenderId(resolvedSenderId);
 
       router.push({
@@ -118,7 +104,7 @@ const SenderHomeContent = () => {
         params: { senderId: resolvedSenderId },
       });
     } catch {
-      Toast.error("Unable to create your sender profile. Please check your connection and try again.");
+      Toast.error("Unable to retrieve your sender profile. Please check your connection and try again.");
     } finally {
       setIsSending(false);
     }
