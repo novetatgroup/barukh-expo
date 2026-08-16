@@ -16,11 +16,35 @@ type RegisterFormProps = {
   onTabChange?: (tab: "login" | "register") => void;
 };
 
+const MIN_NAME_PART_LENGTH = 2;
+
+// Mirrors how the backend splits the full name into firstName/lastName: the
+// first word is the first name, everything after it is the last name.
+const splitName = (fullName: string) => {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  return {
+    firstName: parts[0] || "",
+    lastName: parts.slice(1).join(" "),
+  };
+};
+
 const ValidationSchema = Yup.object().shape({
   name: Yup.string()
     .min(2, "Name is too short!")
     .max(50, "Name is too long!")
-    .required("Name is required"),
+    .required("Name is required")
+    .test(
+      "has-valid-first-and-last-name",
+      `Please enter a first and last name, each at least ${MIN_NAME_PART_LENGTH} characters`,
+      (value) => {
+        if (!value) return false;
+        const { firstName, lastName } = splitName(value);
+        return (
+          firstName.length >= MIN_NAME_PART_LENGTH &&
+          lastName.length >= MIN_NAME_PART_LENGTH
+        );
+      }
+    ),
   email: Yup.string()
     .email("Invalid email address")
     .required("Email is required"),
@@ -80,6 +104,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
               onChangeText={handleChange("name")}
               onBlur={handleBlur("name")}
               autoCapitalize="words"
+              maxLength={50}
             />
             {errors.name && touched.name && (
               <Text style={styles.errorText}>{errors.name}</Text>

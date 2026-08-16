@@ -8,12 +8,17 @@ import AddDetailsForm from "@/components/forms/KYC/AddDetailsForm";
 const AddDetailsScreen = () => {
     const { userId, accessToken } = useContext(AuthContext);
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+    const [loadingProfile, setLoadingProfile] = useState(true);
 
     useEffect(() => {
         const fetchUser = async () => {
-            if (!userId || !accessToken) return;
+            if (!userId || !accessToken) {
+                setLoadingProfile(false);
+                return;
+            }
             const { data, ok } = await userService.getUser(userId, accessToken);
             if (ok && data) setUserProfile(data);
+            setLoadingProfile(false);
         };
         fetchUser();
     }, [userId, accessToken]);
@@ -22,6 +27,7 @@ const AddDetailsScreen = () => {
         <View style={styles.container}>
             <AddDetailsForm
                 initialData={userProfile}
+                isLoadingProfile={loadingProfile}
                 onSuccess={() => router.push("/(KYC)/docuTypeScreen")}
             />
         </View>

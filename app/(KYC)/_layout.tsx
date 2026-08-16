@@ -11,6 +11,7 @@ export default function KYCLayout() {
       <Stack.Screen name="addDetailsScreen" />
       <Stack.Screen name="verifyPhoneNoScreen" />
       <Stack.Screen name="verificationPendingScreen" />
+      <Stack.Screen name="verifiedScreen" />
     </Stack>
   );
 }

@@ -2,7 +2,6 @@ import PackageDetailsForm from "@/components/forms/traveller/PackageDetailsForm"
 import { AuthContext } from "@/context/AuthContext";
 import { useShipment } from "@/context/ShipmentContext";
 import { CreateTripParams, travellerService } from "@/services/travellerService";
-import { userService } from "@/services/userService";
 import { TripCategory } from "@/types/trip";
 import { router } from "expo-router";
 import React, { useContext, useState } from "react";
@@ -47,34 +46,10 @@ const PackageDetailsScreen = () => {
 
       const travellerResult = await travellerService.getTraveller(accessToken);
       if (!travellerResult.ok || !travellerResult.data?.travellerId) {
-        if (travellerResult.status !== 404) {
-          Toast.error(
-            travellerResult.error || "Unable to retrieve your traveller profile. Please try again.",
-          );
-          return;
-        }
-
-        const userResult = await userService.getUser(userId, accessToken);
-        if (!userResult.ok || !userResult.data) {
-          Toast.error(userResult.error || "Unable to load your profile. Please try again.");
-          return;
-        }
-
-        const createTravellerResult = await travellerService.createTraveller(
-          {
-            firstName: userResult.data.firstName,
-            lastName: userResult.data.lastName,
-            email: userResult.data.email,
-          },
-          accessToken,
+        Toast.error(
+          travellerResult.error || "Unable to retrieve your traveller profile. Please try again.",
         );
-
-        if (!createTravellerResult.ok || !createTravellerResult.data?.travellerId) {
-          Toast.error(
-            createTravellerResult.error || "Unable to set up your traveller profile. Please try again.",
-          );
-          return;
-        }
+        return;
       }
 
       // Build trip payload

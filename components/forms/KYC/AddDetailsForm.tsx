@@ -4,6 +4,7 @@ import { UserProfile, userService } from "@/services/userService";
 import { Formik } from "formik";
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import {
+    ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -16,12 +17,13 @@ import * as Yup from "yup";
 import CustomButton from "../../ui/CustomButton";
 import CustomTextInput from "../../ui/CustomTextInput";
 import LocationPicker from "../../ui/LocationPicker";
-import PhoneNumberInput, { COUNTRIES, Country, DEFAULT_COUNTRY } from "../../ui/PhoneNumberInput";
+import PhoneNumberInput, { COUNTRIES, Country, DEFAULT_COUNTRY, getDeviceDefaultCountry } from "../../ui/PhoneNumberInput";
 import { LocationData } from "../traveller/packageForm/types";
 
 type AddDetailsFormProps = {
     onSuccess: () => void;
     initialData?: UserProfile | null;
+    isLoadingProfile?: boolean;
 };
 
 const ValidationSchema = Yup.object().shape({
@@ -30,31 +32,36 @@ const ValidationSchema = Yup.object().shape({
     phoneNumber: Yup.string().required("Phone number is required"),
     emergencyContact: Yup.string().optional(),
     addressLineA: Yup.string().required("Address line A is required"),
-    addressLineB: Yup.string().optional(),
-    postalCode: Yup.string().optional(),
+    addressLineB: Yup.string().required("Address line B is required"),
+    postalCode: Yup.string().required("Postal code is required"),
     city: Yup.string().required("City is required"),
+    state: Yup.string().required("State is required"),
     country: Yup.string().required("Country is required"),
 });
 
-function parsePhone(fullPhone: string): { country: Country; number: string } {
-    if (!fullPhone) return { country: DEFAULT_COUNTRY, number: "" };
+function parsePhone(fullPhone: string, fallback: Country = DEFAULT_COUNTRY): { country: Country; number: string } {
+    if (!fullPhone) return { country: fallback, number: "" };
     const sorted = [...COUNTRIES].sort((a, b) => b.dialCode.length - a.dialCode.length);
     for (const country of sorted) {
         if (fullPhone.startsWith(country.dialCode)) {
             return { country, number: fullPhone.slice(country.dialCode.length) };
         }
     }
-    return { country: DEFAULT_COUNTRY, number: fullPhone };
+    return { country: fallback, number: fullPhone };
 }
 
 const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
     onSuccess,
     initialData,
+    isLoadingProfile = false,
 }) => {
     const { userId, accessToken } = useContext(AuthContext);
     const [loading, setLoading] = useState(false);
 
-    const parsedPhone = useMemo(() => parsePhone(initialData?.phoneNumber || ""), [initialData?.phoneNumber]);
+    const parsedPhone = useMemo(
+        () => parsePhone(initialData?.phoneNumber || "", getDeviceDefaultCountry()),
+        [initialData?.phoneNumber]
+    );
     const parsedEmergency = useMemo(() => parsePhone(initialData?.emergencyContact || ""), [initialData?.emergencyContact]);
 
     const [phoneCountry, setPhoneCountry] = useState<Country>(parsedPhone.country);
@@ -114,6 +121,7 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
         addressLineB: initialData?.addressLineB || "",
         postalCode: initialData?.postalCode || "",
         city: initialData?.city || "",
+        state: initialData?.state || "",
         country: initialData?.country || "",
     }), [initialData, parsedPhone.number, parsedEmergency.number]);
 
@@ -153,6 +161,7 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                         if (values.addressLineB !== initialValues.addressLineB) payload.addressLineB = values.addressLineB;
                         if (values.postalCode !== initialValues.postalCode) payload.postalCode = values.postalCode;
                         if (values.city !== initialValues.city) payload.city = values.city;
+                        if (values.state !== initialValues.state) payload.state = values.state;
                         if (values.country !== initialValues.country) payload.country = values.country;
 
                         if (Object.keys(payload).length === 0) {
@@ -186,12 +195,20 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                         showsVerticalScrollIndicator={false}
                         keyboardShouldPersistTaps="handled"
                     >
+                        {isLoadingProfile && (
+                            <View style={styles.loadingRow}>
+                                <ActivityIndicator size="small" color={Theme.colors.primary} />
+                                <Text style={styles.loadingText}>Loading your details...</Text>
+                            </View>
+                        )}
+
                         <Text style={styles.inputLabel}>First Name</Text>
                         <CustomTextInput
                             value={values.firstName}
                             onChangeText={handleChange('firstName')}
                             variant="compact"
                             placeholder="Enter your first name"
+                            editable={!isLoadingProfile}
                         />
                         {errors.firstName && touched.firstName && (
                             <Text style={styles.errorText}>{errors.firstName}</Text>
@@ -203,6 +220,7 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                             onChangeText={handleChange('lastName')}
                             variant="compact"
                             placeholder="Enter your last name"
+                            editable={!isLoadingProfile}
                         />
                         {errors.lastName && touched.lastName && (
                             <Text style={styles.errorText}>{errors.lastName}</Text>
@@ -240,13 +258,16 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                             <Text style={styles.errorText}>{errors.addressLineA}</Text>
                         )}
 
-                        <Text style={styles.inputLabel}>Address Line B (Optional)</Text>
+                        <Text style={styles.inputLabel}>Address Line B</Text>
                         <CustomTextInput
                             value={values.addressLineB}
                             onChangeText={handleChange('addressLineB')}
                             variant="compact"
                             placeholder="Apartment, suite, unit, etc."
                         />
+                        {errors.addressLineB && touched.addressLineB && (
+                            <Text style={styles.errorText}>{errors.addressLineB}</Text>
+                        )}
 
                         <View style={styles.cityPickerLayer}>
                             <Text style={styles.inputLabel}>City</Text>
@@ -268,6 +289,17 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                                 error={errors.city && touched.city ? errors.city : undefined}
                             />
                         </View>
+
+                        <Text style={styles.inputLabel}>State</Text>
+                        <CustomTextInput
+                            value={values.state}
+                            onChangeText={handleChange('state')}
+                            variant="compact"
+                            placeholder="Enter your state/region"
+                        />
+                        {errors.state && touched.state && (
+                            <Text style={styles.errorText}>{errors.state}</Text>
+                        )}
 
                         <View style={styles.countryPickerLayer}>
                             <Text style={styles.inputLabel}>Country</Text>
@@ -293,6 +325,9 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                             variant="compact"
                             placeholder="Enter postal code"
                         />
+                        {errors.postalCode && touched.postalCode && (
+                            <Text style={styles.errorText}>{errors.postalCode}</Text>
+                        )}
                     </ScrollView>
                     <View style={styles.buttonContainer}>
                         <CustomButton
@@ -337,6 +372,16 @@ const styles = StyleSheet.create({
         paddingTop: Theme.spacing.md,
         paddingBottom: Theme.spacing.xs,
         fontWeight: '600',
+    },
+    loadingRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: Theme.spacing.sm,
+        marginBottom: Theme.spacing.xs,
+    },
+    loadingText: {
+        ...Theme.typography.caption,
+        color: Theme.colors.text.gray,
     },
     cityPickerLayer: {
         zIndex: 30,
