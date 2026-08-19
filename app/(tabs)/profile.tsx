@@ -85,8 +85,9 @@ const ProfileScreen = () => {
         : []),
     { icon: "briefcase-outline", label: "My Shipments", route: "/allShipments" },
 
-    { icon: "help-circle-outline", label: "Help & Support", route: null },
-    { icon: "settings-outline", label: "Settings", route: null },
+    { icon: "help-circle-outline", label: "Help & Support", route: "/(profile)/helpSupport" },
+    // Hidden for now — re-enable once the Settings screen is ready.
+    // { icon: "settings-outline", label: "Settings", route: null },
   ];
 
   const handleMenuPress = (route: Href | null) => {

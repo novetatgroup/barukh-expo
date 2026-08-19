@@ -1,3 +1,4 @@
+import { ComplaintReason, ComplaintType } from "../constants/complaints";
 import { Role } from "../constants/roles";
 import { apiRequest, API_ENDPOINTS } from "./api";
 
@@ -19,6 +20,20 @@ export interface UpdateProfileParams {
 }
 
 export interface UpdateUserResponse {
+	message?: string;
+}
+
+export interface SubmitComplaintParams {
+	type: ComplaintType;
+	reason: ComplaintReason;
+	details: string;
+	shipmentReferenceNumber?: string;
+	travellerReferenceNumber?: string;
+	senderReferenceNumber?: string;
+	attachmentUrls: string[];
+}
+
+export interface SubmitComplaintResponse {
 	message?: string;
 }
 
@@ -78,6 +93,16 @@ export const userService = {
 				Authorization: `Bearer ${accessToken}`,
 			},
 			body: { role },
+		});
+	},
+
+	async submitComplaint(params: SubmitComplaintParams, accessToken: string) {
+		return apiRequest<SubmitComplaintResponse>(API_ENDPOINTS.complaints.submitComplaint, {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+			},
+			body: params,
 		});
 	},
 };

@@ -43,6 +43,13 @@ export type PaymentChallenge =
       additionalFields: Partial<Record<PaymentAdditionalField, string>>;
     };
 
+export type UserCard = {
+  cardHolderName: string;
+  last4: string;
+  flwPaymentCardId: string;
+  isDefault: boolean;
+};
+
 export type MaskedSavedCard = {
   id: string;
   brand: "VISA" | "MASTERCARD" | "AMEX" | "OTHER";
@@ -62,6 +69,21 @@ export type PaymentHistoryItem = {
   createdAt: string;
   maskedMethod: MaskedSavedCard;
   description: string;
+};
+
+export type PaymentTransaction = {
+  id: string;
+  reference: string;
+  shipmentId: string;
+  travellerId: string;
+  travellerName: string;
+  sourceDestination: string;
+  status: PaymentStatus;
+  totalAmount: number;
+  travellerAmount: number;
+  currency: string;
+  createdAt: string;
+  capturedAt: string | null;
 };
 
 export type PayoutCountry = "Uganda" | "Kenya" | "Tanzania" | "Rwanda";

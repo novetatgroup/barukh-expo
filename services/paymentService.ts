@@ -6,8 +6,10 @@ import {
   PaymentNextAction,
   PaymentResponse,
   PaymentStatus,
+  PaymentTransaction,
   PayoutCountry,
   PayoutCurrency,
+  UserCard,
 } from "@/types/payment";
 
 export type CreateBankAccountInput = {
@@ -72,6 +74,27 @@ export type SubmitNextActionInput = {
   reference: string;
   data: PaymentChallenge;
 };
+
+export type GetTransactionsParams = {
+  page?: number;
+  limit?: number;
+  status?: PaymentStatus;
+  fromDate?: string;
+};
+
+export interface TransactionsMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface GetTransactionsResponse {
+  data: PaymentTransaction[];
+  meta: TransactionsMeta;
+}
 
 const paymentStatuses: PaymentStatus[] = [
   "PENDING",
@@ -190,6 +213,13 @@ export const paymentService = {
     });
   },
 
+  async getPaymentCards(accessToken: string) {
+    return apiRequest<{ cards: UserCard[] } | UserCard[]>(API_ENDPOINTS.users.getPaymentCards, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
+
   async initiateCharge(input: InitiateChargeInput, accessToken: string) {
     const result = await apiRequest<unknown>(API_ENDPOINTS.payments.initiateCharge, {
       method: "POST",
@@ -220,6 +250,13 @@ export const paymentService = {
       error: result.ok && !parsed ? "The payment service returned an unsupported response." : result.error,
       ok: result.ok && Boolean(parsed),
     };
+  },
+
+  async getTransactions(params: GetTransactionsParams, accessToken: string) {
+    return apiRequest<GetTransactionsResponse>(API_ENDPOINTS.payments.getTransactions(params), {
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
   },
 
   // TODO(izaiah): backend has no dedicated status endpoint yet (see payments-integration-guide §7).
