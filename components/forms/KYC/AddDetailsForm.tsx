@@ -190,18 +190,13 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                     setFieldValue
                 }) => (
                     <>
+                    <View style={styles.formWrapper}>
                     <ScrollView
-                        style={styles.formContainer}
+                        style={[styles.formContainer, isLoadingProfile && styles.formContainerLoading]}
                         showsVerticalScrollIndicator={false}
                         keyboardShouldPersistTaps="handled"
+                        pointerEvents={isLoadingProfile ? "none" : "auto"}
                     >
-                        {isLoadingProfile && (
-                            <View style={styles.loadingRow}>
-                                <ActivityIndicator size="small" color={Theme.colors.primary} />
-                                <Text style={styles.loadingText}>Loading your details...</Text>
-                            </View>
-                        )}
-
                         <Text style={styles.inputLabel}>First Name</Text>
                         <CustomTextInput
                             value={values.firstName}
@@ -329,6 +324,12 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                             <Text style={styles.errorText}>{errors.postalCode}</Text>
                         )}
                     </ScrollView>
+                    {isLoadingProfile && (
+                        <View style={styles.loadingOverlay} pointerEvents="none">
+                            <ActivityIndicator size="small" color={Theme.colors.primary} />
+                        </View>
+                    )}
+                    </View>
                     <View style={styles.buttonContainer}>
                         <CustomButton
                             title="Update Profile"
@@ -350,9 +351,25 @@ const styles = StyleSheet.create({
         backgroundColor: "#f4f1f2",
         paddingTop: Theme.spacing.xl,
     },
+    formWrapper: {
+        flex: 1,
+        position: "relative",
+    },
     formContainer: {
         flex: 1,
         paddingHorizontal: Theme.spacing.md,
+    },
+    formContainerLoading: {
+        opacity: 0.4,
+    },
+    loadingOverlay: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: "center",
+        alignItems: "center",
     },
     title: {
         marginTop: Theme.spacing.lg,
@@ -372,16 +389,6 @@ const styles = StyleSheet.create({
         paddingTop: Theme.spacing.md,
         paddingBottom: Theme.spacing.xs,
         fontWeight: '600',
-    },
-    loadingRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: Theme.spacing.sm,
-        marginBottom: Theme.spacing.xs,
-    },
-    loadingText: {
-        ...Theme.typography.caption,
-        color: Theme.colors.text.gray,
     },
     cityPickerLayer: {
         zIndex: 30,

@@ -52,6 +52,20 @@ export const API_ENDPOINTS = {
 	payments: {
 		initiateCharge: "/payments/initiate-charge",
 		nextAction: "/payments/next-action",
+		getTransactions: (params: {
+			page?: number;
+			limit?: number;
+			status?: string;
+			fromDate?: string;
+		} = {}) => {
+			const query = new URLSearchParams();
+			if (params.page) query.set("page", String(params.page));
+			if (params.limit) query.set("limit", String(params.limit));
+			if (params.status) query.set("status", params.status);
+			if (params.fromDate) query.set("fromDate", params.fromDate);
+			const queryString = query.toString();
+			return `/payments/transactions/me${queryString ? `?${queryString}` : ""}`;
+		},
 	},
 	kyc: {
 		getUploadUrls: (userId: string) => `/smile-id/upload-urls/${userId}`,

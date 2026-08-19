@@ -9,6 +9,7 @@ export default function ProfileLayout() {
       <Stack.Screen name="payments" />
       <Stack.Screen name="paymentDetails" />
       <Stack.Screen name="payoutAccounts" />
+      <Stack.Screen name="helpSupport" />
     </Stack>
   );
 }
