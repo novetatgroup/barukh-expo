@@ -2,9 +2,12 @@ import { getPayoutCountryConfig } from "@/constants/payout";
 import { AuthContext } from "@/context/AuthContext";
 import { bankService, SupportedBank } from "@/services/bankService";
 import { paymentService } from "@/services/paymentService";
-import { MaskedBankAccount, PayoutCountry } from "@/types/payment";
+import { MaskedBankAccount, PayoutCountry, PayoutRecord } from "@/types/payment";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Toast } from "toastify-react-native";
+
+const PAYOUTS_PAGE_LIMIT = 15;
 
 type PayoutFormState = {
   country: PayoutCountry;
@@ -41,6 +44,13 @@ export const usePayoutAccounts = () => {
   const [banksLoading, setBanksLoading] = useState(false);
   const [banksError, setBanksError] = useState<string | null>(null);
 
+  const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
+  const [payoutsPage, setPayoutsPage] = useState(1);
+  const [payoutsHasNextPage, setPayoutsHasNextPage] = useState(false);
+  const [payoutsLoading, setPayoutsLoading] = useState(true);
+  const [payoutsRefreshing, setPayoutsRefreshing] = useState(false);
+  const [payoutsLoadingMore, setPayoutsLoadingMore] = useState(false);
+
   const bankCacheRef = useRef<Record<string, SupportedBank[]>>({});
   const bankRequestVersionRef = useRef(0);
   const countryConfig = useMemo(() => getPayoutCountryConfig(form.country), [form.country]);
@@ -69,6 +79,52 @@ export const usePayoutAccounts = () => {
       void load();
     }, [load]),
   );
+
+  const fetchPayouts = useCallback(
+    async (pageToLoad = 1, shouldRefresh = false) => {
+      if (!accessToken) {
+        setPayoutsLoading(false);
+        setPayoutsRefreshing(false);
+        setPayoutsLoadingMore(false);
+        return;
+      }
+
+      if (pageToLoad === 1 && !shouldRefresh) setPayoutsLoading(true);
+      if (shouldRefresh) setPayoutsRefreshing(true);
+      if (pageToLoad > 1) setPayoutsLoadingMore(true);
+
+      const { data, ok, error: fetchError } = await paymentService.getPayouts(
+        { page: pageToLoad, limit: PAYOUTS_PAGE_LIMIT },
+        accessToken,
+      );
+
+      if (ok && data) {
+        setPayouts((current) => (pageToLoad === 1 ? data.data : [...current, ...data.data]));
+        setPayoutsPage(data.meta.page);
+        setPayoutsHasNextPage(data.meta.hasNextPage);
+      } else if (fetchError) {
+        Toast.error(fetchError);
+      }
+
+      setPayoutsLoading(false);
+      setPayoutsRefreshing(false);
+      setPayoutsLoadingMore(false);
+    },
+    [accessToken],
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      void fetchPayouts(1, false);
+    }, [fetchPayouts]),
+  );
+
+  const reloadPayouts = () => fetchPayouts(1, true);
+
+  const loadMorePayouts = () => {
+    if (!payoutsHasNextPage || payoutsLoadingMore || payoutsLoading || payoutsRefreshing) return;
+    fetchPayouts(payoutsPage + 1);
+  };
 
   const loadSupportedBanks = useCallback(
     async (country: PayoutCountry, force = false) => {
@@ -167,7 +223,7 @@ export const usePayoutAccounts = () => {
     setForm({
       country: account.country,
       bankId: `existing:${account.bankName}`,
-      bankCode: "",
+      bankCode: account.bankCode ?? "",
       bankName: account.bankName,
       accountHolderName: account.accountHolderName,
       accountNumber: "",
@@ -191,7 +247,7 @@ export const usePayoutAccounts = () => {
   const submit = async () => {
     if (submitting) return;
     const accountNumber = form.accountNumber.replace(/\s/g, "");
-    if (!form.accountHolderName.trim() || !form.bankId || !form.bankName) {
+    if (!form.accountHolderName.trim() || !form.bankId || !form.bankName || !form.bankCode) {
       setError("Account holder and a supported bank are required.");
       return;
     }
@@ -216,6 +272,7 @@ export const usePayoutAccounts = () => {
             country: form.country,
             currency: countryConfig.currency,
             bankName: form.bankName,
+            bankCode: form.bankCode,
             accountHolderName: form.accountHolderName.trim(),
             ...(accountNumber ? { accountNumber } : {}),
             isDefault: form.isDefault,
@@ -240,6 +297,7 @@ export const usePayoutAccounts = () => {
           accountHolderName: form.accountHolderName.trim(),
           accountNumber,
           bankName: form.bankName,
+          bankCode: form.bankCode,
           isDefault: form.isDefault,
         },
         accessToken,
@@ -305,6 +363,12 @@ export const usePayoutAccounts = () => {
     deleteAccount,
     closeForm,
     submit,
+    payouts,
+    payoutsLoading,
+    payoutsRefreshing,
+    payoutsLoadingMore,
+    reloadPayouts,
+    loadMorePayouts,
     back: () => router.back(),
   };
 };

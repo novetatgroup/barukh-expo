@@ -66,6 +66,13 @@ export const API_ENDPOINTS = {
 			const queryString = query.toString();
 			return `/payments/transactions/me${queryString ? `?${queryString}` : ""}`;
 		},
+		getPayouts: (params: { page?: number; limit?: number } = {}) => {
+			const query = new URLSearchParams();
+			if (params.page) query.set("page", String(params.page));
+			if (params.limit) query.set("limit", String(params.limit));
+			const queryString = query.toString();
+			return `/payments/payouts/me${queryString ? `?${queryString}` : ""}`;
+		},
 	},
 	kyc: {
 		getUploadUrls: (userId: string) => `/smile-id/upload-urls/${userId}`,

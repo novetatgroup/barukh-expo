@@ -95,29 +95,25 @@ export type MaskedBankAccount = {
   country: PayoutCountry;
   currency: PayoutCurrency;
   bankName: string;
+  bankCode?: string | null;
   accountHolderName: string;
   maskedAccountNumber: string;
   swiftCode?: string;
   isDefault: boolean;
 };
 
-export type PayoutStatus =
-  | "NOT_STARTED"
-  | "PENDING"
-  | "PROCESSING"
-  | "PAID"
-  | "REJECTED";
+export type PayoutRecordStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
 
-export type PayoutState =
-  | { status: "NOT_STARTED"; shipmentId: string }
-  | { status: "PENDING" | "PROCESSING"; shipmentId: string; updatedAt: string }
-  | { status: "PAID"; shipmentId: string; updatedAt: string; maskedAccount: string }
-  | {
-      status: "REJECTED";
-      shipmentId: string;
-      updatedAt: string;
-      guidance: string;
-    };
+export type PayoutRecord = {
+  id: string;
+  shipmentId: string;
+  status: PayoutRecordStatus;
+  amount: number;
+  currency: string;
+  createdAt: string;
+  completedAt?: string;
+  failureMessage?: string;
+};
 
 export type SafePaymentRecovery = {
   userId: string;

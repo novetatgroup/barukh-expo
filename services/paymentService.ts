@@ -9,6 +9,7 @@ import {
   PaymentTransaction,
   PayoutCountry,
   PayoutCurrency,
+  PayoutRecord,
   UserCard,
 } from "@/types/payment";
 
@@ -19,6 +20,7 @@ export type CreateBankAccountInput = {
   accountHolderName: string;
   accountNumber: string;
   bankName: string;
+  bankCode: string;
   swiftCode?: string;
   routingNumber?: string;
   sortCode?: string;
@@ -93,6 +95,16 @@ export interface TransactionsMeta {
 
 export interface GetTransactionsResponse {
   data: PaymentTransaction[];
+  meta: TransactionsMeta;
+}
+
+export type GetPayoutsParams = {
+  page?: number;
+  limit?: number;
+};
+
+export interface GetPayoutsResponse {
+  data: PayoutRecord[];
   meta: TransactionsMeta;
 }
 
@@ -254,6 +266,13 @@ export const paymentService = {
 
   async getTransactions(params: GetTransactionsParams, accessToken: string) {
     return apiRequest<GetTransactionsResponse>(API_ENDPOINTS.payments.getTransactions(params), {
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
+
+  async getPayouts(params: GetPayoutsParams, accessToken: string) {
+    return apiRequest<GetPayoutsResponse>(API_ENDPOINTS.payments.getPayouts(params), {
       method: "GET",
       headers: { Authorization: `Bearer ${accessToken}` },
     });
