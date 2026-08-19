@@ -1,15 +1,16 @@
 import SupportedBankPicker from "@/components/forms/payments/SupportedBankPicker";
 import CustomDropdown from "@/components/ui/Dropdown";
-import SampleDataBanner from "@/components/ui/SampleDataBanner";
 import { PAYOUT_COUNTRIES } from "@/constants/payout";
 import { Theme } from "@/constants/Theme";
 import { usePayoutAccounts } from "@/hooks/usePayoutAccounts";
-import { PayoutState } from "@/types/payment";
+import { PayoutRecord } from "@/types/payment";
+import { formatMoney } from "@/utils/formatting";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   ScrollView,
   StyleSheet,
   Switch,
@@ -21,27 +22,6 @@ import {
 
 type Props = ReturnType<typeof usePayoutAccounts>;
 type Tab = "accounts" | "payouts";
-
-const SAMPLE_PAYOUTS: PayoutState[] = [
-  {
-    status: "PROCESSING",
-    shipmentId: "SAMPLE-payout-1",
-    updatedAt: "2026-08-02T11:00:00.000Z",
-  },
-  {
-    status: "PAID",
-    shipmentId: "SAMPLE-payout-2",
-    updatedAt: "2026-07-28T08:45:00.000Z",
-    maskedAccount: "**** 1208",
-  },
-  {
-    status: "REJECTED",
-    shipmentId: "SAMPLE-payout-3",
-    updatedAt: "2026-07-24T16:20:00.000Z",
-    guidance:
-      "Check your bank details and contact support. Payout retry is handled by the operations team after the account issue is resolved.",
-  },
-];
 
 const PayoutAccountsForm = (props: Props) => {
   const [tab, setTab] = useState<Tab>("accounts");
@@ -68,6 +48,12 @@ const PayoutAccountsForm = (props: Props) => {
     deleteAccount,
     closeForm,
     submit,
+    payouts,
+    payoutsLoading,
+    payoutsRefreshing,
+    payoutsLoadingMore,
+    reloadPayouts,
+    loadMorePayouts,
     back,
   } = props;
 
@@ -106,11 +92,11 @@ const PayoutAccountsForm = (props: Props) => {
         ))}
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
-        {success ? <Text style={styles.successBanner}>{success}</Text> : null}
+      {tab === "accounts" ? (
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
+          {success ? <Text style={styles.successBanner}>{success}</Text> : null}
 
-        {tab === "accounts" ? (
           <>
             {!formVisible ? (
               <TouchableOpacity style={styles.primaryButton} onPress={openCreate}>
@@ -172,6 +158,7 @@ const PayoutAccountsForm = (props: Props) => {
                   </View>
                   <Text style={styles.accountMeta}>{account.accountHolderName}</Text>
                   <Text style={styles.accountMeta}>{account.maskedAccountNumber} - {account.currency}</Text>
+                  {account.bankCode ? <Text style={styles.accountMeta}>Bank code {account.bankCode}</Text> : null}
                   {account.swiftCode ? <Text style={styles.accountMeta}>SWIFT {account.swiftCode}</Text> : null}
                 </View>
                 <View style={styles.accountActions}>
@@ -196,24 +183,60 @@ const PayoutAccountsForm = (props: Props) => {
               </View>
             ) : null}
           </>
-        ) : (
-          <>
-            <SampleDataBanner />
-            {SAMPLE_PAYOUTS.map((payout) => (
-              <View key={payout.shipmentId} style={styles.payoutCard}>
-                <View style={styles.payoutHeader}>
-                  <Text style={styles.accountTitle}>{payout.shipmentId}</Text>
-                  <Text style={[styles.payoutStatus, payout.status === "REJECTED" && styles.rejectedStatus]}>{payout.status}</Text>
-                </View>
-                {"updatedAt" in payout ? <Text style={styles.accountMeta}>Updated {new Date(payout.updatedAt).toLocaleString()}</Text> : null}
-                {payout.status === "PAID" ? <Text style={styles.helpText}>Paid to {payout.maskedAccount}</Text> : null}
-                {payout.status === "PENDING" || payout.status === "PROCESSING" ? <Text style={styles.helpText}>Processing time varies by bank and country.</Text> : null}
-                {payout.status === "REJECTED" ? <View style={styles.rejectedGuide}><Text style={styles.helpText}>{payout.guidance}</Text><Text style={styles.noRetry}>No payout retry is available in the app.</Text></View> : null}
+        </ScrollView>
+      ) : payoutsLoading ? (
+        <ActivityIndicator size="large" color={Theme.colors.primary} style={styles.payoutsLoader} />
+      ) : (
+        <FlatList
+          data={payouts}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.content}
+          refreshing={payoutsRefreshing}
+          onRefresh={reloadPayouts}
+          onEndReached={loadMorePayouts}
+          onEndReachedThreshold={0.4}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIconContainer}>
+                <Ionicons name="cash-outline" size={48} color={Theme.colors.primary} />
               </View>
-            ))}
-          </>
-        )}
-      </ScrollView>
+              <Text style={styles.emptyTitle}>No payouts yet</Text>
+              <Text style={styles.emptySubtext}>
+                Once a shipment you deliver is paid out, it will show up here.
+              </Text>
+            </View>
+          }
+          ListFooterComponent={
+            payoutsLoadingMore ? (
+              <ActivityIndicator size="small" color={Theme.colors.primary} style={styles.footerLoader} />
+            ) : null
+          }
+          renderItem={({ item }: { item: PayoutRecord }) => (
+            <View style={styles.payoutCard}>
+              <View style={styles.payoutHeader}>
+                <Text style={styles.accountTitle}>{item.shipmentId}</Text>
+                <Text style={[styles.payoutStatus, item.status === "FAILED" && styles.rejectedStatus]}>{item.status}</Text>
+              </View>
+              <Text style={styles.accountMeta}>
+                {formatMoney(item.amount, item.currency)} · {new Date(item.createdAt).toLocaleDateString()}
+              </Text>
+              {item.status === "COMPLETED" && item.completedAt ? (
+                <Text style={styles.helpText}>Paid on {new Date(item.completedAt).toLocaleDateString()}</Text>
+              ) : null}
+              {item.status === "PENDING" || item.status === "PROCESSING" ? (
+                <Text style={styles.helpText}>Processing time varies by bank and country.</Text>
+              ) : null}
+              {item.status === "FAILED" ? (
+                <View style={styles.rejectedGuide}>
+                  <Text style={styles.helpText}>{item.failureMessage}</Text>
+                  <Text style={styles.noRetry}>No payout retry is available in the app.</Text>
+                </View>
+              ) : null}
+            </View>
+          )}
+        />
+      )}
     </View>
   );
 };
@@ -260,6 +283,27 @@ const styles = StyleSheet.create({
   rejectedStatus: { color: Theme.colors.error },
   rejectedGuide: { backgroundColor: Theme.colors.background.secondary, borderRadius: Theme.borderRadius.sm, padding: Theme.spacing.sm, marginTop: Theme.spacing.sm },
   noRetry: { fontSize: 11, fontFamily: "Inter-SemiBold", color: Theme.colors.error, marginTop: Theme.spacing.xs },
+  payoutsLoader: { marginTop: Theme.spacing.xxxxl },
+  footerLoader: { marginVertical: Theme.spacing.md },
+  emptyState: { alignItems: "center", paddingHorizontal: Theme.spacing.xl, paddingTop: Theme.spacing.xl },
+  emptyIconContainer: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: "#EBF2F1",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: Theme.spacing.md,
+  },
+  emptyTitle: { fontSize: 18, fontFamily: "Inter-Bold", color: Theme.colors.text.dark, marginBottom: Theme.spacing.sm },
+  emptySubtext: {
+    fontSize: 14,
+    fontFamily: "Inter-Regular",
+    color: Theme.colors.text.gray,
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: Theme.spacing.lg,
+  },
 });
 
 export default PayoutAccountsForm;
