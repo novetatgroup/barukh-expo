@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "barukh-expo",
+    "name": "Barukh",
     "slug": "barukh-expo",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -20,7 +20,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#163330"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.anonymous.barukhexpo"
@@ -45,6 +45,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ba4f02fd-67f8-4129-aab2-9698b1130bb3"
+      }
+    },
+    "owner": "novetats-team"
   }
 }
