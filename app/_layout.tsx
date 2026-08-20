@@ -4,6 +4,7 @@ import { Slot, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import ToastManager from "toastify-react-native";
+import * as Sentry from "@sentry/react-native";
 import { toastConfig } from "@/components/ui/AppToast";
 import { Theme } from "@/constants/Theme";
 import { AuthProvider } from "@/context/AuthContext";
@@ -15,7 +16,18 @@ import { PaymentProvider } from "@/context/PaymentContext";
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  enabled: !__DEV__,
+  sendDefaultPii: true,
+  tracesSampleRate: 1.0,
+  profilesSampleRate: 1.0,
+  replaysOnErrorSampleRate: 1.0,
+  replaysSessionSampleRate: 0.1,
+  integrations: [Sentry.mobileReplayIntegration()],
+});
+
+function RootLayout() {
   const segments = useSegments();
   const hasBottomTabBar = segments[0] === "(tabs)";
   const [fontsLoaded, fontError] = useFonts({
@@ -60,3 +72,5 @@ export default function RootLayout() {
     </AuthProvider>
   );
 }
+
+export default Sentry.wrap(RootLayout);

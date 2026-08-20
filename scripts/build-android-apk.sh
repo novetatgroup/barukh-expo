@@ -12,6 +12,18 @@
 #
 set -euo pipefail
 
+# Load local secrets (e.g. SENTRY_AUTH_TOKEN) into this shell. Gradle reads
+# System.getenv directly and does not source .env files itself, so without
+# this the Sentry Gradle plugin silently fails to upload source maps/symbols.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_LOCAL="$SCRIPT_DIR/../.env.local"
+if [[ -f "$ENV_LOCAL" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$ENV_LOCAL"
+  set +a
+fi
+
 # --- args -------------------------------------------------------------------
 
 BUILD_TYPE="release"

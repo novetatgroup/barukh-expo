@@ -37,6 +37,9 @@ yarn-error.*
 # local env files
 .env*.local
 
+# Sentry build-time secrets file (written by @sentry/react-native's gradle/xcode hooks)
+.env.sentry-build-plugin
+
 # typescript
 *.tsbuildinfo
 
