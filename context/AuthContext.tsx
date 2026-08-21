@@ -1,11 +1,9 @@
 import React, { createContext, useState, useEffect, ReactNode } from "react";
 import { router } from "expo-router";
 import { jwtDecode } from "jwt-decode";
-import {
-	deleteSecureItem,
-	getSecureItem,
-	saveSecureItem,
-} from "../utils/secureStorage";
+import { refreshAccessToken } from "../services/api";
+import { authSession } from "../services/authSession";
+import { getSecureItem } from "../utils/secureStorage";
 
 interface DecodedToken {
 	userId: string | number;
@@ -31,15 +29,52 @@ export const AuthContext = createContext<AuthContextType>(
 	{} as AuthContextType
 );
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-	const [authState, setAuthStateInternal] = useState<AuthState>({
-		accessToken: null,
-		refreshToken: null,
-		isAuthenticated: false,
-		userId: null,
-	});
+const extractUserId = (token: string): string | null => {
+	const decoded: DecodedToken = jwtDecode(token);
+	return typeof decoded.userId === "string" || typeof decoded.userId === "number"
+		? String(decoded.userId)
+		: null;
+};
 
+const LOGGED_OUT_STATE: AuthState = {
+	accessToken: null,
+	refreshToken: null,
+	isAuthenticated: false,
+	userId: null,
+};
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+	const [authState, setAuthStateInternal] = useState<AuthState>(LOGGED_OUT_STATE);
 	const [loading, setLoading] = useState(true);
+
+	// authSession is the single source of truth for the live tokens (it's what
+	// apiRequest's 401-retry logic reads/writes, since that plain module can't
+	// use React context). Whenever it changes - from login, a silent
+	// background refresh, or expiry - mirror it into React state here.
+	useEffect(() => {
+		const unsubscribe = authSession.subscribe(({ accessToken, refreshToken }) => {
+			if (!accessToken) {
+				setAuthStateInternal(LOGGED_OUT_STATE);
+				return;
+			}
+			const userId = extractUserId(accessToken);
+			setAuthStateInternal({
+				accessToken,
+				refreshToken,
+				isAuthenticated: Boolean(userId),
+				userId,
+			});
+		});
+
+		authSession.setExpiredHandler(() => {
+			router.replace("/(auth)");
+		});
+
+		return () => {
+			unsubscribe();
+			authSession.setExpiredHandler(null);
+		};
+	}, []);
 
 	useEffect(() => {
 		const loadAuthState = async () => {
@@ -49,54 +84,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 					getSecureItem("refreshToken"),
 				]);
 
+				authSession.setTokens({ accessToken: token, refreshToken });
+
 				if (token) {
 					const decoded: DecodedToken = jwtDecode(token);
 					const currentTime = Date.now() / 1000;
+					const isExpired = Boolean(decoded.exp && Number(decoded.exp) < currentTime);
 
-					if (decoded.exp && Number(decoded.exp) < currentTime) {
-						await Promise.all([
-							deleteSecureItem("accessToken"),
-							deleteSecureItem("refreshToken"),
-						]);
-						setAuthStateInternal({
-							accessToken: null,
-							refreshToken: null,
-							isAuthenticated: false,
-							userId: null,
-						});
-					} else {
-						const userId = typeof decoded.userId === 'string' || typeof decoded.userId === 'number'
-							? String(decoded.userId)
-							: null;
+					if (!isExpired) return; // subscriber above already applied the state
 
-						if (!userId) {
-							await deleteSecureItem("accessToken");
-							setAuthStateInternal({
-								accessToken: null,
-								refreshToken: null,
-								isAuthenticated: false,
-								userId: null,
-							});
-							return;
-						}
+					// The access token has expired (e.g. the app was killed and reopened
+					// after enough time passed) - try the refresh token before forcing a
+					// fresh login. Only clears the session if refreshing actually fails.
+					await refreshAccessToken();
+					return;
+				}
 
-						setAuthStateInternal({
-							accessToken: token,
-							refreshToken,
-							isAuthenticated: true,
-							userId: userId,
-						});
-					}
-				} else if (refreshToken) {
-					// A refresh endpoint is not confirmed, so an orphaned refresh token
-					// cannot safely restore the session.
-					await deleteSecureItem("refreshToken");
+				if (refreshToken) {
+					await refreshAccessToken();
 				}
 			} catch {
-				await Promise.all([
-					deleteSecureItem("accessToken"),
-					deleteSecureItem("refreshToken"),
-				]);
+				await authSession.expire();
 			} finally {
 				setLoading(false);
 			}
@@ -106,25 +114,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	}, []);
 
 	const setAuthState = async (state: AuthState) => {
-		setAuthStateInternal(state);
-		if (state.accessToken) {
-			await saveSecureItem("accessToken", state.accessToken);
-		}
-		if (state.refreshToken) {
-			await saveSecureItem("refreshToken", state.refreshToken);
-		}
+		authSession.setTokens({ accessToken: state.accessToken, refreshToken: state.refreshToken });
 	};
 
 	const authFetch = async (url: string, options: RequestInit = {}) => {
-		const token = authState.accessToken;
+		let token = authSession.getTokens().accessToken;
 		if (!token) throw new Error("No access token found");
 
 		const decoded: DecodedToken = jwtDecode(token);
 		const currentTime = Date.now() / 1000;
 
 		if (decoded.exp && Number(decoded.exp) < currentTime) {
-			await logout();
-			throw new Error("Token expired");
+			const refreshed = await refreshAccessToken();
+			if (!refreshed) throw new Error("Token expired");
+			token = refreshed;
 		}
 
 		let existingHeaders: Record<string, string> = {};
@@ -140,30 +143,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 			existingHeaders = options.headers as Record<string, string>;
 		}
 
-     const isFormData = options.body instanceof FormData;
+		const isFormData = options.body instanceof FormData;
 
 		const headers: Record<string, string> = {
 			...existingHeaders,
-			Authorization: `Bearer ${authState.accessToken}`,
-      ...(isFormData ? {} : { "Content-Type": "application/json" }), 
+			Authorization: `Bearer ${token}`,
+			...(isFormData ? {} : { "Content-Type": "application/json" }),
 		};
 
 		return fetch(url, { ...options, headers });
 	};
 
 	const logout = async () => {
-		await deleteSecureItem("accessToken");
-		await deleteSecureItem("refreshToken");
-
-		setAuthStateInternal({
-			accessToken: null,
-			refreshToken: null,
-			isAuthenticated: false,
-			userId: null,
-		});
-
+		await authSession.expire();
 		router.replace("/(auth)");
 	};
+
 	return (
 		<AuthContext.Provider
 			value={{ ...authState, setAuthState, logout, authFetch, loading }}>
