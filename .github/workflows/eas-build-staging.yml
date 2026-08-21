@@ -1,6 +1,5 @@
-name: EAS Build - Staging
+name: EAS Build Barukh Staging
 
-# Fires whenever `staging` gets new commits (i.e. a PR merge into staging).
 # Kicks off an Android build on EAS using the "preview" profile and returns
 # immediately - check expo.dev for build status/the resulting APK link.
 on:
