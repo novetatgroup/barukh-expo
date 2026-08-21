@@ -1,8 +1,11 @@
-import Theme from "@/constants/Theme";
-import { AuthContext } from "@/context/AuthContext";
-import { Package, senderService } from "@/services/senderService";
-import { UserProfile, userService } from "@/services/userService";
 import { PackagePattern } from "@/assets/svgs";
+import ShipmentCard, { getShipmentDetailsRoute } from "@/components/shipments/ShipmentCard";
+import { Theme } from "@/constants/Theme";
+import { AuthContext } from "@/context/AuthContext";
+import { useShipments } from "@/hooks/useShipments";
+import { useUnreadNotificationsCount } from "@/hooks/useUnreadNotificationsCount";
+import { senderService } from "@/services/senderService";
+import { UserProfile, userService } from "@/services/userService";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useContext, useEffect, useState } from "react";
@@ -10,7 +13,6 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
-  LayoutAnimation,
   Platform,
   StyleSheet,
   Text,
@@ -29,9 +31,9 @@ if (Platform.OS === "android") {
 const SenderHomeContent = () => {
   const router = useRouter();
   const { userId, accessToken } = useContext(AuthContext);
+  const { unreadNotificationsCount } = useUnreadNotificationsCount();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [packages, setPackages] = useState<Package[]>([]);
-  const [packagesLoading, setPackagesLoading] = useState(true);
+  const { shipments, loading: shipmentsLoading, refresh: refreshShipments } = useShipments();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -44,40 +46,36 @@ const SenderHomeContent = () => {
     fetchUser();
   }, [userId, accessToken]);
 
-  useEffect(() => {
-    const fetchPackages = async () => {
-      if (!userId || !accessToken) return;
-      setPackagesLoading(true);
-      const { data, ok } = await senderService.getPackages(userId, accessToken);
-      if (ok && data) {
-        setPackages(data.data);
-      }
-      setPackagesLoading(false);
-    };
-    fetchPackages();
-  }, [userId, accessToken]);
-
   const userName = userProfile?.firstName || "User";
+  const notificationBadgeLabel =
+    unreadNotificationsCount > 99 ? "99+" : String(unreadNotificationsCount);
 
-  const handleNavigateToShipments = (tab?: string) => {
+  const goToAllShipments = () => {
+    router.push("/allShipments");
+  };
+
+  const goToNotifications = () => {
     router.push({
-      pathname: "/(tabs)/shipments",
-      params: { tab: tab || "All" },
+      pathname: "/(profile)/notifications",
     });
   };
 
   const [isSending, setIsSending] = useState(false);
   const [senderId, setSenderId] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const handleSendPackage = async () => {
-    if (!userProfile?.isActive) {
-      router.push("/(KYC)/KYCLanding");
+    if (!userId || !accessToken) {
+      Toast.error("You must be logged in to send a package.");
       return;
     }
 
-    if (!userId || !accessToken) {
-      Toast.error("You must be logged in to send a package.");
+    if (!userProfile) {
+      Toast.error("Your profile is still loading. Please try again.");
+      return;
+    }
+
+    if (!userProfile.isActive) {
+      router.push("/(KYC)/KYCLanding");
       return;
     }
 
@@ -91,31 +89,22 @@ const SenderHomeContent = () => {
 
     try {
       setIsSending(true);
-      const result = await senderService.createSender({ userId }, accessToken);
+      const getResult = await senderService.getSender(userId, accessToken);
 
-      let resolvedSenderId = result.data?.senderId;
-
-      if (!result.ok || !resolvedSenderId) {
-        const getResult = await senderService.getSender(userId, accessToken);
-
-        if (!getResult.ok || !getResult.data?.senderId) {
-          Toast.error(getResult.error || "Unable to retrieve your sender profile. Please try again.");
-          return;
-        }
-
-        resolvedSenderId = getResult.data.senderId;
+      if (!getResult.ok || !getResult.data?.senderId) {
+        Toast.error(getResult.error || "Unable to retrieve your sender profile. Please try again.");
+        return;
       }
 
-      console.log("Resolved senderId:", resolvedSenderId);
+      const resolvedSenderId = getResult.data.senderId;
       setSenderId(resolvedSenderId);
 
       router.push({
         pathname: "/(sender)/createShipment",
         params: { senderId: resolvedSenderId },
       });
-    } catch (error) {
-      Toast.error("Unable to create your sender profile. Please check your connection and try again.");
-      console.error("Error creating sender:", error);
+    } catch {
+      Toast.error("Unable to retrieve your sender profile. Please check your connection and try again.");
     } finally {
       setIsSending(false);
     }
@@ -132,19 +121,30 @@ const SenderHomeContent = () => {
         <View style={styles.headerContent}>
           <View style={styles.userRow}>
             <Image
-              source={require("@/assets/images/avatar.png")}
+              source={
+                userProfile?.profilePicture
+                  ? { uri: userProfile.profilePicture }
+                  : require("@/assets/images/avatar.png")
+              }
               style={styles.avatar}
             />
             <View>
               <Text style={styles.welcomeText}>Welcome Back !</Text>
               <Text style={styles.userName}>Hi {userName}</Text>
             </View>
-            <TouchableOpacity style={styles.bellIcon}>
+            <TouchableOpacity onPress={goToNotifications} style={styles.bellIcon}>
               <Ionicons
                 name="notifications-outline"
                 size={22}
                 color={Theme.colors.white}
               />
+              {unreadNotificationsCount > 0 ? (
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationBadgeText}>
+                    {notificationBadgeLabel}
+                  </Text>
+                </View>
+              ) : null}
             </TouchableOpacity>
           </View>
 
@@ -193,7 +193,7 @@ const SenderHomeContent = () => {
       {/* Shipments Section Header */}
       <View style={styles.shipmentHeader}>
         <Text style={styles.shipmentTitle}>My Shipments</Text>
-        <TouchableOpacity onPress={() => handleNavigateToShipments("All")}>
+        <TouchableOpacity onPress={goToAllShipments}>
           <Text style={styles.seeAll}>See All</Text>
         </TouchableOpacity>
       </View>
@@ -203,91 +203,35 @@ const SenderHomeContent = () => {
   return (
     <View style={styles.content}>
       <FlatList
-        data={packages}
+        onRefresh={refreshShipments}
+        refreshing={shipmentsLoading}
+        data={shipments}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={
-          packagesLoading ? (
+          shipmentsLoading ? (
             <ActivityIndicator size="large" color={Theme.colors.primary} style={{ marginTop: 32 }} />
           ) : (
             <View style={styles.emptyState}>
               <View style={styles.emptyIconContainer}>
-                <Ionicons name="cube-outline" size={48} color={Theme.colors.primary} />
+                <Ionicons name="briefcase-outline" size={48} color={Theme.colors.primary} />
               </View>
-              <Text style={styles.emptyTitle}>No packages yet</Text>
+              <Text style={styles.emptyTitle}>No shipments yet</Text>
               <Text style={styles.emptySubtext}>
-                You haven't sent any packages. Tap the button above to get started.
+                You haven&apos;t sent any packages. Tap the button above to get started.
               </Text>
-             
             </View>
           )
         }
-        renderItem={({ item }) => {
-          const trackingNumber = `#${item.id.substring(0, 8).toUpperCase()}`;
-          const from = `${item.originCity}, ${item.originCountry}`;
-          const to = `${item.destinationCity}, ${item.destinationCountry}`;
-          const isExpanded = expandedId === item.id;
-          return (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              style={styles.shipmentCard}
-              onPress={() => {
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                setExpandedId(isExpanded ? null : item.id);
-              }}
-            >
-              <View style={styles.shipmentCardRow}>
-                <TouchableOpacity
-                  style={styles.packageIconContainer}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/(sender)/matchedTraveller",
-                      params: { packageId: item.id },
-                    })
-                  }
-                >
-                  <Ionicons name="cube-outline" size={24} color={Theme.colors.primary} />
-                </TouchableOpacity>
-                <View style={styles.shipmentInfo}>
-                  <Text style={styles.trackingNumber}>{trackingNumber}</Text>
-                  <Text style={styles.shipmentItem}>{item.name}</Text>
-                </View>
-                <View style={[styles.statusBadge, styles.pending]}>
-                  <Text style={[styles.statusText, styles.pendingText]}>Pending</Text>
-                </View>
-              </View>
-
-              {isExpanded && (
-                <>
-                  <View style={styles.accordionDivider} />
-                  <View style={styles.accordionGrid}>
-                    <View style={styles.accordionCell}>
-                      <Text style={styles.accordionLabel}>From :</Text>
-                      <Text style={styles.accordionValue}>{from}</Text>
-                    </View>
-                    <View style={styles.accordionCell}>
-                      <Text style={styles.accordionLabel}>To :</Text>
-                      <Text style={styles.accordionValue}>{to}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.accordionDivider} />
-                  <View style={styles.accordionGrid}>
-                    <View style={styles.accordionCell}>
-                      <Text style={styles.accordionLabel}>Weight :</Text>
-                      <Text style={styles.accordionValue}>{item.weightKg} kg</Text>
-                    </View>
-                    <View style={styles.accordionCell}>
-                      <Text style={styles.accordionLabel}>Quantity :</Text>
-                      <Text style={styles.accordionValue}>{item.quantity}</Text>
-                    </View>
-                  </View>
-                </>
-              )}
-            </TouchableOpacity>
-          );
-        }}
+        renderItem={({ item }) => (
+          <ShipmentCard
+            shipment={item}
+            isTraveller={false}
+            onPress={() => router.push(getShipmentDetailsRoute(item, false))}
+          />
+        )}
       />
     </View>
   );
@@ -337,6 +281,25 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginLeft: "auto",
+    position: "relative",
+  },
+  notificationBadge: {
+    position: "absolute",
+    top: -3,
+    right: -3,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: Theme.colors.yellow,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  notificationBadgeText: {
+    fontSize: 9,
+    fontFamily: "Inter-Bold",
+    color: Theme.colors.primary,
+    includeFontPadding: false,
   },
   welcomeText: {
     color: "#CED1D8",
@@ -432,93 +395,6 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 100,
-  },
-  shipmentCard: {
-    backgroundColor: Theme.colors.white,
-    borderRadius: Theme.borderRadius.md,
-    padding: Theme.spacing.md,
-    marginBottom: Theme.spacing.sm,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  shipmentCardRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  accordionDivider: {
-    height: 1,
-    backgroundColor: Theme.colors.background.border,
-    marginVertical: 14,
-  },
-  accordionGrid: {
-    flexDirection: "row",
-    paddingVertical: 4,
-  },
-  accordionCell: {
-    flex: 1,
-    gap: 6,
-  },
-  accordionLabel: {
-    fontSize: 13,
-    fontFamily: "Inter-Regular",
-    color: Theme.colors.text.gray,
-  },
-  accordionValue: {
-    fontSize: 16,
-    fontFamily: "Inter-Bold",
-    color: Theme.colors.text.dark,
-  },
-  packageIconContainer: {
-    backgroundColor: "#C7F530",
-    borderRadius: 24,
-    width: 48,
-    height: 48,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  shipmentInfo: {
-    marginLeft: Theme.spacing.md,
-    flex: 1,
-  },
-  trackingNumber: {
-    fontSize: 16,
-    fontFamily: "Inter-Bold",
-    color: Theme.colors.black,
-    marginBottom: 2,
-  },
-  shipmentItem: {
-    fontSize: 13,
-    fontFamily: "Inter-Regular",
-    color: Theme.colors.text.gray,
-  },
-  statusBadge: {
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-  },
-  pending: {
-    backgroundColor: "#9CA3AF",
-  },
-  inTransit: {
-    backgroundColor: "#7856D3",
-  },
-  delivered: {
-    backgroundColor: "#32BF5B",
-  },
-  statusText: {
-    fontSize: 12,
-    fontFamily: "Inter-SemiBold",
-  },
-  pendingText: {
-    color: Theme.colors.white,
-  },
-  inTransitText: {
-    color: Theme.colors.white,
-  },
-  deliveredText: {
-    color: Theme.colors.white,
   },
   emptyText: {
     textAlign: "center",

@@ -5,11 +5,17 @@ import React, { useContext } from "react";
 import { StyleSheet, View } from "react-native";
 import { Toast } from "toastify-react-native";
 import VerifyOtpForm from "@/components/forms/auth/VerifyOtpForm";
+import { ROLES } from "@/constants/roles";
 import { AuthContext } from "@/context/AuthContext";
+import { useRole } from "@/context/RoleContext";
 import { authService } from "@/services/authService";
+import { senderService } from "@/services/senderService";
+import { travellerService } from "@/services/travellerService";
+import { userService } from "@/services/userService";
 
 const VerifyOtpScreen = () => {
 	const { setAuthState } = useContext(AuthContext);
+	const { setRole } = useRole();
 
 	const handleVerifyOtp = async ({ otp }: { otp: string }) => {
 		const sessionId = await AsyncStorage.getItem("sessionId");
@@ -44,7 +50,34 @@ const VerifyOtpScreen = () => {
 			});
 
 			Toast.success("OTP verified successfully!");
-			setTimeout(() => router.push("/roleSelection"), 1500);
+
+			const { data: userProfile } = await userService.getUser(userId, data.accessToken);
+
+			if (userProfile?.role === ROLES.SENDER || userProfile?.role === ROLES.TRAVELLER) {
+				// Established users go straight into their mode. KYC/isActive gating only
+				// applies right after a first-time role selection (see roleSelection.tsx) and
+				// at the point of action (e.g. SenderHomeContent redirects to KYCLanding when
+				// an unverified user tries to send a package) — not on every login.
+				await setRole(userProfile.role);
+
+				// Backfill sender/traveller profiles for established accounts that predate
+				// eager creation at role-selection time. Fire-and-forget so it doesn't add
+				// latency to every login — apiRequest never throws, and this is safe/best-
+				// effort the same way the roleSelection.tsx version is.
+				const profileParams = {
+					firstName: userProfile.firstName,
+					lastName: userProfile.lastName,
+					email: userProfile.email,
+				};
+				void Promise.all([
+					senderService.createSender(profileParams, data.accessToken),
+					travellerService.createTraveller(profileParams, data.accessToken),
+				]);
+
+				router.replace("/(tabs)/home");
+			} else {
+				setTimeout(() => router.push("/roleSelection"), 1500);
+			}
 			return;
 		}
 

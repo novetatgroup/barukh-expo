@@ -48,8 +48,8 @@ const DeliveryDetailsStep: React.FC<DeliveryDetailsStepProps> = ({
             setFieldValue("origin", location);
             setFieldValue("originCountry", location?.countryCode || "");
             setFieldValue("originCity", location?.city || "");
-            setFieldValue("originLat", location?.latitude || null);
-            setFieldValue("originLon", location?.longitude || null);
+            setFieldValue("originLat", location?.latitude ?? null);
+            setFieldValue("originLon", location?.longitude ?? null);
           }}
           error={touched.origin && errors.origin ? String(errors.origin) : undefined}
         />
@@ -65,8 +65,8 @@ const DeliveryDetailsStep: React.FC<DeliveryDetailsStepProps> = ({
             setFieldValue("destination", location);
             setFieldValue("destinationCountry", location?.countryCode || "");
             setFieldValue("destinationCity", location?.city || "");
-            setFieldValue("destinationLat", location?.latitude || null);
-            setFieldValue("destinationLon", location?.longitude || null);
+            setFieldValue("destinationLat", location?.latitude ?? null);
+            setFieldValue("destinationLon", location?.longitude ?? null);
           }}
           error={touched.destination && errors.destination ? String(errors.destination) : undefined}
         />

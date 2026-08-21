@@ -1,4 +1,4 @@
-import Theme from "@/constants/Theme";
+import { Theme } from "@/constants/Theme";
 import { ChatContext, ChatMessage } from "@/context/ChatContext";
 import { AuthContext } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
@@ -37,11 +37,9 @@ const ChatScreen = () => {
 
   // ── Fetch history on mount + reconnect ──────────────────────────────────
   useEffect(() => {
-    console.log("[Chat] fetch effect — socket:", !!socket, "| conversationId:", conversationId);
     if (!socket || !conversationId) return;
 
     const handleHistory = (data: { messages: ChatMessage[]; count: number }) => {
-      console.log("[Chat] messages:history received — count:", data.messages.length);
       const ordered = [...data.messages].reverse();
       setMessages(ordered);
       setHistoryLoaded(true);
@@ -61,7 +59,6 @@ const ChatScreen = () => {
     };
 
     const fetchMessages = () => {
-      console.log("[Chat] emitting messages:fetch for:", conversationId);
       socket.emit("messages:fetch", { conversationId, limit: 50 });
     };
 
@@ -157,9 +154,7 @@ const ChatScreen = () => {
   // ── Sending ──────────────────────────────────────────────────────────────
   const handleSend = useCallback(() => {
     const trimmed = text.trim();
-    console.log("[handleSend] trimmed:", trimmed, "| socket:", !!socket, "| receiverId:", receiverId);
     if (!trimmed || !socket || !receiverId) {
-      console.log("[handleSend] blocked — trimmed:", !!trimmed, "socket:", !!socket, "receiverId:", receiverId);
       return;
     }
 
@@ -176,7 +171,8 @@ const ChatScreen = () => {
     setMessages((prev) => [...prev, optimistic]);
     setText("");
 
-    socket.emit("message:send", { receiverId, content: trimmed });
+    // Backend currently expects the misspelled key for message:send.
+    socket.emit("message:send", { recieverId: receiverId, content: trimmed });
     socket.emit("typing:stop", { receiverId });
     isTypingActiveRef.current = false;
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
@@ -236,7 +232,7 @@ const ChatScreen = () => {
     >
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.replace("/(tabs)/chat")} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.dismissTo("/(tabs)/chat")} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={Theme.colors.primary} />
         </TouchableOpacity>
         <View style={styles.headerAvatar}>

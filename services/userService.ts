@@ -1,3 +1,4 @@
+import { ComplaintReason, ComplaintType } from "../constants/complaints";
 import { Role } from "../constants/roles";
 import { apiRequest, API_ENDPOINTS } from "./api";
 
@@ -14,11 +15,34 @@ export interface UpdateProfileParams {
 	addressLineB?: string;
 	postalCode?: string;
 	city?: string;
+	state?: string;
 	country?: string;
 }
 
 export interface UpdateUserResponse {
 	message?: string;
+}
+
+export interface SubmitComplaintParams {
+	type: ComplaintType;
+	reason: ComplaintReason;
+	details: string;
+	shipmentReferenceNumber?: string;
+	travellerReferenceNumber?: string;
+	senderReferenceNumber?: string;
+	attachmentUrls: string[];
+}
+
+export interface SubmitComplaintResponse {
+	message?: string;
+}
+
+export interface FlwCustomerObject {
+	flwCustomerId: string;
+	flwPaymentCardId?: string;
+	flwPaymentCardLast4?: string;
+	flwPaymentCardHolderName?: string;
+	flwPaymentCardIsDefault?: boolean;
 }
 
 export interface UserProfile {
@@ -36,13 +60,15 @@ export interface UserProfile {
 	addressLineB: string;
 	postalCode: string;
 	city: string;
+	state: string;
 	country: string;
 	isKycVerified: boolean;
+	flwCustomerObject?: FlwCustomerObject;
 }
 
 export const userService = {
-	async getUser(userId: string, accessToken: string) {
-		return apiRequest<UserProfile>(API_ENDPOINTS.users.get(userId), {
+	async getUser(_userId: string, accessToken: string) {
+		return apiRequest<UserProfile>(API_ENDPOINTS.users.get, {
 			method: "GET",
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
@@ -50,8 +76,8 @@ export const userService = {
 		});
 	},
 
-	async updateProfile(userId: string, params: UpdateProfileParams, accessToken: string) {
-		return apiRequest<UpdateUserResponse>(API_ENDPOINTS.users.update(userId), {
+	async updateProfile(_userId: string, params: UpdateProfileParams, accessToken: string) {
+		return apiRequest<UpdateUserResponse>(API_ENDPOINTS.users.update, {
 			method: "PATCH",
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
@@ -60,13 +86,23 @@ export const userService = {
 		});
 	},
 
-	async updateRole(userId: string, role: Role, accessToken: string) {
-		return apiRequest<UpdateUserResponse>(API_ENDPOINTS.users.update(userId), {
+	async updateRole(_userId: string, role: Role, accessToken: string) {
+		return apiRequest<UpdateUserResponse>(API_ENDPOINTS.users.update, {
 			method: "PATCH",
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
 			},
 			body: { role },
+		});
+	},
+
+	async submitComplaint(params: SubmitComplaintParams, accessToken: string) {
+		return apiRequest<SubmitComplaintResponse>(API_ENDPOINTS.complaints.submitComplaint, {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+			},
+			body: params,
 		});
 	},
 };

@@ -9,14 +9,14 @@ import {
   View,
 } from 'react-native';
 import CustomButton from '../../ui/CustomButton';
-import PhoneNumberInput, { DEFAULT_COUNTRY, Country } from '../../ui/PhoneNumberInput';
+import PhoneNumberInput, { Country, getDeviceDefaultCountry } from '../../ui/PhoneNumberInput';
 
 interface VerifyPhoneNoFormProps {
   onSubmit: (phoneNumber: string, country: Country) => void;
 }
 
 const VerifyPhoneNoForm: React.FC<VerifyPhoneNoFormProps> = ({ onSubmit }) => {
-  const [selectedCountry, setSelectedCountry] = useState<Country>(DEFAULT_COUNTRY);
+  const [selectedCountry, setSelectedCountry] = useState<Country>(() => getDeviceDefaultCountry());
   const [inputValue, setInputValue] = useState('');
 
   return (

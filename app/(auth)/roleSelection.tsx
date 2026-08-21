@@ -1,13 +1,15 @@
-import { router } from "expo-router";
-import React, { useContext, useState } from "react";
-import { StyleSheet, View } from "react-native";
-import { Toast } from "toastify-react-native";
 import RoleSelectionForm from "@/components/forms/auth/RoleSelectionForm";
 import { Role } from "@/constants/roles";
 import { AuthContext } from "@/context/AuthContext";
 import { useRole } from "@/context/RoleContext";
-import { userService } from "@/services/userService";
 import { kycService } from "@/services/kycService";
+import { senderService } from "@/services/senderService";
+import { travellerService } from "@/services/travellerService";
+import { userService } from "@/services/userService";
+import { router } from "expo-router";
+import React, { useContext, useState } from "react";
+import { StyleSheet, View } from "react-native";
+import { Toast } from "toastify-react-native";
 
 const RoleSelectionScreen = () => {
   const { userId, accessToken } = useContext(AuthContext);
@@ -35,6 +37,26 @@ const RoleSelectionScreen = () => {
       await setRole(role);
 
       const { data: userProfile } = await userService.getUser(userId, accessToken);
+
+      if (userProfile) {
+        // Provision both a sender and traveller profile up front, regardless
+        // of which mode was picked, so switching modes later (or any screen
+        // that assumes a sender/traveller record exists) doesn't depend on
+        // the user having taken an action first. Best-effort: apiRequest
+        // never throws, and failures here don't block navigation since the
+        // existing lazy-creation fallbacks (send package / create trip)
+        // still cover the case where a profile is missing.
+        const profileParams = {
+          firstName: userProfile.firstName,
+          lastName: userProfile.lastName,
+          email: userProfile.email,
+        };
+        await Promise.all([
+          senderService.createSender(profileParams, accessToken),
+          travellerService.createTraveller(profileParams, accessToken),
+        ]);
+      }
+
       if (userProfile && !userProfile.isActive) {
         const { data: jobStatus } = await kycService.getJobStatus(userId, accessToken);
         if (jobStatus?.status === "SUCCESS") {

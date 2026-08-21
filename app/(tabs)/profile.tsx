@@ -1,9 +1,12 @@
-import Theme from "@/constants/Theme";
+import { Theme } from "@/constants/Theme";
 import { AuthContext } from "@/context/AuthContext";
 import { useRole } from "@/context/RoleContext";
+import { useUnreadNotificationsCount } from "@/hooks/useUnreadNotificationsCount";
+import { senderService } from "@/services/senderService";
+import { travellerService } from "@/services/travellerService";
 import { UserProfile, userService } from "@/services/userService";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { Href, useRouter } from "expo-router";
 import React, { useContext, useEffect, useState } from "react";
 import {
   Image,
@@ -17,8 +20,10 @@ import {
 const ProfileScreen = () => {
   const router = useRouter();
   const { logout, userId, accessToken } = useContext(AuthContext);
-  const { clearRole } = useRole();
+  const { clearRole, role } = useRole();
+  const { unreadNotificationsCount } = useUnreadNotificationsCount();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [roleNumber, setRoleNumber] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -31,23 +36,63 @@ const ProfileScreen = () => {
     fetchUser();
   }, [userId, accessToken]);
 
+  useEffect(() => {
+    const fetchRoleNumber = async () => {
+      if (!userId || !accessToken) return;
+
+      if (role === "SENDER") {
+        const { data, ok } = await senderService.getSender(userId, accessToken);
+        setRoleNumber(ok && data ? data.senderNumber : null);
+      } else if (role === "TRAVELLER") {
+        const { data, ok } = await travellerService.getTraveller(accessToken);
+        setRoleNumber(ok && data ? data.travellerNumber : null);
+      } else {
+        setRoleNumber(null);
+      }
+    };
+    fetchRoleNumber();
+  }, [role, userId, accessToken]);
+
   const userName = userProfile
     ? `${userProfile.firstName} ${userProfile.lastName}`
     : "User";
+  const notificationBadgeLabel =
+    unreadNotificationsCount > 99 ? "99+" : String(unreadNotificationsCount);
 
-  const menuItems = [
-     { icon: "swap-horizontal-outline", label: "Switch Barukh Mode", route: "/(profile)/switchProfile" },
-{ icon: "shield-checkmark-outline", label: "Verification", route: null },
-    { icon: "card-outline", label: "My Payments", route: null },
-    { icon: "cube-outline", label: "My Shipments", route: null },
-   
-    { icon: "help-circle-outline", label: "Help & Support", route: null },
-    { icon: "settings-outline", label: "Settings", route: null },
+  const switchModeLabel =
+    role === "SENDER"
+      ? "Switch to Barukh Go"
+      : role === "TRAVELLER"
+        ? "Switch to Barukh Send"
+        : "Switch Barukh Mode";
+
+  const menuItems: {
+    icon: keyof typeof Ionicons.glyphMap;
+    label: string;
+    route: Href | null;
+  }[] = [
+    { icon: "swap-horizontal-outline", label: switchModeLabel, route: "/(profile)/switchProfile" },
+    { icon: "notifications-outline", label: "Notifications", route: "/(profile)/notifications" },
+    {
+      icon: "shield-checkmark-outline",
+      label: "Verification",
+      route: userProfile?.isActive ? "/(KYC)/verifiedScreen" : "/(KYC)/KYCLanding",
+    },
+    ...(role === "TRAVELLER"
+      ? [{ icon: "business-outline" as const, label: "Payout Accounts", route: "/(profile)/payoutAccounts" as Href }]
+      : role === "SENDER"
+        ? [{ icon: "card-outline" as const, label: "My Payments", route: "/(profile)/payments" as Href }]
+        : []),
+    { icon: "briefcase-outline", label: "My Shipments", route: "/allShipments" },
+
+    { icon: "help-circle-outline", label: "Help & Support", route: "/(profile)/helpSupport" },
+    // Hidden for now — re-enable once the Settings screen is ready.
+    // { icon: "settings-outline", label: "Settings", route: null },
   ];
 
-  const handleMenuPress = (route: string | null) => {
+  const handleMenuPress = (route: Href | null) => {
     if (route) {
-      router.push(route as any);
+      router.push(route);
     }
   };
 
@@ -66,15 +111,20 @@ const ProfileScreen = () => {
 
       <View style={styles.profileHeader}>
         <Image
-          source={require("@/assets/images/avatar.png")}
+          source={
+            userProfile?.profilePicture
+              ? { uri: userProfile.profilePicture }
+              : require("@/assets/images/avatar.png")
+          }
           style={styles.avatar}
         />
         <View style={styles.profileInfo}>
           <Text style={styles.userName}>{userName}</Text>
+          {roleNumber ? <Text style={styles.userNumber}>{roleNumber}</Text> : null}
         </View>
         <TouchableOpacity
           style={styles.editIcon}
-          onPress={() => router.push("/(profile)/editProfile" as any)}
+          onPress={() => router.push("/(profile)/editProfile")}
         >
           <Ionicons name="create-outline" size={22} color={Theme.colors.primary} />
         </TouchableOpacity>
@@ -89,10 +139,17 @@ const ProfileScreen = () => {
           >
             <View style={styles.menuIconContainer}>
               <Ionicons
-                name={item.icon as keyof typeof Ionicons.glyphMap}
+                name={item.icon}
                 size={22}
                 color={Theme.colors.primary}
               />
+              {item.label === "Notifications" && unreadNotificationsCount > 0 ? (
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationBadgeText}>
+                    {notificationBadgeLabel}
+                  </Text>
+                </View>
+              ) : null}
             </View>
             <Text style={styles.menuLabel}>{item.label}</Text>
             <Ionicons
@@ -156,6 +213,12 @@ const styles = StyleSheet.create({
     fontFamily: "Inter-Bold",
     color: Theme.colors.text.dark,
   },
+  userNumber: {
+    fontSize: 13,
+    fontFamily: "Inter-Regular",
+    color: Theme.colors.text.gray,
+    marginTop: 2,
+  },
   editIcon: {
     padding: Theme.spacing.xs,
   },
@@ -182,6 +245,25 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.background.border,
     justifyContent: "center",
     alignItems: "center",
+    position: "relative",
+  },
+  notificationBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: Theme.colors.yellow,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  notificationBadgeText: {
+    fontSize: 9,
+    fontFamily: "Inter-Bold",
+    color: Theme.colors.primary,
+    includeFontPadding: false,
   },
   menuLabel: {
     flex: 1,

@@ -48,8 +48,7 @@ const VerifyPhoneOtpForm: React.FC<VerifyPhoneOtpFormProps> = ({ onSubmit, lengt
     try {
       setLoading(true);
       await onSubmit({ otp });
-    } catch (error) {
-      console.error("Error verifying OTP:", error);
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -61,8 +60,6 @@ const VerifyPhoneOtpForm: React.FC<VerifyPhoneOtpFormProps> = ({ onSubmit, lengt
       setOtp("");
     }
   };
-
-  const isOtpComplete = otp.length === length;
 
   return (
     <KeyboardAvoidingView
@@ -80,7 +77,7 @@ const VerifyPhoneOtpForm: React.FC<VerifyPhoneOtpFormProps> = ({ onSubmit, lengt
         </View>
 
         <Text style={styles.subtitle}>
-          We've sent a 6-digit code to your phone number
+          We&apos;ve sent a 6-digit code to your phone number
         </Text>
 
         <View style={styles.otpContainer}>

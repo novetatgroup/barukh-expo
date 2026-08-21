@@ -2,8 +2,9 @@ import Theme from "@/constants/Theme";
 import { AuthContext } from "@/context/AuthContext";
 import { UserProfile, userService } from "@/services/userService";
 import { Formik } from "formik";
-import React, { useState, useMemo, useEffect, useContext } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import {
+    ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -15,13 +16,14 @@ import { Toast } from "toastify-react-native";
 import * as Yup from "yup";
 import CustomButton from "../../ui/CustomButton";
 import CustomTextInput from "../../ui/CustomTextInput";
-import PhoneNumberInput, { DEFAULT_COUNTRY, Country, COUNTRIES } from "../../ui/PhoneNumberInput";
 import LocationPicker from "../../ui/LocationPicker";
+import PhoneNumberInput, { COUNTRIES, Country, DEFAULT_COUNTRY, getDeviceDefaultCountry } from "../../ui/PhoneNumberInput";
 import { LocationData } from "../traveller/packageForm/types";
 
 type AddDetailsFormProps = {
     onSuccess: () => void;
     initialData?: UserProfile | null;
+    isLoadingProfile?: boolean;
 };
 
 const ValidationSchema = Yup.object().shape({
@@ -30,31 +32,36 @@ const ValidationSchema = Yup.object().shape({
     phoneNumber: Yup.string().required("Phone number is required"),
     emergencyContact: Yup.string().optional(),
     addressLineA: Yup.string().required("Address line A is required"),
-    addressLineB: Yup.string().optional(),
-    postalCode: Yup.string().optional(),
-    city: Yup.string().required("Location is required"),
-    country: Yup.string().required("Location is required"),
+    addressLineB: Yup.string().required("Address line B is required"),
+    postalCode: Yup.string().required("Postal code is required"),
+    city: Yup.string().required("City is required"),
+    state: Yup.string().required("State is required"),
+    country: Yup.string().required("Country is required"),
 });
 
-function parsePhone(fullPhone: string): { country: Country; number: string } {
-    if (!fullPhone) return { country: DEFAULT_COUNTRY, number: "" };
+function parsePhone(fullPhone: string, fallback: Country = DEFAULT_COUNTRY): { country: Country; number: string } {
+    if (!fullPhone) return { country: fallback, number: "" };
     const sorted = [...COUNTRIES].sort((a, b) => b.dialCode.length - a.dialCode.length);
     for (const country of sorted) {
         if (fullPhone.startsWith(country.dialCode)) {
             return { country, number: fullPhone.slice(country.dialCode.length) };
         }
     }
-    return { country: DEFAULT_COUNTRY, number: fullPhone };
+    return { country: fallback, number: fullPhone };
 }
 
 const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
     onSuccess,
     initialData,
+    isLoadingProfile = false,
 }) => {
     const { userId, accessToken } = useContext(AuthContext);
     const [loading, setLoading] = useState(false);
 
-    const parsedPhone = useMemo(() => parsePhone(initialData?.phoneNumber || ""), [initialData?.phoneNumber]);
+    const parsedPhone = useMemo(
+        () => parsePhone(initialData?.phoneNumber || "", getDeviceDefaultCountry()),
+        [initialData?.phoneNumber]
+    );
     const parsedEmergency = useMemo(() => parsePhone(initialData?.emergencyContact || ""), [initialData?.emergencyContact]);
 
     const [phoneCountry, setPhoneCountry] = useState<Country>(parsedPhone.country);
@@ -114,6 +121,7 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
         addressLineB: initialData?.addressLineB || "",
         postalCode: initialData?.postalCode || "",
         city: initialData?.city || "",
+        state: initialData?.state || "",
         country: initialData?.country || "",
     }), [initialData, parsedPhone.number, parsedEmergency.number]);
 
@@ -133,7 +141,6 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                     if (!userId || !accessToken) return;
                     try {
                         setLoading(true);
-
                         const fullPhoneNumber = `${phoneCountry.dialCode}${values.phoneNumber}`;
                         const fullEmergencyContact = values.emergencyContact
                             ? `${emergencyCountry.dialCode}${values.emergencyContact}`
@@ -154,6 +161,7 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                         if (values.addressLineB !== initialValues.addressLineB) payload.addressLineB = values.addressLineB;
                         if (values.postalCode !== initialValues.postalCode) payload.postalCode = values.postalCode;
                         if (values.city !== initialValues.city) payload.city = values.city;
+                        if (values.state !== initialValues.state) payload.state = values.state;
                         if (values.country !== initialValues.country) payload.country = values.country;
 
                         if (Object.keys(payload).length === 0) {
@@ -161,17 +169,14 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                             return;
                         }
 
-                        console.log("[AddDetailsForm] updateProfile payload:", payload);
                         const { ok, error } = await userService.updateProfile(userId, payload, accessToken);
                         if (ok) {
                             Toast.success("Details saved successfully!");
                             onSuccess();
                         } else {
-                            console.error("[AddDetailsForm] updateProfile failed:", error);
                             Toast.error(error || "Failed to save details.");
                         }
-                    } catch (err) {
-                        console.error("[AddDetailsForm] updateProfile threw an exception:", err);
+                    } catch {
                         Toast.error("Something went wrong. Please try again.");
                     } finally {
                         setLoading(false);
@@ -185,10 +190,12 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                     setFieldValue
                 }) => (
                     <>
+                    <View style={styles.formWrapper}>
                     <ScrollView
-                        style={styles.formContainer}
+                        style={[styles.formContainer, isLoadingProfile && styles.formContainerLoading]}
                         showsVerticalScrollIndicator={false}
                         keyboardShouldPersistTaps="handled"
+                        pointerEvents={isLoadingProfile ? "none" : "auto"}
                     >
                         <Text style={styles.inputLabel}>First Name</Text>
                         <CustomTextInput
@@ -196,6 +203,7 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                             onChangeText={handleChange('firstName')}
                             variant="compact"
                             placeholder="Enter your first name"
+                            editable={!isLoadingProfile}
                         />
                         {errors.firstName && touched.firstName && (
                             <Text style={styles.errorText}>{errors.firstName}</Text>
@@ -207,6 +215,7 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                             onChangeText={handleChange('lastName')}
                             variant="compact"
                             placeholder="Enter your last name"
+                            editable={!isLoadingProfile}
                         />
                         {errors.lastName && touched.lastName && (
                             <Text style={styles.errorText}>{errors.lastName}</Text>
@@ -244,39 +253,65 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                             <Text style={styles.errorText}>{errors.addressLineA}</Text>
                         )}
 
-                        <Text style={styles.inputLabel}>Address Line B (Optional)</Text>
+                        <Text style={styles.inputLabel}>Address Line B</Text>
                         <CustomTextInput
                             value={values.addressLineB}
                             onChangeText={handleChange('addressLineB')}
                             variant="compact"
                             placeholder="Apartment, suite, unit, etc."
                         />
+                        {errors.addressLineB && touched.addressLineB && (
+                            <Text style={styles.errorText}>{errors.addressLineB}</Text>
+                        )}
 
-                        <Text style={styles.inputLabel}>City</Text>
-                        <LocationPicker
-                            placeholder="Search for your city..."
-                            value={cityLocation}
-                            onLocationSelect={(loc) => {
-                                setCityLocation(loc ? { ...loc, description: loc.city } : null);
-                                setFieldValue("city", loc?.city || "");
-                                if (loc?.country) {
-                                    setCountryLocation({ ...loc, description: loc.country });
-                                    setFieldValue("country", loc.countryCode || "");
-                                }
-                            }}
-                            error={errors.city && touched.city ? errors.city : undefined}
-                        />
+                        <View style={styles.cityPickerLayer}>
+                            <Text style={styles.inputLabel}>City</Text>
+                            <LocationPicker
+                                placeholder="Search for your city..."
+                                value={cityLocation}
+                                zIndex={30}
+                                onInputChange={(text) => {
+                                    setFieldValue("city", text);
+                                }}
+                                onLocationSelect={(loc) => {
+                                    setCityLocation(loc ? { ...loc, description: loc.city } : null);
+                                    setFieldValue("city", loc?.city || loc?.description || "");
+                                    if (loc?.country) {
+                                        setCountryLocation({ ...loc, description: loc.country });
+                                        setFieldValue("country", loc.country);
+                                    }
+                                }}
+                                error={errors.city && touched.city ? errors.city : undefined}
+                            />
+                        </View>
 
-                        <Text style={styles.inputLabel}>Country</Text>
-                        <LocationPicker
-                            placeholder="Search for your country..."
-                            value={countryLocation}
-                            onLocationSelect={(loc) => {
-                                setCountryLocation(loc ? { ...loc, description: loc.country } : null);
-                                setFieldValue("country", loc?.countryCode || "");
-                            }}
-                            error={errors.country && touched.country ? errors.country : undefined}
+                        <Text style={styles.inputLabel}>State</Text>
+                        <CustomTextInput
+                            value={values.state}
+                            onChangeText={handleChange('state')}
+                            variant="compact"
+                            placeholder="Enter your state/region"
                         />
+                        {errors.state && touched.state && (
+                            <Text style={styles.errorText}>{errors.state}</Text>
+                        )}
+
+                        <View style={styles.countryPickerLayer}>
+                            <Text style={styles.inputLabel}>Country</Text>
+                            <LocationPicker
+                                placeholder="Search for your country..."
+                                value={countryLocation}
+                                zIndex={20}
+                                onInputChange={(text) => {
+                                    setFieldValue("country", text);
+                                }}
+                                onLocationSelect={(loc) => {
+                                    setCountryLocation(loc ? { ...loc, description: loc.country } : null);
+                                    setFieldValue("country", loc?.country || loc?.description || "");
+                                }}
+                                error={errors.country && touched.country ? errors.country : undefined}
+                            />
+                        </View>
 
                         <Text style={styles.inputLabel}>Postal Code</Text>
                         <CustomTextInput
@@ -285,7 +320,16 @@ const AddDetailsForm: React.FC<AddDetailsFormProps> = ({
                             variant="compact"
                             placeholder="Enter postal code"
                         />
+                        {errors.postalCode && touched.postalCode && (
+                            <Text style={styles.errorText}>{errors.postalCode}</Text>
+                        )}
                     </ScrollView>
+                    {isLoadingProfile && (
+                        <View style={styles.loadingOverlay} pointerEvents="none">
+                            <ActivityIndicator size="small" color={Theme.colors.primary} />
+                        </View>
+                    )}
+                    </View>
                     <View style={styles.buttonContainer}>
                         <CustomButton
                             title="Update Profile"
@@ -307,9 +351,25 @@ const styles = StyleSheet.create({
         backgroundColor: "#f4f1f2",
         paddingTop: Theme.spacing.xl,
     },
+    formWrapper: {
+        flex: 1,
+        position: "relative",
+    },
     formContainer: {
         flex: 1,
         paddingHorizontal: Theme.spacing.md,
+    },
+    formContainerLoading: {
+        opacity: 0.4,
+    },
+    loadingOverlay: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: "center",
+        alignItems: "center",
     },
     title: {
         marginTop: Theme.spacing.lg,
@@ -329,6 +389,22 @@ const styles = StyleSheet.create({
         paddingTop: Theme.spacing.md,
         paddingBottom: Theme.spacing.xs,
         fontWeight: '600',
+    },
+    cityPickerLayer: {
+        zIndex: 30,
+        ...Platform.select({
+            android: {
+                elevation: 30,
+            },
+        }),
+    },
+    countryPickerLayer: {
+        zIndex: 20,
+        ...Platform.select({
+            android: {
+                elevation: 20,
+            },
+        }),
     },
     errorText: {
         color: Theme.colors.error,

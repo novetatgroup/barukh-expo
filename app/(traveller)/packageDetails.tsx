@@ -1,12 +1,15 @@
-import { router } from "expo-router";
-import React, { useContext, useState } from "react";
-import { StyleSheet, View } from "react-native";
-import { Toast } from "toastify-react-native";
 import PackageDetailsForm from "@/components/forms/traveller/PackageDetailsForm";
 import { AuthContext } from "@/context/AuthContext";
 import { useShipment } from "@/context/ShipmentContext";
 import { CreateTripParams, travellerService } from "@/services/travellerService";
+import { TripCategory } from "@/types/trip";
+import { router } from "expo-router";
+import React, { useContext, useState } from "react";
+import { StyleSheet, View } from "react-native";
+import { Toast } from "toastify-react-native";
 
+const isFiniteNumber = (value: number | undefined): value is number =>
+  typeof value === "number" && Number.isFinite(value);
 
 const PackageDetailsScreen = () => {
   const { accessToken, userId } = useContext(AuthContext);
@@ -14,7 +17,7 @@ const PackageDetailsScreen = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (packageData: {
-    allowedCategories: string[];
+    allowedCategories: TripCategory[];
     maxWeightKg: number;
     maxHeightCm: number;
     maxWidthCm: number;
@@ -41,22 +44,17 @@ const PackageDetailsScreen = () => {
     try {
       setIsSubmitting(true);
 
-      // Ensure traveller profile exists before creating a trip
-      const travellerResult = await travellerService.createTraveller({ userId }, accessToken);
-      let resolvedTravellerId = travellerResult.data?.travellerId;
-
-      if (!travellerResult.ok || !resolvedTravellerId) {
-        const getResult = await travellerService.getTraveller(userId, accessToken);
-        if (!getResult.ok || !getResult.data?.travellerId) {
-          Toast.error(getResult.error || "Unable to retrieve your traveller profile. Please try again.");
-          return;
-        }
-        resolvedTravellerId = getResult.data.travellerId;
+      const travellerResult = await travellerService.getTraveller(accessToken);
+      if (!travellerResult.ok || !travellerResult.data?.travellerId) {
+        Toast.error(
+          travellerResult.error || "Unable to retrieve your traveller profile. Please try again.",
+        );
+        return;
       }
 
       // Build trip payload
       const tripPayload: CreateTripParams = {
-        userId,
+        allowedCategories: packageData.allowedCategories,
         maxWeightKg: Number(packageData.maxWeightKg) || 0,
         maxHeightCm: Number(packageData.maxHeightCm) || 0,
         maxWidthCm: Number(packageData.maxWidthCm) || 0,
@@ -65,11 +63,11 @@ const PackageDetailsScreen = () => {
         originCity: packageData.originCity,
         destinationCountry: packageData.destinationCountry,
         destinationCity: packageData.destinationCity,
-        ...(packageData.originLatitude && {
+        ...(isFiniteNumber(packageData.originLatitude) && isFiniteNumber(packageData.originLongitude) && {
           originLat: packageData.originLatitude,
           originLon: packageData.originLongitude,
         }),
-        ...(packageData.destinationLatitude && {
+        ...(isFiniteNumber(packageData.destinationLatitude) && isFiniteNumber(packageData.destinationLongitude) && {
           destinationLat: packageData.destinationLatitude,
           destinationLon: packageData.destinationLongitude,
         }),
@@ -121,8 +119,7 @@ const PackageDetailsScreen = () => {
         clearCurrentShipment();
         router.push("/(tabs)/home");
       }, 600);
-    } catch (error) {
-      console.error("Error submitting trip:", error);
+    } catch {
       Toast.error("Failed to create trip. Please check your connection and try again.");
     } finally {
       setIsSubmitting(false);

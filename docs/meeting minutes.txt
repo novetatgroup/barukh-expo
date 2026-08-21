@@ -1,0 +1,410 @@
+Julius
+Good afternoon We still have an issue with the creation of a trip -> Create trip failed {"error": "property allowedCategories should not exist", "payload": {"allowedCategories": ["Documents", "Electronics"], "arrivalAt": "2026-07-09T17:40:00.000Z", "departureAt": "2026-07-07T06:00:00.000Z", "destinationCity": "Kampala", "destinationCountry": "UG", "destinationLat": 0.3151692, "destinationLon": 32.5816313, "maxHeightCm": 25, "maxLengthCm": 60, "maxWeightKg": 1, "maxWidthCm": 40, "mode": "CAR", "originCity": "Nairobi", "originCountry": "KE", "originLat": -1.2920659, "originLon": 36.8219462, "userId": "05a2ef29-da63-4447-8b3b-823f15a6e306", "vehiclePlate": "UBY 346K"}}
+
+
+Izaiah
+
+It seems the payload is somehow being constructed looking like this
+
+
+{
+  "allowedCategories": [
+    "Documents",
+    "Electronics"
+  ],
+  "arrivalAt": "2026-07-09T17:40:00.000Z",
+  "departureAt": "2026-07-07T06:00:00.000Z",
+  "destinationCity": "Kampala",
+  "destinationCountry": "UG",
+  "destinationLat": 0.3151692,
+  "destinationLon": 32.5816313,
+  "maxHeightCm": 25,
+  "maxLengthCm": 60,
+  "maxWeightKg": 1,
+  "maxWidthCm": 40,
+  "mode": "CAR",
+  "originCity": "Nairobi",
+  "originCountry": "KE",
+  "originLat": -1.2920659,
+  "originLon": 36.8219462,
+  "userId": "05a2ef29-da63-4447-8b3b-823f15a6e306",
+  "vehiclePlate": "UBY 346K"
+} 
+
+this property should not be there "allowedCategories" when creating a trip
+So I think UI is somehow attaching it when you are trying to create a trip
+that's why the 400 comes
+If you remove that value it will go through
+
+Mmmmm
+Let me check in the code
+Cause it's the Nestjs DTO validator that is stopping it from going through
+Maybe a field was removed
+
+Let me check and see if before a trip had to have allowed categories
+
+Just finished checking
+there was no where that we were taking "allowedCategories" for creating a trip
+I think that was for creating packages only
+
+If I had to guess why it's breaking now, It could be that the validator was added recently
+Although checking the file history it says that it was changed 3months ago
+
+So its a big mystery
+Maybe the change happened accedentally UI side?
+
+maybe the field is getting attached unexpectedly, or there is a sort of conflict of sorts
+
+its funny really, cause there hasn't been change in 3months..but yeah
+
+
+Julius
+i guess the introduction of DTO validators is the issue, so now my question is. How does some provide information of package they allow to move with when filling in the second step (package details). i guess we will have to accomodate for allowedCategories too.
+
+Izaiah
+
+Meanwhile
+Is the UI able to keep sessions?
+It's like it wasn't able to when I tried using it 
+As though it would log me out on refresh
+
+Izaiah
+
+I have pushed fixes for the issues
+
+including the one for allowed categories
+
+it is similar to the one of the package when creating one
+
+so the payload should look like so
+
+
+{
+    "allowedCategories": [
+      "DOCUMENT",
+      "ELECTRONIC"
+    ],
+    "arrivalAt": "2026-07-09T17:40:00.000Z",
+    "departureAt": "2026-07-07T06:00:00.000Z",
+    "destinationCity": "Kampala",
+    "destinationCountry": "UG",
+    "destinationLat": 0.3151692,
+    "destinationLon": 32.5816313,
+    "maxHeightCm": 25,
+    "maxLengthCm": 60,
+    "maxWeightKg": 1,
+    "maxWidthCm": 40,
+    "mode": "CAR",
+    "originCity": "Nairobi",
+    "originCountry": "KE",
+    "originLat": -1.2920659,
+    "originLon": 36.8219462,
+    "userId": "{{local-user}}",
+    "vehiclePlate": "UBY 346K"
+  }
+
+
+Payment Updated
+
+Izaiah
+
+Hey @kazibwe julius Good day
+Our payments dev is still working on the payments endpoints however I have managed to create the endpoints for Creating a Bank Account (For a traveller) and for Creating a payment method(Card payment method for now)
+
+I've pushed those endpoints to the API folder, you will get them under "payments",
+
+
+so this is how it works...A traveller can create a bank account, this is where they shall receive payments from after a successfull trip. so
+
+they shall call this endpoint
+
+
+{{url}}/users/create-bank-account
+
+
+then pass the following details
+
+
+{
+  "country": "Uganda",
+  "currency": "UGX",
+  "accountHolderName": "Isaiah Mukisa",
+  "accountNumber": "123456789",
+  "bankName": "Commonwealth Bank of Kabodia",
+  // Optional fields
+  "swiftCode": "BANK123",
+  "routingNumber": "062123"
+  // "sortCode": "string",
+  // "branchCode": "string",
+  // "isDefault": true
+}
+
+Please note, there are some optional fields...these fields include swiftCode, routingNumber, SortCode and branch Code.
+These 4 fields are optional because they are dependant on the Country
+And since we are starting with east africa, we shall focus on SwiftCode cause I believe its what we focus on a lot more
+
+There is another optional field called "isDefault" now this one is optional because someone can decide to have more than one bank account, ofcourse on creation we make the first bankaccount you create the default one, but a user can switch/update
+
+so that is for bank account creation
+
+
+the other endpoint I have for you is
+
+
+{{url}}/users/create-payment-card
+
+which looks like so
+
+
+{
+  "cardHolderName": "Isaiah Mukisa",
+  "cardNumber": "123xxxx",
+  "expiryMonth": "09",
+  "expiryYear": "32",
+  "cvv": "1xx"
+  //   Type  Network  Card Number  Expiry  CVV  OTP  PIN
+  // PIN auth  Mastercard  123xxxx  09/32  1xx  xxxx  xxx
+}
+
+
+For this one its straight forward, it happens on the Sender Side when they want to perform a payment
+so they shall create those details,
+Please note that with these details we store partial details of the card on our server and the rest on Flutterwave
+What this means is that on subsequent payments, they don't have to re-enter their payment details...they can always change them, or they can switch between them because we store the last4 digits of the card and the name on the card, they can be displayed incase they need to change the payment method
+
+
+NOTE: Flutterwave requires that each customer has a futterwave customer id to be attached when doing things like creating payment methods and even payments themselves, on Back end we are handling that already, so each customer gets a flutterwave customer id, however I need to know which accounts you use so that I attach for you one manually, cause going through the process of getting a flutterwave customer id might be too long, cause we create them during the successful completion of KYC
+So I have test customerIds but I want to attach one to your test accounts that you use so that you don't go through that tedious process, so you can give me the emails of those accounts then I add them.
+
+izaiah  [9:57 AM]
+Hey @kazibwe julius,
+I'm still working through the questions in your document, but I've already responded to some of them. Please check those first and continue with the ones I've addressed as I work on the rest.
+There are also a few API changes that you need to be aware of.
+1. Sender & Traveller Profile Creation
+Previously, you were only sending the userId when creating Sender and Traveller profiles.
+Now, you also need to send the user's firstName, lastName, and email. This allows the Shipping Service to keep a local copy of the user's basic details, reducing the number of requests made to the User Service whenever we need to display their information.
+Traveller Profile payload
+{
+  "userId": "traveller-45566",
+  "firstName": "John",
+  "lastName": "Snow",
+  "email": "johnsnow@novetatgroup.com"
+}Sender Profile payload
+{
+  "userId": "sender-45566",
+  "firstName": "John",
+  "lastName": "Snow",
+  "email": "johnsnow@novetatgroup.com"
+}
+
+2. Matching Endpoint Changes
+There has also been a small change to the matching endpoint. We replaced the underlying matching technology to improve performance, so both the request and response have changed.
+It is now a GET request:
+
+GET {{url}}/matching/auto-assign/{{package_id}}
+
+
+
+The response now looks like this:
+{
+  "trip": {
+    "id": "49243aa6-c697-4bcf-b32d-524103d2c5f2",
+    "travellerId": "a94c08e6-e019-4f2b-9df0-4b26f8cca053",
+    "travellerFirstName": "John",
+    "travellerLastName": "Snow",
+    "originLat": 0.3476000130176544,
+    "originLon": 32.58250045776367,
+    "destinationLat": -1.292099952697754,
+    "destinationLon": 36.8218994140625,
+    "originDistanceKm": 0,
+    "destinationDistanceKm": 0,
+    "remainingCapacity": 3,
+    "maxWeightKg": 25,
+    "maxLengthCm": 50,
+    "maxWidthCm": 50,
+    "maxHeightCm": 50
+  }
+}One thing to think about on the UI side is how we handle cases where no suitable trip is found within the initial search radius.
+A nice user experience would be to automatically retry the search by gradually increasing the radius until a reasonable limit is reached before finally informing the user that no matching trips were found. This is similar to how apps like SafeBoda and Faras search for nearby drivers.
+The backend already supports this behavior, so it isn't a blocker or a required change right now. However, if you have time to implement it, let me know and I'll explain how the endpoint should be called.
+Other than that, if you're having any challenges with the payment endpoints, just let me know. We can also jump on a call and go through them together. (edited)
+
+
+izaiah  [3:29 PM]
+Hey @kazibwe julius
+[3:30 PM]I have some documentation for you to start on Payments and what we have in regards to initiating payment
+
+
+
+Payments API — UI Integration Guide
+Base URL: {{url}}/payments
+There are two endpoints. The flow is: call initiate-charge once, then if the response comes back with a nextAction, keep calling next-action until the payment is CAPTURED or FAILED.
+1. POST {{url}}/payments/initiate-charge
+Kicks off a charge for a shipment.
+Request body (CreateTransferRequestDto):
+{
+  "currency": "USD",
+  "shipmentId": "bkh-transfer-1627384950",
+  "customerId": "cus_IpH7CKCUtD",
+  "paymentMethodId": "pmd_wlVhaYmkl2",
+  "amount": 250,
+  "redirectUrl": "http://barukh.com/payments/success",
+  "meta": {
+    "senderId": "1",
+    "travellerId": "2",
+    "senderName": "King James",
+    "travellerName": "Patrick Star",
+    "sourceDestination": "paris_kampala"
+  }
+}All fields are required. shipmentId is what dedupes charges — if you call this twice with the same shipmentId, the backend won't create a second charge; it just returns the current state of the existing one. So it's safe to retry this call if you're unsure whether it went through.
+Response (CreateTransferResponseDto):
+{
+  "status": "success",
+  "message": "Transfer initiated",
+  "reference": "bkh-<uuid>",
+  "paymentStatus": "PENDING",
+  "nextAction": {
+    "mode": "PIN",
+    "url": null,
+    "requiresAdditionalFields": []
+  }
+}
+reference — save this. You need it for every subsequent next-action call.
+paymentStatus — one of PENDING, CAPTURED, FAILED, CANCELLED, REFUNDED.
+nextAction — only present if the charge isn't finished yet. Tells the UI what to do next:
+mode: "PIN" → prompt the user for their card PIN, submit it via next-action.
+mode: "OTP" → prompt the user for an OTP code.
+mode: "ADDITIONAL_FIELDS" → check requiresAdditionalFields for which fields to collect (e.g. authorization.avs.address).
+mode: "REDIRECT_URL" → redirect the user to nextAction.url (typically a 3DS auth page).
+
+If nextAction is absent and paymentStatus is CAPTURED, the charge is done — no further calls needed.
+2. POST {{url}}/payments/next-action
+Used to complete whatever step initiate-charge (or a previous next-action call) asked for.
+Request body (NextActionRequestDto):
+{
+  "reference": "bkh-<uuid-from-initiate-charge>",
+  "data": {
+    "type": "PIN",
+    "pin": "1234"
+  }
+}data shape depends on which mode you got back:
+   mode from previous response data to send     PIN { "type": "PIN", "pin": "1234" }   OTP { "type": "OTP", "otp": "123456" }   ADDITIONAL_FIELDS { "type": "ADDITIONAL_FIELDS", "additionalFields": { ... } }   REDIRECT_URL Don't call this endpoint — just redirect the user to nextAction.url. The redirect flow completes on Flutterwave's side.   Response (NextActionResponseDto) — same shape logic as initiate-charge's response:
+{
+  "status": "success",
+  "message": "Transfer Updated",
+  "reference": "bkh-<uuid>",
+  "paymentStatus": "CAPTURED",
+  "data": {
+    "amount": 250,
+    "currency": "USD",
+    "meta": { "senderId": "1", "travellerId": "2", "senderName": "King James", "travellerName": "Patrick Star", "sourceDestination": "paris_kampala" }
+  }
+}
+If paymentStatus is CAPTURED → done, show success.
+If paymentStatus is PENDING and nextAction is present again → loop back, ask the user for the next thing (e.g. PIN then OTP, back to back, is normal).
+If paymentStatus is FAILED → show message to the user (it's already a user-friendly string like "Insufficient funds, please try again").
+
+
+General notes
+
+If a call throws/500s, treat it as a failed attempt and let the user retry — the backend marks the record FAILED internally and logs the reason server-side; you won't get a detailed error message back, just a generic error.
+There's an x-test-scenario header both endpoints accept for staging/testing against specific Flutterwave scenarios (e.g. forcing a decline). It's silently ignored in production, so don't rely on it for anything user-facing — it's a QA tool only.
+reference is the single source of truth to track a charge across the whole flow — persist it in UI state (or the URL) as soon as you get it from initiate-charge.
+izaiah  [3:39 PM]
+Please Note, How you call the api has now changed:
+So, To call the API...add /api
+
+so it becomes
+
+https://staging.api.barukhconnector.com/api
+
+And to access the chat you will call
+
+https://staging.api.barukhconnector.com/chat (edited) 
+kazibwe julius  [3:53 PM]
+Thanks for this update, i will definitely proceed with updating the payment module. 
+Are we still using websockets, am asking just to be sure.izaiah  [3:54 PM]
+Yes, we are
+Everything is the same, we're just updating how we call them
+
+Hey @kazibwe julius
+I added the priceMinor  to the matching endpoint, so when you match the price is attached as well
+
+then this is the review endpoint, both Sender and Travellers hit the same endpoint, BE resolves.
+
+POST
+{{url}}/shipments/submit-review 
+
+
+{
+  "shipmentId": "BK-000",
+  "rating": 2,
+  "comment": "Terriblleee"
+} 
+
+
+the response looks like so
+
+
+{
+  "message": "Traveller has been reviewed, Thank you."
+  "review_id": "rr-100"
+}
+
+@kazibwe julius  CustomerId is returned on a user profile endpoint that you have been hitting, when you call the profile endpoint it returns the customerID
+Here is a sample response.
+
+
+{
+  "id": "3411e6ad-d75a-425a-bbc9-36c34a8e3aa7",
+  "firstName": "Super",
+  "lastName": "Admin",
+  "email": "novetatgroup@gmail.com",
+  "role": "USER",
+  "isActive": true,
+  "profilePicture": "",
+  "phoneNumber": "",
+  "addressLineA": "",
+  "isPhoneVerified": true,
+  "emergencyContact": "",
+  "addressLineB": "",
+  "state": "",
+  "flwCustomerObject": {
+    "flwCustomerId": "cus_idriowe",
+    "flwPaymentCardLast4": "",
+    "flwPaymentCardHolderName": "",
+    "flwPaymentCardIsDefault": false
+  }
+}
+
+the field is inside the flwCustomerObject  and it's called flwCustomerId
+
+
+So, Still on that profile endpoint in the flwCustomerObject  the payment method ID is also returned in the same object
+it is called flwPaymentCardId  the reason why its not showing up in the response I have shared above is cause for the superadmin He is not registered a card, so he doesn't have
+but yeah, that is where the payment_method_id is and that is what its called
+
+I have added a payment Method for your sender account
+
+(`kazibwejuliusjunior@gmail.com[sender]).`)
+
+
+It is a card from Flutterwave that tests pin
+so if you are asked for Pin, here is the value
+
+PIN:
+3310
+
+the OTP shall be
+12345
+
+
+---
+We have two emulator one uses a sender (kazibwejuliusjunior@gmail) and ther is a traveller (juliusjuniorkazibwe@gmail.com). 
+The first method is to ensure that the sender is able to make payments to the traveler and the traveler is able to receive payments. The biggest thing to look at is to provide screens that enable the sender to pay the money and work with the payment methods that we have. We have the part where it allows one to initiate a charge, and what happens to it is the next action, depending on what the card requirements or the bank requirements require.
+
+Secondly, allow the traveler to receive money from the sender, that is, to their default payout account, the bank accounts that they had registered with the system. Enable both the sender and the traveler to add bank details that are going to be debited by the system. Add self-functionality where the sender can confirm that they'll be able to transport the item before the sender is able to commit to pay.
+
+Thirdly, we shall add a screen that enables the sender to rate the traveler. Also, do the same for the traveler, so both of them should be able to rate each other.
+
+Lastly, we add a screen that enables the sender and the traveler to raise a dispute. Most of the time, the traveler should be able to raise a dispute. Those are the core functionalities that we need to add into the system. 

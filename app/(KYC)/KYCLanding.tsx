@@ -28,7 +28,15 @@ const KYCVerificationScreen: React.FC<KYCVerificationScreenProps> = ({ onBeginKY
         <CustomButton
           title="Begin KYC"
           variant="primary"
-          onPress={() => router.push("/(KYC)/verifyPhoneNoScreen")}
+          // Phone number + OTP verification steps are temporarily disabled — jumping straight to the profile details screen.
+          // onPress={() => router.push("/(KYC)/verifyPhoneNoScreen")}
+          onPress={() => router.push("/(KYC)/addDetailsScreen")}
+          style={styles.button}
+        />
+        <CustomButton
+          title="Go Home"
+          variant="secondary"
+          onPress={() => router.replace("/(tabs)/home")}
           style={styles.button}
         />
       </View>

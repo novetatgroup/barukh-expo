@@ -19,6 +19,9 @@ interface MatchDetailsFormProps {
   fromLocation: string;
   toLocation: string;
   onBack: () => void;
+  onConfirm: () => void;
+  onDecline: () => void;
+  actionMessage?: string | null;
 }
 const MatchDetailsForm: React.FC<MatchDetailsFormProps> = ({
   matchedUserName,
@@ -28,6 +31,9 @@ const MatchDetailsForm: React.FC<MatchDetailsFormProps> = ({
   fromLocation,
   toLocation,
   onBack,
+  onConfirm,
+  onDecline,
+  actionMessage,
 }) => {
   return (
     <View style={styles.container}>
@@ -89,17 +95,19 @@ const MatchDetailsForm: React.FC<MatchDetailsFormProps> = ({
                 <Text style={styles.detailValue}>{toLocation}</Text>
               </View>
             </View>
-            {/* TODO: Ensure the confirmed users are moved to accepted  */}
+            {actionMessage ? <Text style={styles.actionMessage}>{actionMessage}</Text> : null}
             <View style={styles.buttonRow}>
               <CustomButton
                 title="Confirm"
                 style={styles.actionButton}
                 variant="primary"
+                onPress={onConfirm}
               />
               <CustomButton
                 title="Decline"
                 style={styles.actionButton}
-                variant="primary"
+                variant="secondary"
+                onPress={onDecline}
               />
             </View>
           </View>
@@ -231,6 +239,13 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
+  },
+  actionMessage: {
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: "Inter-Regular",
+    color: Theme.colors.error,
+    marginTop: Theme.spacing.md,
   },
 });
 

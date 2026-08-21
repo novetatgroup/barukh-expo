@@ -10,7 +10,6 @@ type NavItem = {
   name: TabName;
   iconActive: keyof typeof Ionicons.glyphMap;
   iconInactive: keyof typeof Ionicons.glyphMap;
-  route: string;
 };
 
 const navItems: NavItem[] = [
@@ -18,25 +17,21 @@ const navItems: NavItem[] = [
     name: "home",
     iconActive: "home",
     iconInactive: "home-outline",
-    route: "home",
   },
   {
     name: "shipments",
     iconActive: "briefcase",
     iconInactive: "briefcase-outline",
-    route: "myShipments",
   },
   {
     name: "messages",
     iconActive: "chatbubbles",
     iconInactive: "chatbubbles-outline",
-    route: "messages",
   },
   {
     name: "profile",
     iconActive: "person",
     iconInactive: "person-outline",
-    route: "profile",
   },
 ];
 
@@ -68,25 +63,21 @@ const BottomNavBar = ({ activeTab }: BottomNavBarProps) => {
   const currentTab = getActiveTab();
 
   const handleNavPress = (item: NavItem) => {
-    // Determine the route group based on current pathname
-    const isSender = pathname.includes("(sender)");
-    const routeGroup = isSender ? "(sender)" : "(traveller)";
-
     switch (item.name) {
       case "home":
-        router.push(`/${routeGroup}/home`);
+        router.push("/(tabs)/home");
         break;
       case "shipments":
         router.push({
-          pathname: `/${routeGroup}/myShipments`,
+          pathname: "/(tabs)/shipments",
           params: { tab: "All" },
         });
         break;
       case "messages":
-        router.push("/chat");
+        router.push("/(tabs)/chat");
         break;
       case "profile":
-        router.push("/profile");
+        router.push("/(tabs)/profile");
         break;
     }
   };

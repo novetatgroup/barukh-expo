@@ -33,8 +33,7 @@ export default function SelfieCaptureScreen() {
         return false;
       }
       return true;
-    } catch (error) {
-      console.error("Permission request error:", error);
+    } catch {
       return false;
     }
   };
@@ -67,8 +66,7 @@ export default function SelfieCaptureScreen() {
           image: imageUri,
         });
       }
-    } catch (error) {
-      console.error("Camera error:", error);
+    } catch {
       Toast.error(
         "Camera Error Unable to access camera. Please try again.",
       );
@@ -104,19 +102,6 @@ export default function SelfieCaptureScreen() {
         formData.append(`image_type_ids[${index}]`, img.image_type_id.toString());
       });
 
-      console.log("📦 FormData being sent to server:");
-      console.log("Images order and their types:");
-      payload.images.forEach((img, index) => {
-        console.log(`  Index ${index}: image_type_id = ${img.image_type_id} (${img.image_type_id === 2 ? 'SELFIE' :
-            img.image_type_id === 3 ? 'ID_FRONT' :
-              img.image_type_id === 7 ? 'ID_BACK' : 'UNKNOWN'
-          })`);
-      });
-
-      for (let [key, value] of (formData as any).entries()) {
-        console.log(`${key}:`, value);
-      }
-
       const response = await authFetch(
         `${apiUrl}/smile-id/document-verification`,
         {
@@ -132,8 +117,7 @@ export default function SelfieCaptureScreen() {
       setTimeout(() => {
         router.push("/(traveller)/travellerDetails");
       }, 1500);
-    } catch (error) {
-      console.error("Submission error:", error);
+    } catch {
       Toast.error("Submission failed. Please try again later.");
     }
   };

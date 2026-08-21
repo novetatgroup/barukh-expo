@@ -33,7 +33,7 @@ const LoginScreen = ({ activeTab, onTabChange }: LoginScreenProps) => {
     <View style={styles.container}>
       <LoginForm
         onSubmit={handleLogin}
-        onGooglePress={() => console.log("Google pressed")}
+        onGooglePress={() => {}}
         onRegisterPress={() => onTabChange("register")}
         activeTab={activeTab}
         onTabChange={onTabChange}

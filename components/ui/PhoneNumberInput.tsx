@@ -142,6 +142,20 @@ const COUNTRIES: Country[] = [
 
 const DEFAULT_COUNTRY: Country = COUNTRIES.find(c => c.code === "US") || COUNTRIES[0];
 
+// Best-effort default based on the device's locale region (e.g. "en-KE" -> "KE"),
+// no location permission or extra dependency needed. Falls back to DEFAULT_COUNTRY
+// if the locale can't be read or doesn't match a country in our list.
+const getDeviceDefaultCountry = (): Country => {
+  try {
+    const locale = Intl.DateTimeFormat().resolvedOptions().locale;
+    const regionCode = locale.match(/-([A-Za-z]{2})$/)?.[1]?.toUpperCase();
+    const match = regionCode && COUNTRIES.find((c) => c.code === regionCode);
+    return match || DEFAULT_COUNTRY;
+  } catch {
+    return DEFAULT_COUNTRY;
+  }
+};
+
 const MAX_PHONE_LENGTH = 15;
 
 interface PhoneNumberInputProps {
@@ -394,5 +408,5 @@ const styles = StyleSheet.create({
   },
 });
 
-export { COUNTRIES, DEFAULT_COUNTRY };
+export { COUNTRIES, DEFAULT_COUNTRY, getDeviceDefaultCountry };
 export default PhoneNumberInput;

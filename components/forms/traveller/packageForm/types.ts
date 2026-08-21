@@ -1,4 +1,5 @@
 import * as Yup from "yup";
+import { TripCategory } from "@/types/trip";
 
 export type LocationData = {
   placeId: string;
@@ -30,7 +31,7 @@ export type PackageFormValues = {
   flightNumber: string;
   vehiclePlate: string;
   // Step 2 - Package Details
-  allowedCategories: string[];
+  allowedCategories: TripCategory[];
   maxWeightKg: number;
   maxHeightCm: string;
   maxWidthCm: string;
@@ -38,7 +39,7 @@ export type PackageFormValues = {
 };
 
 export type PackageSubmitData = {
-  allowedCategories: string[];
+  allowedCategories: TripCategory[];
   maxWeightKg: number;
   maxHeightCm: number;
   maxWidthCm: number;
@@ -90,12 +91,16 @@ export const Step1ValidationSchema = Yup.object().shape({
     .test("has-city", "Please select a valid city", (value) =>
       value !== null && (value as LocationData).city !== ""
     ),
+  originCountry: Yup.string().required("Origin country is required"),
+  originCity: Yup.string().required("Origin city is required"),
   destination: Yup.object()
     .nullable()
     .required("Destination location is required")
     .test("has-city", "Please select a valid city", (value) =>
       value !== null && (value as LocationData).city !== ""
     ),
+  destinationCountry: Yup.string().required("Destination country is required"),
+  destinationCity: Yup.string().required("Destination city is required"),
   departureDate: Yup.string().required("Departure date is required"),
   departureTime: Yup.string().required("Departure time is required"),
   arrivalDate: Yup.string().required("Arrival date is required"),
@@ -113,18 +118,23 @@ export const Step1ValidationSchema = Yup.object().shape({
   }),
 });
 
+const positiveNumber = (requiredMessage: string) =>
+  Yup.number()
+    .transform((value, originalValue) => (originalValue === "" ? undefined : value))
+    .typeError(requiredMessage)
+    .required(requiredMessage)
+    .positive("Must be positive");
+
 export const Step2ValidationSchema = Yup.object().shape({
-  allowedCategories: Yup.array().min(1, "Select at least one category"),
-  maxWeightKg: Yup.number()
-    .required("Package size is required")
-    .positive("Must be positive"),
-  maxHeightCm: Yup.number()
-    .required("Max height is required")
-    .positive("Must be positive"),
-  maxWidthCm: Yup.number()
-    .required("Max width is required")
-    .positive("Must be positive"),
-  maxLengthCm: Yup.number()
-    .required("Max length is required")
-    .positive("Must be positive"),
+  allowedCategories: Yup.array()
+    .of(Yup.string().required())
+    .min(1, "Select at least one category")
+    .required("Select at least one category"),
+  maxWeightKg: positiveNumber("Package size is required"),
+  maxHeightCm: positiveNumber("Max height is required"),
+  maxWidthCm: positiveNumber("Max width is required"),
+  maxLengthCm: positiveNumber("Max length is required"),
 });
+
+export const PackageValidationSchema =
+  Step1ValidationSchema.concat(Step2ValidationSchema);

@@ -13,6 +13,10 @@ export interface VerifyOtpResponse {
 	message?: string;
 }
 
+export interface RefreshTokenResponse {
+	accessToken: string;
+}
+
 export interface ApiErrorResponse {
 	message?: string;
 	error?: string;

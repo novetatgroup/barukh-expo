@@ -1,26 +1,135 @@
-import React from "react";
-import { useLocalSearchParams, useRouter } from "expo-router";
 import ShipmentDetailsForm from "@/components/forms/traveller/ShipmentDetailsForm";
+import { AuthContext } from "@/context/AuthContext";
+import { senderService, ShipmentDetails } from "@/services/senderService";
+import { formatMoney } from "@/utils/formatting";
+import {
+  formatShipmentStatus,
+  getShipmentDeliveryPhotoUrl,
+} from "@/utils/shipmentTracking";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useContext, useState } from "react";
+
+const formatDate = (value?: string) => {
+  if (!value) return "Pending";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Pending";
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+  });
+};
 
 const ShipmentDetailsScreen = () => {
   const router = useRouter();
-  const params = useLocalSearchParams();
+  const { accessToken, userId } = useContext(AuthContext);
+  const [shipment, setShipment] = useState<ShipmentDetails | null>(null);
+  const params = useLocalSearchParams<{
+    id?: string;
+    shipmentId?: string;
+    orderId?: string;
+    itemId?: string;
+    itemName?: string;
+    fromLocation?: string;
+    toLocation?: string;
+    status?: string;
+    progress?: string;
+    title?: string;
+    shipperName?: string;
+    receiverName?: string;
+    senderUserId?: string;
+    travellerUserId?: string;
+    requestedAt?: string;
+    shipmentCost?: string;
+  }>();
+  const shipmentId =
+    (params.shipmentId as string | undefined) || (params.id as string | undefined);
+  const itemId = shipment?.packageId
+    ? `#${shipment.packageId.slice(0, 8).toUpperCase()}`
+    : (params.itemId as string) || "—";
+  const referenceNumber =
+    shipment?.referenceNumber || (params.orderId as string) || itemId;
+  const itemName = shipment?.package?.name || (params.itemName as string) || "—";
+  const fromLocation =
+    shipment?.package?.originCity ||
+    shipment?.travel?.originCity ||
+    (params.fromLocation as string) ||
+    "—";
+  const toLocation =
+    shipment?.package?.destinationCity ||
+    shipment?.travel?.destinationCity ||
+    (params.toLocation as string) ||
+    "—";
+  const status = shipment?.status || (params.status as string) || "";
+  const progress = formatShipmentStatus(shipment?.status || (params.progress as string) || status);
+  const deliveryPhotoUrl = getShipmentDeliveryPhotoUrl(shipment);
+
+  const fetchShipment = useCallback(async () => {
+    if (!shipmentId || !accessToken) return;
+
+    const result = await senderService.getShipment(shipmentId, accessToken);
+
+    if (result.ok && result.data) {
+      setShipment(result.data);
+    }
+  }, [accessToken, shipmentId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchShipment();
+    }, [fetchShipment])
+  );
 
   const handleBack = () => {
     router.back();
   };
 
+  const handleOpenChat = () => {
+    const receiverId = shipment?.sender?.userId || params.senderUserId;
+    const currentUserId = userId || shipment?.traveller?.userId || params.travellerUserId;
+
+    if (!receiverId || !currentUserId) {
+      router.push("/(tabs)/chat");
+      return;
+    }
+
+    router.push({
+      pathname: "/(chat)/[conversationId]",
+      params: {
+        conversationId: [currentUserId, receiverId].sort().join("_"),
+        receiverId,
+        receiverName: (params.shipperName as string) || receiverId,
+      },
+    });
+  };
+
   return (
     <ShipmentDetailsForm
-          itemId={(params.itemId as string) || 'N/A'}
-          itemName={(params.itemName as string) || 'No Item'}
-          shipperName={(params.shipperName as string) || 'No Item'}
-          receiverName={(params.receiverName as string) || 'No Item'}
-          fromLocation={(params.fromLocation as string) || 'Unknown'}
-          toLocation={(params.toLocation as string) || 'Unknown'}
-          status={(params.status as string)}
-          progress={(params.progress as string) || 'N/A'}
-          onBack={handleBack}   />
+      headerTitle={(params.title as string) || "Shipment Details"}
+      shipmentId={shipmentId}
+      itemId={referenceNumber}
+      shipperName={(params.shipperName as string) || "—"}
+      receiverName={(params.receiverName as string) || "—"}
+      itemName={itemName}
+      fromLocation={fromLocation}
+      toLocation={toLocation}
+      requestedAt={
+        shipment?.requestedAt
+          ? formatDate(shipment.requestedAt)
+          : params.requestedAt || "Pending"
+      }
+      shipmentCost={
+        shipment
+          ? formatMoney(shipment.priceMinor, shipment.currency)
+          : params.shipmentCost || ""
+      }
+      status={status}
+      progress={progress}
+      deliveryPhotoUrl={deliveryPhotoUrl}
+      onBack={handleBack}
+      onChatPress={handleOpenChat}
+    />
   );
 };
 

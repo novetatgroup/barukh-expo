@@ -1,4 +1,5 @@
 import Theme from "@/constants/Theme";
+import { useRole } from "@/context/RoleContext";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Tabs } from "expo-router";
@@ -6,9 +7,13 @@ import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 
 const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
+  const { role } = useRole();
   const icons: Record<string, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }> = {
     home: { active: "home", inactive: "home-outline" },
-    shipments: { active: "briefcase", inactive: "briefcase-outline" },
+    shipments:
+      role === "TRAVELLER"
+        ? { active: "airplane", inactive: "airplane-outline" }
+        : { active: "cube", inactive: "cube-outline" },
     chat: { active: "chatbubbles", inactive: "chatbubbles-outline" },
     profile: { active: "person", inactive: "person-outline" },
   };

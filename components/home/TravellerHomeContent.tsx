@@ -1,8 +1,10 @@
-import Theme from "@/constants/Theme";
-import { AuthContext } from "@/context/AuthContext";
-import { UserProfile, userService } from "@/services/userService";
-import { Trip, TripDetails, travellerService } from "@/services/travellerService";
 import { PackagePattern } from "@/assets/svgs";
+import ShipmentCard, { getShipmentDetailsRoute } from "@/components/shipments/ShipmentCard";
+import { Theme } from "@/constants/Theme";
+import { AuthContext } from "@/context/AuthContext";
+import { useShipments } from "@/hooks/useShipments";
+import { useUnreadNotificationsCount } from "@/hooks/useUnreadNotificationsCount";
+import { UserProfile, userService } from "@/services/userService";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useContext, useEffect, useState } from "react";
@@ -10,7 +12,6 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
-  LayoutAnimation,
   Platform,
   StyleSheet,
   Text,
@@ -27,11 +28,9 @@ if (Platform.OS === "android") {
 const TravellerHomeContent = () => {
   const router = useRouter();
   const { userId, accessToken } = useContext(AuthContext);
+  const { unreadNotificationsCount } = useUnreadNotificationsCount();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [trips, setTrips] = useState<Trip[]>([]);
-  const [tripsLoading, setTripsLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [tripDetailsCache, setTripDetailsCache] = useState<Record<string, TripDetails>>({});
+  const { shipments, loading: shipmentsLoading, refresh: refreshShipments } = useShipments();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -44,51 +43,12 @@ const TravellerHomeContent = () => {
     fetchUser();
   }, [userId, accessToken]);
 
-  useEffect(() => {
-    const fetchTrips = async () => {
-      if (!userId || !accessToken) return;
-      setTripsLoading(true);
-      const { data, ok } = await travellerService.getTrips(userId, accessToken);
-      if (ok && data) {
-        setTrips(data.data);
-      }
-      setTripsLoading(false);
-    };
-    fetchTrips();
-  }, [userId, accessToken]);
-
   const userName = userProfile?.firstName || "User";
+  const notificationBadgeLabel =
+    unreadNotificationsCount > 99 ? "99+" : String(unreadNotificationsCount);
 
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case "Pending":
-        return { badge: styles.pending, text: styles.pendingText };
-      case "In Transit":
-        return { badge: styles.inTransit, text: styles.inTransitText };
-      case "Delivered":
-        return { badge: styles.delivered, text: styles.deliveredText };
-      default:
-        return { badge: styles.pending, text: styles.pendingText };
-    }
-  };
-
-  const handleNavigateToShipments = (tab?: string) => {
-    router.push({
-      pathname: "/(tabs)/shipments",
-      params: { tab: tab || "All" },
-    });
-  };
-
-  const handleExpand = async (tripId: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpandedId(expandedId === tripId ? null : tripId);
-
-    if (!tripDetailsCache[tripId] && accessToken) {
-      const { data, ok } = await travellerService.findTrip(tripId, accessToken);
-      if (ok && data) {
-        setTripDetailsCache((prev) => ({ ...prev, [tripId]: data }));
-      }
-    }
+  const goToAllShipments = () => {
+    router.push("/allShipments");
   };
 
   const handleCreateTrip = () => {
@@ -97,6 +57,12 @@ const TravellerHomeContent = () => {
       return;
     }
     router.push("/(traveller)/packageDetails");
+  };
+
+  const goToNotifications = () => {
+    router.push({
+      pathname: "/(profile)/notifications",
+    });
   };
 
   const listHeader = (
@@ -110,23 +76,34 @@ const TravellerHomeContent = () => {
         <View style={styles.headerContent}>
           <View style={styles.userRow}>
             <Image
-              source={require("@/assets/images/avatar.png")}
+              source={
+                userProfile?.profilePicture
+                  ? { uri: userProfile.profilePicture }
+                  : require("@/assets/images/avatar.png")
+              }
               style={styles.avatar}
             />
             <View>
               <Text style={styles.welcomeText}>Welcome Back !</Text>
               <Text style={styles.userName}>Hi {userName}</Text>
             </View>
-            <TouchableOpacity style={styles.bellIcon}>
+            <TouchableOpacity onPress={goToNotifications} style={styles.bellIcon}>
               <Ionicons
                 name="notifications-outline"
                 size={22}
                 color={Theme.colors.white}
               />
+              {unreadNotificationsCount > 0 ? (
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationBadgeText}>
+                    {notificationBadgeLabel}
+                  </Text>
+                </View>
+              ) : null}
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.myShipmentsTitle}>My Trips</Text>
+          <Text style={styles.myShipmentsTitle}>My Shipments</Text>
 
           <View style={styles.searchContainer}>
             <Ionicons
@@ -136,7 +113,7 @@ const TravellerHomeContent = () => {
               style={styles.searchIcon}
             />
             <TextInput
-              placeholder="Search trips"
+              placeholder="Search shipments"
               placeholderTextColor="#FFFFFF80"
               style={styles.searchInput}
             />
@@ -161,10 +138,10 @@ const TravellerHomeContent = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Trips Section Header */}
+      {/* Shipments Section Header */}
       <View style={styles.shipmentHeader}>
-        <Text style={styles.shipmentTitle}>My Trips</Text>
-        <TouchableOpacity onPress={() => handleNavigateToShipments("All")}>
+        <Text style={styles.shipmentTitle}>My Shipments</Text>
+        <TouchableOpacity onPress={goToAllShipments}>
           <Text style={styles.seeAll}>See All</Text>
         </TouchableOpacity>
       </View>
@@ -174,91 +151,35 @@ const TravellerHomeContent = () => {
   return (
     <View style={styles.content}>
       <FlatList
-        data={trips}
+        onRefresh={refreshShipments}
+        refreshing={shipmentsLoading}
+        data={shipments}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={
-          tripsLoading ? (
+          shipmentsLoading ? (
             <ActivityIndicator size="large" color={Theme.colors.primary} style={{ marginTop: 32 }} />
           ) : (
             <View style={styles.emptyState}>
               <View style={styles.emptyIconContainer}>
-                <Ionicons name="airplane-outline" size={48} color={Theme.colors.primary} />
+                <Ionicons name="briefcase-outline" size={48} color={Theme.colors.primary} />
               </View>
-              <Text style={styles.emptyTitle}>No trips yet</Text>
+              <Text style={styles.emptyTitle}>No shipments yet</Text>
               <Text style={styles.emptySubtext}>
-                You haven't created any trips. Tap the button above to get started.
+                You haven&apos;t been matched with a shipment yet. Tap the button above to create a trip.
               </Text>
             </View>
           )
         }
-        renderItem={({ item }) => {
-          const tripNumber = `#${item.id.substring(0, 8).toUpperCase()}`;
-          const isExpanded = expandedId === item.id;
-          const statusStyle = getStatusStyle(item.status);
-          const details = tripDetailsCache[item.id];
-          const from = details ? `${details.originCity}, ${details.originCountry}` : null;
-          const to = details ? `${details.destinationCity}, ${details.destinationCountry}` : null;
-          return (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              style={styles.shipmentCard}
-              onPress={() => handleExpand(item.id)}
-            >
-              <View style={styles.shipmentCardRow}>
-                <View style={styles.packageIconContainer}>
-                  <Ionicons name="airplane-outline" size={24} color={Theme.colors.primary} />
-                </View>
-                <View style={styles.shipmentInfo}>
-                  <Text style={styles.trackingNumber}>{tripNumber}</Text>
-                  {from && to && (
-                    <Text style={styles.shipmentItem}>{from} → {to}</Text>
-                  )}
-                </View>
-                <View style={[styles.statusBadge, statusStyle.badge]}>
-                  <Text style={[styles.statusText, statusStyle.text]}>{item.status}</Text>
-                </View>
-              </View>
-
-              {isExpanded && (
-                <>
-                  <View style={styles.accordionDivider} />
-                  {!details ? (
-                    <ActivityIndicator size="small" color={Theme.colors.primary} style={{ marginVertical: 8 }} />
-                  ) : (
-                    <>
-                      <View style={styles.accordionGrid}>
-                        <View style={styles.accordionCell}>
-                          <Text style={styles.accordionLabel}>From :</Text>
-                          <Text style={styles.accordionValue}>{from}</Text>
-                        </View>
-                        <View style={styles.accordionCell}>
-                          <Text style={styles.accordionLabel}>To :</Text>
-                          <Text style={styles.accordionValue}>{to}</Text>
-                        </View>
-                      </View>
-                      <View style={styles.accordionDivider} />
-                      <View style={styles.accordionGrid}>
-                        <View style={styles.accordionCell}>
-                          <Text style={styles.accordionLabel}>Mode :</Text>
-                          <Text style={styles.accordionValue}>{details.mode}</Text>
-                        </View>
-                        <View style={styles.accordionCell}>
-                          <Text style={styles.accordionLabel}>Departure :</Text>
-                          <Text style={styles.accordionValue}>
-                            {new Date(details.departureAt).toLocaleDateString()}
-                          </Text>
-                        </View>
-                      </View>
-                    </>
-                  )}
-                </>
-              )}
-            </TouchableOpacity>
-          );
-        }}
+        renderItem={({ item }) => (
+          <ShipmentCard
+            shipment={item}
+            isTraveller={true}
+            onPress={() => router.push(getShipmentDetailsRoute(item, true))}
+          />
+        )}
       />
     </View>
   );
@@ -308,6 +229,25 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginLeft: "auto",
+    position: "relative",
+  },
+  notificationBadge: {
+    position: "absolute",
+    top: -3,
+    right: -3,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: Theme.colors.yellow,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  notificationBadgeText: {
+    fontSize: 9,
+    fontFamily: "Inter-Bold",
+    color: Theme.colors.primary,
+    includeFontPadding: false,
   },
   welcomeText: {
     color: "#CED1D8",
@@ -400,93 +340,6 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 100,
-  },
-  shipmentCard: {
-    backgroundColor: Theme.colors.white,
-    borderRadius: Theme.borderRadius.md,
-    padding: Theme.spacing.md,
-    marginBottom: Theme.spacing.sm,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  shipmentCardRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  accordionDivider: {
-    height: 1,
-    backgroundColor: Theme.colors.background.border,
-    marginVertical: 14,
-  },
-  accordionGrid: {
-    flexDirection: "row",
-    paddingVertical: 4,
-  },
-  accordionCell: {
-    flex: 1,
-    gap: 6,
-  },
-  accordionLabel: {
-    fontSize: 13,
-    fontFamily: "Inter-Regular",
-    color: Theme.colors.text.gray,
-  },
-  accordionValue: {
-    fontSize: 16,
-    fontFamily: "Inter-Bold",
-    color: Theme.colors.text.dark,
-  },
-  packageIconContainer: {
-    backgroundColor: "#C7F530",
-    borderRadius: 24,
-    width: 48,
-    height: 48,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  shipmentInfo: {
-    marginLeft: Theme.spacing.md,
-    flex: 1,
-  },
-  trackingNumber: {
-    fontSize: 16,
-    fontFamily: "Inter-Bold",
-    color: Theme.colors.black,
-    marginBottom: 2,
-  },
-  shipmentItem: {
-    fontSize: 13,
-    fontFamily: "Inter-Regular",
-    color: Theme.colors.text.gray,
-  },
-  statusBadge: {
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-  },
-  pending: {
-    backgroundColor: "#9CA3AF",
-  },
-  inTransit: {
-    backgroundColor: "#7856D3",
-  },
-  delivered: {
-    backgroundColor: "#32BF5B",
-  },
-  statusText: {
-    fontSize: 12,
-    fontFamily: "Inter-SemiBold",
-  },
-  pendingText: {
-    color: Theme.colors.white,
-  },
-  inTransitText: {
-    color: Theme.colors.white,
-  },
-  deliveredText: {
-    color: Theme.colors.white,
   },
   emptyState: {
     alignItems: "center",

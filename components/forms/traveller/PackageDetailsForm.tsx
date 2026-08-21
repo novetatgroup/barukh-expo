@@ -1,23 +1,35 @@
-import Theme from "@/constants/Theme";
+import AppTheme from "@/constants/Theme";
 import { ShipmentData } from "@/context/ShipmentContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { Formik } from "formik";
+import { Formik, FormikErrors, FormikHelpers, FormikTouched } from "formik";
 import React, { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ValidationError } from "yup";
 import CustomButton from "../../ui/CustomButton";
 import {
   initialFormValues,
+  LocationData,
   PackageDetailsStep,
   PackageFormValues,
   PackageSubmitData,
+  PackageValidationSchema,
   Step1ValidationSchema,
   Step2ValidationSchema,
   TravelDetailsStep,
 } from "./packageForm";
 
+type PackageFormInitialValues =
+  Partial<Omit<ShipmentData, "destination" | "maxHeightCm" | "maxWidthCm" | "maxLengthCm">> &
+  Partial<Omit<PackageFormValues, "destination" | "maxHeightCm" | "maxWidthCm" | "maxLengthCm">> & {
+    destination?: LocationData | string | null;
+    maxHeightCm?: string | number;
+    maxWidthCm?: string | number;
+    maxLengthCm?: string | number;
+  };
+
 type PackageDetailsFormProps = {
-  initialValues?: Partial<ShipmentData>;
+  initialValues?: PackageFormInitialValues;
   onSubmit: (data: PackageSubmitData) => Promise<void>;
   isSubmitting?: boolean;
 };
@@ -32,6 +44,116 @@ const combineDateAndTime = (dateStr: string, timeStr: string): string => {
   return date.toISOString();
 };
 
+const toDateField = (value?: string): string => {
+  if (!value) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
+  return parsed.toISOString().split("T")[0];
+};
+
+const toTimeField = (value?: string): string => {
+  if (!value) return "";
+  if (/^\d{2}:\d{2}$/.test(value)) {
+    return value;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
+  return parsed.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+};
+
+const toTextField = (value?: string | number): string =>
+  value === undefined || value === null ? "" : String(value);
+
+const isFiniteNumber = (value: number | null | undefined): value is number =>
+  typeof value === "number" && Number.isFinite(value);
+
+const isLocationData = (value: unknown): value is LocationData =>
+  typeof value === "object" &&
+  value !== null &&
+  "placeId" in value &&
+  "description" in value &&
+  "city" in value;
+
+const step1Fields = new Set<keyof PackageFormValues>([
+  "origin",
+  "originCountry",
+  "originCity",
+  "destination",
+  "destinationCountry",
+  "destinationCity",
+  "departureDate",
+  "departureTime",
+  "arrivalDate",
+  "arrivalTime",
+  "mode",
+  "flightNumber",
+  "vehiclePlate",
+]);
+
+const toFormikErrors = (error: ValidationError): FormikErrors<PackageFormValues> => {
+  const errors: Partial<Record<keyof PackageFormValues, string>> = {};
+  const validationErrors = error.inner.length > 0 ? error.inner : [error];
+
+  validationErrors.forEach((validationError) => {
+    const path = validationError.path as keyof PackageFormValues | undefined;
+    if (path && !errors[path]) {
+      errors[path] = validationError.message;
+    }
+  });
+
+  return errors as FormikErrors<PackageFormValues>;
+};
+
+const toTouchedFields = (
+  errors: FormikErrors<PackageFormValues>,
+): FormikTouched<PackageFormValues> => {
+  const touched: Partial<Record<keyof PackageFormValues, boolean>> = {};
+
+  (Object.keys(errors) as (keyof PackageFormValues)[]).forEach((field) => {
+    touched[field] = true;
+  });
+
+  return touched as FormikTouched<PackageFormValues>;
+};
+
+const toLocationValue = (
+  city?: string,
+  country?: string,
+  latitude?: number,
+  longitude?: number,
+): LocationData | null => {
+  if (!city && !country) {
+    return null;
+  }
+
+  const description = [city, country].filter(Boolean).join(", ");
+
+  return {
+    placeId: description || "saved-location",
+    description,
+    city: city || "",
+    country: country || "",
+    countryCode: country || "",
+    latitude: latitude ?? 0,
+    longitude: longitude ?? 0,
+  };
+};
+
 const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
   onSubmit,
   initialValues,
@@ -39,6 +161,37 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const normalizedInitialValues: PackageFormValues = {
+    ...initialFormValues,
+    ...initialValues,
+    origin:
+      initialValues?.origin ??
+      toLocationValue(
+        initialValues?.originCity,
+        initialValues?.originCountry,
+        initialValues?.originLatitude ?? undefined,
+        initialValues?.originLongitude ?? undefined,
+      ),
+    destination:
+      (isLocationData(initialValues?.destination) ? initialValues.destination : null) ??
+      toLocationValue(
+        initialValues?.destinationCity,
+        initialValues?.destinationCountry,
+        initialValues?.destinationLatitude ?? undefined,
+        initialValues?.destinationLongitude ?? undefined,
+      ),
+    departureDate:
+      initialValues?.departureDate || toDateField(initialValues?.departureAt),
+    departureTime:
+      initialValues?.departureTime || toTimeField(initialValues?.departureAt),
+    arrivalDate:
+      initialValues?.arrivalDate || toDateField(initialValues?.arrivalAt),
+    arrivalTime:
+      initialValues?.arrivalTime || toTimeField(initialValues?.arrivalAt),
+    maxHeightCm: toTextField(initialValues?.maxHeightCm),
+    maxWidthCm: toTextField(initialValues?.maxWidthCm),
+    maxLengthCm: toTextField(initialValues?.maxLengthCm),
+  };
 
   const validateStep1 = async (values: PackageFormValues) => {
     try {
@@ -49,27 +202,49 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
     }
   };
 
-  const handleFormSubmit = async (values: PackageFormValues) => {
-    if (currentStep === 1) {
-      const isValid = await validateStep1(values);
-      if (isValid) {
-        setCurrentStep(2);
-      }
-    } else {
-      try {
+  const handleFormSubmit = async (
+    values: PackageFormValues,
+    helpers: FormikHelpers<PackageFormValues>,
+  ) => {
+    try {
+      if (currentStep === 1) {
+        const isValid = await validateStep1(values);
+        if (isValid) {
+          setCurrentStep(2);
+        }
+      } else {
+        try {
+          await PackageValidationSchema.validate(values, { abortEarly: false });
+        } catch (error) {
+          if (error instanceof ValidationError) {
+            const errors = toFormikErrors(error);
+            helpers.setErrors(errors);
+            helpers.setTouched(toTouchedFields(errors), false);
+
+            const hasStep1Error = (Object.keys(errors) as (keyof PackageFormValues)[])
+              .some((field) => step1Fields.has(field));
+
+            if (hasStep1Error) {
+              setCurrentStep(1);
+            }
+            return;
+          }
+
+          throw error;
+        }
         setLoading(true);
         const submitData: PackageSubmitData = {
           originCountry: values.originCountry,
           originCity: values.originCity,
           destinationCountry: values.destinationCountry,
           destinationCity: values.destinationCity,
-          ...(values.originLatitude && {
+          ...(isFiniteNumber(values.originLatitude) && isFiniteNumber(values.originLongitude) && {
             originLatitude: values.originLatitude,
-            originLongitude: values.originLongitude ?? undefined,
+            originLongitude: values.originLongitude,
           }),
-          ...(values.destinationLatitude && {
+          ...(isFiniteNumber(values.destinationLatitude) && isFiniteNumber(values.destinationLongitude) && {
             destinationLatitude: values.destinationLatitude,
-            destinationLongitude: values.destinationLongitude ?? undefined,
+            destinationLongitude: values.destinationLongitude,
           }),
           departureAt: combineDateAndTime(values.departureDate, values.departureTime),
           arrivalAt: combineDateAndTime(values.arrivalDate, values.arrivalTime),
@@ -82,12 +257,14 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
           maxWidthCm: Number(values.maxWidthCm),
           maxLengthCm: Number(values.maxLengthCm),
         };
+
         await onSubmit(submitData);
-      } catch (error) {
-        console.error("Error submitting package details:", error);
-      } finally {
-        setLoading(false);
+
       }
+
+    } catch {
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -104,7 +281,7 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
 
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Ionicons name="chevron-back" size={24} color={Theme.colors.black} />
+          <Ionicons name="chevron-back" size={24} color={AppTheme.colors.black} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
           {currentStep === 1 ? "Travel Details" : "Package Details"}
@@ -112,7 +289,7 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
         <View style={styles.headerSpacer} />
       </View>
 
-   
+
       <View style={styles.progressContainer}>
         <View style={styles.progressStep}>
           <View style={[styles.progressDot, currentStep >= 1 && styles.progressDotActive]}>
@@ -140,13 +317,14 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
           keyboardShouldPersistTaps="handled"
         >
           <Formik<PackageFormValues>
-            initialValues={{ ...initialFormValues, ...initialValues } as PackageFormValues}
+            initialValues={normalizedInitialValues}
             validationSchema={currentStep === 1 ? Step1ValidationSchema : Step2ValidationSchema}
+            enableReinitialize
             validateOnChange={false}
             validateOnBlur={true}
             onSubmit={handleFormSubmit}
           >
-            {({ values, handleChange, handleSubmit, setFieldValue, errors, touched }) => (
+            {({ values, handleChange, handleSubmit, setFieldValue, setFieldTouched, errors, touched }) => (
               <View style={styles.formContainer}>
                 {currentStep === 1 ? (
                   <TravelDetailsStep
@@ -154,6 +332,7 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
                     errors={errors}
                     touched={touched}
                     setFieldValue={setFieldValue}
+                    setFieldTouched={setFieldTouched}
                     handleChange={handleChange}
                   />
                 ) : (
@@ -162,7 +341,7 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
                     errors={errors}
                     touched={touched}
                     setFieldValue={setFieldValue}
-                    handleChange={handleChange}
+                    setFieldTouched={setFieldTouched}
                   />
                 )}
 
@@ -180,7 +359,7 @@ const PackageDetailsForm: React.FC<PackageDetailsFormProps> = ({
                       style={styles.previousButton}
                       onPress={() => setCurrentStep(1)}
                     >
-                      <Ionicons name="chevron-back" size={20} color={Theme.colors.primary} />
+                      <Ionicons name="chevron-back" size={20} color={AppTheme.colors.primary} />
                       <Text style={styles.previousButtonText}>Previous</Text>
                     </TouchableOpacity>
                   )}
@@ -210,18 +389,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Theme.spacing.md,
-    paddingTop: Theme.spacing.xxxl,
-    paddingBottom: Theme.spacing.md,
+    paddingHorizontal: AppTheme.spacing.md,
+    paddingTop: AppTheme.spacing.xxxl,
+    paddingBottom: AppTheme.spacing.md,
     backgroundColor: "#F4F1F2",
   },
   backButton: {
-    padding: Theme.spacing.xs,
+    padding: AppTheme.spacing.xs,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: Theme.colors.black,
+    color: AppTheme.colors.black,
   },
   headerSpacer: {
     width: 32,
@@ -230,8 +409,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: Theme.spacing.xl,
-    paddingVertical: Theme.spacing.md,
+    paddingHorizontal: AppTheme.spacing.xl,
+    paddingVertical: AppTheme.spacing.md,
   },
   progressStep: {
     alignItems: "center",
@@ -240,29 +419,29 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Theme.colors.text.border,
+    backgroundColor: AppTheme.colors.text.border,
     alignItems: "center",
     justifyContent: "center",
   },
   progressDotActive: {
-    backgroundColor: Theme.colors.green,
+    backgroundColor: AppTheme.colors.green,
   },
   progressDotText: {
-    color: Theme.colors.white,
+    color: AppTheme.colors.white,
     fontWeight: "600",
     fontSize: 14,
   },
   progressLabel: {
-    marginTop: Theme.spacing.xs,
+    marginTop: AppTheme.spacing.xs,
     fontSize: 12,
-    color: Theme.colors.text.gray,
+    color: AppTheme.colors.text.gray,
   },
   progressLine: {
     flex: 1,
     height: 2,
-    backgroundColor: Theme.colors.text.border,
-    marginHorizontal: Theme.spacing.sm,
-    marginBottom: Theme.spacing.lg,
+    backgroundColor: AppTheme.colors.text.border,
+    marginHorizontal: AppTheme.spacing.sm,
+    marginBottom: AppTheme.spacing.lg,
   },
   keyboardAvoidingView: {
     flex: 1,
@@ -271,29 +450,29 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   formContainer: {
-    paddingHorizontal: Theme.spacing.lg,
-    paddingTop: Theme.spacing.md,
-    paddingBottom: Theme.spacing.xxl,
+    paddingHorizontal: AppTheme.spacing.lg,
+    paddingTop: AppTheme.spacing.md,
+    paddingBottom: AppTheme.spacing.xxl,
   },
   buttonContainer: {
     flexDirection: "row",
-    marginTop: Theme.spacing.xl,
+    marginTop: AppTheme.spacing.xl,
     gap: 8,
   },
   cancelButton: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: Theme.spacing.md,
+    paddingVertical: AppTheme.spacing.md,
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: Theme.colors.primary,
-    borderRadius: Theme.borderRadius.xl,
-    minHeight: Theme.components.button.height,
+    borderColor: AppTheme.colors.primary,
+    borderRadius: AppTheme.borderRadius.xl,
+    minHeight: AppTheme.components.button.height,
   },
   cancelButtonText: {
-    fontSize: Theme.typography.body.fontSize,
-    color: Theme.colors.primary,
+    fontSize: AppTheme.typography.body.fontSize,
+    color: AppTheme.colors.primary,
     fontWeight: "500",
   },
   previousButton: {
@@ -301,18 +480,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: Theme.spacing.md,
+    paddingVertical: AppTheme.spacing.md,
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: Theme.colors.primary,
-    borderRadius: Theme.borderRadius.xl,
-    minHeight: Theme.components.button.height,
+    borderColor: AppTheme.colors.primary,
+    borderRadius: AppTheme.borderRadius.xl,
+    minHeight: AppTheme.components.button.height,
   },
   previousButtonText: {
-    fontSize: Theme.typography.body.fontSize,
-    color: Theme.colors.primary,
+    fontSize: AppTheme.typography.body.fontSize,
+    color: AppTheme.colors.primary,
     fontWeight: "500",
-    marginLeft: Theme.spacing.xs,
+    marginLeft: AppTheme.spacing.xs,
   },
   submitButton: {
     flex: 1,

@@ -1,7 +1,11 @@
-import { apiRequest, API_ENDPOINTS } from "./api";
+import { API_ENDPOINTS, apiRequest } from "./api";
+import type { GetShipmentsResponse } from "./senderService";
+import { TripCategory } from "@/types/trip";
 
 export interface CreateTravellerParams {
-	userId: string;
+	firstName: string;
+	lastName: string;
+	email: string;
 }
 
 export interface CreateTravellerResponse {
@@ -14,10 +18,11 @@ export interface TravellerProfile {
 	travellerId: string;
 	userId: string;
 	status: string;
+	travellerNumber: string;
 }
 
 export interface CreateTripParams {
-	userId: string;
+	allowedCategories: TripCategory[];
 	maxWeightKg: number;
 	maxHeightCm: number;
 	maxWidthCm: number;
@@ -44,20 +49,22 @@ export interface CreateTripResponse {
 
 export interface Trip {
 	id: string;
-	userId: string;
-	originCountry: string;
-	originCity: string;
-	destinationCountry: string;
-	destinationCity: string;
-	departureAt: string;
-	arrivalAt: string;
-	mode: string;
+	travellerId: string;
 	status: string;
-	maxWeightKg: number;
+	mode: string;
+	originCountry: string;
+	destinationCountry: string;
+	// The list endpoint (get-trips/me) does not currently return these —
+	// only findTrip's richer TripDetails response is guaranteed to have them.
+	originCity?: string;
+	destinationCity?: string;
+	departureAt?: string;
+	arrivalAt?: string;
+	maxWeightKg?: number;
 	flightNumber?: string;
 	vehiclePlate?: string;
-	createdAt: string;
-	updatedAt: string;
+	createdAt?: string;
+	updatedAt?: string;
 }
 
 export interface TripDetails {
@@ -91,6 +98,26 @@ export interface GetTripsResponse {
 	};
 }
 
+export interface UpdateShipmentStatusParams {
+	status: "INTRANSIT";
+}
+
+export interface ConfirmItemPickupParams {
+	code: string;
+	shipmentId: string;
+}
+
+export interface GetShipmentUploadUrlResponse {
+	key: string;
+	uploadUrl: string;
+}
+
+export interface ConfirmItemDeliveryParams {
+	code: string;
+	shipmentId: string;
+	deliveryPhotoKey: string;
+}
+
 export const travellerService = {
 	async createTraveller(params: CreateTravellerParams, accessToken: string) {
 		return apiRequest<CreateTravellerResponse>(API_ENDPOINTS.traveller.createTraveller, {
@@ -112,8 +139,8 @@ export const travellerService = {
 		});
 	},
 
-	async getTrips(userId: string, accessToken: string) {
-		return apiRequest<GetTripsResponse>(API_ENDPOINTS.traveller.getTrips(userId), {
+	async getTrips(accessToken: string) {
+		return apiRequest<GetTripsResponse>(API_ENDPOINTS.traveller.getTrips, {
 			method: "GET",
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
@@ -121,8 +148,8 @@ export const travellerService = {
 		});
 	},
 
-	async getTraveller(userId: string, accessToken: string) {
-		return apiRequest<TravellerProfile>(API_ENDPOINTS.traveller.getTraveller(userId), {
+	async getTraveller(accessToken: string) {
+		return apiRequest<TravellerProfile>(API_ENDPOINTS.traveller.getTraveller, {
 			method: "GET",
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
@@ -137,5 +164,94 @@ export const travellerService = {
 				Authorization: `Bearer ${accessToken}`,
 			},
 		});
+	},
+
+	async getTravellerShipments(travellerId: string, accessToken: string) {
+		return apiRequest<GetShipmentsResponse>(
+			API_ENDPOINTS.shipments.listByRole(travellerId, "TRAVELLER"),
+			{
+				method: "GET",
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			}
+		);
+	},
+
+	async findShipmentsByTrip(
+		tripId: string,
+		accessToken: string,
+		page: number = 1,
+		limit: number = 10
+	) {
+		return apiRequest<GetShipmentsResponse>(
+			API_ENDPOINTS.shipments.findByTrip(tripId, page, limit),
+			{
+				method: "GET",
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			}
+		);
+	},
+
+	async updateShipmentStatus(
+		shipmentId: string,
+		params: UpdateShipmentStatusParams,
+		accessToken: string
+	) {
+		return apiRequest(API_ENDPOINTS.shipments.update(shipmentId), {
+			method: "PATCH",
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+			},
+			body: params,
+		});
+	},
+
+	async confirmItemPickup(params: ConfirmItemPickupParams, accessToken: string) {
+		return apiRequest<{ message?: string }>(API_ENDPOINTS.shipments.confirmItemPickup, {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+			},
+			body: params,
+		});
+	},
+
+	async getShipmentUploadUrl(shipmentId: string, accessToken: string) {
+		return apiRequest<GetShipmentUploadUrlResponse>(
+			API_ENDPOINTS.shipments.getUploadShipmentUrl(shipmentId),
+			{
+				method: "GET",
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			}
+		);
+	},
+
+	async confirmItemDelivery(params: ConfirmItemDeliveryParams, accessToken: string) {
+		return apiRequest<{ message?: string }>(API_ENDPOINTS.shipments.confirmItemDelivery, {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+			},
+			body: params,
+		});
+	},
+
+	async uploadImageToS3(imageUri: string, uploadUrl: string): Promise<void> {
+		const fileResponse = await fetch(imageUri);
+		const blob = await fileResponse.blob();
+		const uploadResponse = await fetch(uploadUrl, {
+			method: "PUT",
+			headers: { "Content-Type": "image/jpeg" },
+			body: blob,
+		});
+
+		if (!uploadResponse.ok) {
+			throw new Error(`S3 upload failed: HTTP ${uploadResponse.status}`);
+		}
 	},
 };
