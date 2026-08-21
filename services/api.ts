@@ -1,3 +1,6 @@
+import { RefreshTokenResponse } from "../Interfaces/auth";
+import { authSession } from "./authSession";
+
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export const API_ENDPOINTS = {
@@ -5,6 +8,7 @@ export const API_ENDPOINTS = {
 		loginRequestOtp: "/auth/login/request-otp",
 		registerRequestOtp: "/users/register/request-otp",
 		verifyOtp: "/auth/verify-otp",
+		refreshToken: "/auth/refresh-token",
 	},
 	users: {
 		get: "/users/profile/me",
@@ -171,9 +175,48 @@ const getResponseErrorCode = (data: ParsedResponseBody): string | null => {
 	return typeof errorCode === "string" ? errorCode : null;
 };
 
-export async function apiRequest<T>(
+let refreshPromise: Promise<string | null> | null = null;
+
+// Single-flight refresh: if several requests 401 at once, only one actually
+// calls the refresh endpoint - the rest await the same in-flight promise.
+async function performRefresh(): Promise<string | null> {
+	if (refreshPromise) return refreshPromise;
+
+	const { refreshToken } = authSession.getTokens();
+	if (!refreshToken) return null;
+
+	refreshPromise = (async () => {
+		const result = await apiRequest<RefreshTokenResponse>(API_ENDPOINTS.auth.refreshToken, {
+			method: "POST",
+			body: { refreshToken },
+		});
+
+		if (!result.ok || !result.data?.accessToken) {
+			await authSession.expire();
+			return null;
+		}
+
+		await authSession.setAccessToken(result.data.accessToken);
+		return result.data.accessToken;
+	})();
+
+	try {
+		return await refreshPromise;
+	} finally {
+		refreshPromise = null;
+	}
+}
+
+// Exposed so AuthContext can attempt a session restore on app launch using
+// the same logic the 401-retry below relies on.
+export async function refreshAccessToken(): Promise<string | null> {
+	return performRefresh();
+}
+
+async function doRequest<T>(
 	endpoint: string,
-	options: RequestOptions = {}
+	options: RequestOptions,
+	isRetry: boolean
 ): Promise<ApiResponse<T>> {
 	const { body, headers: customHeaders, ...restOptions } = options;
 
@@ -205,6 +248,20 @@ export async function apiRequest<T>(
 		}
 
 		if (!response.ok) {
+			const hadAuthHeader = Boolean(headers.Authorization);
+			const isRefreshCall = endpoint === API_ENDPOINTS.auth.refreshToken;
+
+			if (response.status === 401 && hadAuthHeader && !isRefreshCall && !isRetry) {
+				const newAccessToken = await performRefresh();
+				if (newAccessToken) {
+					return doRequest<T>(
+						endpoint,
+						{ ...options, headers: { ...headers, Authorization: `Bearer ${newAccessToken}` } },
+						true
+					);
+				}
+			}
+
 			return {
 				data: null,
 				error: getResponseMessage(parsedResponseBody),
@@ -230,6 +287,13 @@ export async function apiRequest<T>(
 			errorCode: null,
 		};
 	}
+}
+
+export async function apiRequest<T>(
+	endpoint: string,
+	options: RequestOptions = {}
+): Promise<ApiResponse<T>> {
+	return doRequest<T>(endpoint, options, false);
 }
 
 export { API_URL };
