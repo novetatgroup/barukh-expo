@@ -23,9 +23,13 @@ const notify = () => {
  * (login, background refresh, or expiry).
  */
 export const authSession = {
-	setTokens(next: SessionTokens) {
+	async setTokens(next: SessionTokens) {
 		tokens = next;
 		notify();
+		await Promise.all([
+			next.accessToken ? saveSecureItem("accessToken", next.accessToken) : Promise.resolve(),
+			next.refreshToken ? saveSecureItem("refreshToken", next.refreshToken) : Promise.resolve(),
+		]);
 	},
 
 	getTokens: (): SessionTokens => tokens,

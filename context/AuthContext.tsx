@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 					getSecureItem("refreshToken"),
 				]);
 
-				authSession.setTokens({ accessToken: token, refreshToken });
+				await authSession.setTokens({ accessToken: token, refreshToken });
 
 				if (token) {
 					const decoded: DecodedToken = jwtDecode(token);
@@ -114,7 +114,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	}, []);
 
 	const setAuthState = async (state: AuthState) => {
-		authSession.setTokens({ accessToken: state.accessToken, refreshToken: state.refreshToken });
+		await authSession.setTokens({ accessToken: state.accessToken, refreshToken: state.refreshToken });
 	};
 
 	const authFetch = async (url: string, options: RequestInit = {}) => {
