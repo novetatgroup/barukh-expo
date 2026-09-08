@@ -37,7 +37,9 @@ type StepConfig = {
   reviewQuestion: string;
 };
 
-const STEPS: StepConfig[] = [
+// A passport has no meaningful "back" page, unlike a national ID or driving license, so
+// its capture flow skips the id_back step (image_type_id 7).
+const ALL_STEPS: StepConfig[] = [
   {
     stepNumber: 1,
     facing: "back",
@@ -81,7 +83,7 @@ const STEPS: StepConfig[] = [
 const DOC_LABELS: Record<string, string> = {
   PASSPORT: "passport",
   IDENTITY_CARD: "national ID",
-  DRIVING_LICENCE: "driver's licence",
+  DRIVING_LICENSE: "driver's licence",
 };
 
 const KYCCameraFlow: React.FC<KYCCameraFlowProps> = ({ onComplete, onImageCaptured, onClose, isSubmitting = false }) => {
@@ -92,9 +94,11 @@ const KYCCameraFlow: React.FC<KYCCameraFlowProps> = ({ onComplete, onImageCaptur
   const cameraRef = useRef<CameraView>(null);
   const capturedRef = useRef<CapturedImage[]>([]);
 
-  const step = STEPS[stepIndex];
+  const steps =
+    id_type === "PASSPORT" ? ALL_STEPS.filter(s => s.image_type_id !== 7) : ALL_STEPS;
+  const step = steps[stepIndex];
   const docLabel = DOC_LABELS[id_type ?? "IDENTITY_CARD"] ?? "document";
-  const totalSteps = STEPS.length;
+  const totalSteps = steps.length;
 
   if (!permission) {
     return <View style={styles.container} />;
@@ -163,7 +167,7 @@ const KYCCameraFlow: React.FC<KYCCameraFlowProps> = ({ onComplete, onImageCaptur
     capturedRef.current = [...capturedRef.current, captured];
     onImageCaptured?.(captured);
     setReviewUri(null);
-    if (stepIndex < STEPS.length - 1) {
+    if (stepIndex < steps.length - 1) {
       setStepIndex(stepIndex + 1);
     } else {
       onComplete(capturedRef.current);
@@ -218,7 +222,7 @@ const KYCCameraFlow: React.FC<KYCCameraFlowProps> = ({ onComplete, onImageCaptur
             <View style={styles.iconButton} />
           )}
           <Text style={styles.stepCounter}>
-            {step.stepNumber}/{totalSteps}
+            {stepIndex + 1}/{totalSteps}
           </Text>
           <TouchableOpacity onPress={onClose} style={styles.iconButton} hitSlop={12}>
             <Ionicons name="close" size={22} color="white" />

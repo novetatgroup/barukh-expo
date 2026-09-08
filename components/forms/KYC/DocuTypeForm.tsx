@@ -6,7 +6,7 @@ import KYCContext from "@/context/KYCContext";
 
 type DocumentTypeSelectionFormProps = {
   onDocumentTypeSelect: (
-    id_type: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENCE",
+    id_type: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENSE",
   ) => void;
   isLoading?: boolean;
 };
@@ -14,14 +14,14 @@ type DocumentTypeSelectionFormProps = {
 const DocumentTypeSelectionForm: React.FC<DocumentTypeSelectionFormProps> = ({ onDocumentTypeSelect, isLoading = false }) => {
   const { id_type, updateIdType } = useContext(KYCContext);
 
-  const handleDocumentTypeSelect = (selectedType: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENCE") => {
+  const handleDocumentTypeSelect = (selectedType: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENSE") => {
     updateIdType(selectedType);
     onDocumentTypeSelect(selectedType);
   };
 
-  const options: { type: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENCE"; label: string }[] = [
+  const options: { type: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENSE"; label: string }[] = [
     { type: "IDENTITY_CARD", label: "National ID" },
-    { type: "DRIVING_LICENCE", label: "Driving License" },
+    { type: "DRIVING_LICENSE", label: "Driving License" },
     { type: "PASSPORT", label: "Passport" },
   ];
 

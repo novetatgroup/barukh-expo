@@ -13,13 +13,13 @@ const DocumentTypeSelectionScreen = () => {
   const { setUploadData } = useContext(KYCContext);
 
   const handleDocumentTypeSelect = async (
-    selectedType: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENCE",
+    selectedType: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENSE",
   ) => {
     if (isLoading || !userId || !accessToken) return;
     setIsLoading(true);
 
     try {
-      const { data, error } = await kycService.getUploadUrls(userId, accessToken);
+      const { data, error } = await kycService.getUploadUrls(userId, selectedType, accessToken);
 
       if (error || !data) {
         Toast.error(error ?? "Failed to initialise verification. Please try again.");

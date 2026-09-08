@@ -10,12 +10,14 @@ import {
 } from "@/constants/complaints";
 import Theme from "@/constants/Theme";
 import { AuthContext } from "@/context/AuthContext";
+import { useImageUpload } from "@/hooks/useImageUpload";
 import { userService } from "@/services/userService";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useContext, useState } from "react";
+import React, { useContext, useRef, useState } from "react";
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -24,6 +26,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
+const MAX_ATTACHMENTS = 5;
 
 const REFERENCE_FIELD_BY_TYPE: Partial<Record<ComplaintType, {
   key: "shipmentReferenceNumber" | "travellerReferenceNumber" | "senderReferenceNumber";
@@ -58,6 +62,9 @@ const HelpSupportScreen = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const attachments = useImageUpload();
+  const nextSlotIndex = useRef(0);
+
   const referenceField = REFERENCE_FIELD_BY_TYPE[type];
 
   const canSubmit =
@@ -71,6 +78,16 @@ const HelpSupportScreen = () => {
     setReferenceNumber("");
   };
 
+  const addAttachmentFromLibrary = () => {
+    if (attachments.images.length >= MAX_ATTACHMENTS) return;
+    attachments.pickFromLibrary(`attachment-${nextSlotIndex.current++}`);
+  };
+
+  const addAttachmentFromCamera = () => {
+    if (attachments.images.length >= MAX_ATTACHMENTS) return;
+    attachments.takePhoto(`attachment-${nextSlotIndex.current++}`);
+  };
+
   const onSubmit = async () => {
     if (!canSubmit || !reason) return;
     if (!accessToken) {
@@ -81,12 +98,41 @@ const HelpSupportScreen = () => {
     setSubmitting(true);
     setError(null);
 
+    let attachmentUrls: string[] = [];
+
+    if (attachments.images.length > 0) {
+      const uploadUrlsResult = await userService.getComplaintAttachmentUploadUrls(
+        attachments.images.length,
+        accessToken
+      );
+
+      if (!uploadUrlsResult.ok || !uploadUrlsResult.data) {
+        setSubmitting(false);
+        setError(uploadUrlsResult.error || "Could not prepare your attachments. Please try again.");
+        return;
+      }
+
+      const presignedSlots = uploadUrlsResult.data.urls;
+      attachments.images.forEach((image, index) => {
+        attachments.startUpload(image.slot, presignedSlots[index].uploadUrl);
+      });
+      attachmentUrls = presignedSlots.map(slot => slot.key);
+
+      try {
+        await attachments.waitForAllUploads();
+      } catch {
+        setSubmitting(false);
+        setError("One or more attachments failed to upload. Please try again.");
+        return;
+      }
+    }
+
     const { ok, error: submitError } = await userService.submitComplaint(
       {
         type,
         reason,
         details: details.trim(),
-        attachmentUrls: [],
+        attachmentUrls,
         ...(referenceField ? { [referenceField.key]: referenceNumber.trim() } : {}),
       },
       accessToken
@@ -163,6 +209,41 @@ const HelpSupportScreen = () => {
           style={styles.detailsInput}
         />
 
+        <Text style={styles.label}>Attachments (optional)</Text>
+        <View style={styles.attachmentsRow}>
+          {attachments.images.map(image => (
+            <View key={image.slot} style={styles.attachmentThumbWrap}>
+              <Image source={{ uri: image.uri }} style={styles.attachmentThumb} />
+              <TouchableOpacity
+                style={styles.removeAttachmentButton}
+                onPress={() => attachments.removeImage(image.slot)}
+                accessibilityLabel="Remove attachment"
+              >
+                <Ionicons name="close-circle" size={20} color={Theme.colors.error} />
+              </TouchableOpacity>
+            </View>
+          ))}
+
+          {attachments.images.length < MAX_ATTACHMENTS ? (
+            <>
+              <TouchableOpacity
+                style={styles.addAttachmentButton}
+                onPress={addAttachmentFromLibrary}
+                accessibilityLabel="Add photo from library"
+              >
+                <Ionicons name="image-outline" size={22} color={Theme.colors.text.gray} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.addAttachmentButton}
+                onPress={addAttachmentFromCamera}
+                accessibilityLabel="Take a photo"
+              >
+                <Ionicons name="camera-outline" size={22} color={Theme.colors.text.gray} />
+              </TouchableOpacity>
+            </>
+          ) : null}
+        </View>
+
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         <CustomButton
@@ -170,7 +251,7 @@ const HelpSupportScreen = () => {
           variant="primary"
           onPress={onSubmit}
           disabled={!canSubmit}
-          loading={submitting}
+          loading={submitting || attachments.isUploading}
         />
       </ScrollView>
     </KeyboardAvoidingView>
@@ -213,6 +294,38 @@ const styles = StyleSheet.create({
     minHeight: 140,
     paddingTop: 12,
     textAlignVertical: "top",
+  },
+  attachmentsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Theme.spacing.sm,
+  },
+  attachmentThumbWrap: {
+    width: 64,
+    height: 64,
+    position: "relative",
+  },
+  attachmentThumb: {
+    width: 64,
+    height: 64,
+    borderRadius: Theme.borderRadius.md,
+  },
+  removeAttachmentButton: {
+    position: "absolute",
+    top: -8,
+    right: -8,
+    backgroundColor: Theme.colors.white,
+    borderRadius: 10,
+  },
+  addAttachmentButton: {
+    width: 64,
+    height: 64,
+    borderRadius: Theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: Theme.colors.text.border,
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
   },
   errorText: {
     color: Theme.colors.error,

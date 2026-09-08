@@ -1,6 +1,7 @@
 import AuthContext from "@/context/AuthContext";
 import KYCContext from "@/context/KYCContext";
 import { kycService } from "@/services/kycService";
+import { uploadService } from "@/services/uploadService";
 import { router } from "expo-router";
 import React, { useContext, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -15,6 +16,14 @@ const IMAGE_TYPE_TO_SLOT: Record<number, "id_front" | "id_back" | "selfie"> = {
   2: "selfie",
 };
 
+// Inverse of IMAGE_TYPE_TO_SLOT - used to build the submission payload generically, since
+// the slot set returned by uploadUrls varies by document type (a passport has no "id_back").
+const SLOT_TO_IMAGE_TYPE: Record<string, number> = {
+  selfie: 2,
+  id_front: 3,
+  id_back: 7,
+};
+
 export default function DocumentCaptureScreen() {
   const { accessToken, userId } = useContext(AuthContext);
   const { id_type, uploadUrls, jobId } = useContext(KYCContext);
@@ -27,7 +36,7 @@ export default function DocumentCaptureScreen() {
   const handleImageCaptured = (image: CapturedImage) => {
     const slot = IMAGE_TYPE_TO_SLOT[image.image_type_id];
     if (!slot || !uploadUrls) return;
-    uploadPromises.current.set(slot, kycService.uploadImageToS3(image.image, uploadUrls[slot].uploadUrl));
+    uploadPromises.current.set(slot, uploadService.uploadToS3(image.image, uploadUrls[slot].uploadUrl));
   };
 
   const handleComplete = async (_images: CapturedImage[]) => {
@@ -53,11 +62,10 @@ export default function DocumentCaptureScreen() {
             idType: id_type,
             countryTypes: "UG", // TODO: read from user profile once backend provides it
           },
-          images: [
-            { imageTypeId: 2, imageKey: uploadUrls.selfie.key },
-            { imageTypeId: 3, imageKey: uploadUrls.id_front.key },
-            { imageTypeId: 7, imageKey: uploadUrls.id_back.key },
-          ],
+          images: Object.entries(uploadUrls).map(([slot, entry]) => ({
+            imageTypeId: SLOT_TO_IMAGE_TYPE[slot],
+            imageKey: entry.key,
+          })),
         },
         accessToken
       );

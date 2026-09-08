@@ -7,18 +7,16 @@ interface UploadUrlEntry {
   fileUrl: string;
 }
 
-interface UploadUrls {
-  selfie: UploadUrlEntry;
-  id_front: UploadUrlEntry;
-  id_back: UploadUrlEntry;
-}
+// Slot set depends on document type - a passport has no "id_back" slot since it has no
+// meaningful back page, unlike a national ID or driving license.
+type UploadUrls = Record<string, UploadUrlEntry>;
 
 interface KYCState {
   frontImage: string | null;
   backImage: string | null;
   selfieImage: string | null;
   country: string | null;
-  id_type: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENCE" | null;
+  id_type: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENSE" | null;
   uploadUrls: UploadUrls | null;
   jobId: string | null;
 }
@@ -42,7 +40,7 @@ interface Payload {
 interface KYCContextType extends KYCState {
   setKYCState: (state: KYCState) => void;
   addImage: (imageDetail: ImageDetail) => void;
-  updateIdType: ( id_type: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENCE") => void;
+  updateIdType: ( id_type: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENSE") => void;
   updateCountry: (country: string) => void;
   resetKYC: () => void;
   buildPayload: () => Payload;
@@ -91,7 +89,7 @@ export const KYCProvider = ({ children }: { children: ReactNode }) => {
     }));
   }
 
-  const updateIdType = (id_type: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENCE") => {
+  const updateIdType = (id_type: "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENSE") => {
     setKYCStateInternal((prevState) => ({
       ...prevState,
       id_type,

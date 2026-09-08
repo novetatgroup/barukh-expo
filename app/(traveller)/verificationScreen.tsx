@@ -2,6 +2,7 @@ import CustomButton from "@/components/ui/CustomButton";
 import { Theme } from "@/constants/Theme";
 import { AuthContext } from "@/context/AuthContext";
 import { travellerService } from "@/services/travellerService";
+import { uploadService } from "@/services/uploadService";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -100,7 +101,7 @@ const VerificationScreen = () => {
           return;
         }
 
-        await travellerService.uploadImageToS3(selectedImage, uploadUrlResult.data.uploadUrl);
+        await uploadService.uploadToS3(selectedImage, uploadUrlResult.data.uploadUrl);
         deliveryPhotoKey = uploadUrlResult.data.key;
       }
 

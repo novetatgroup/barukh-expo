@@ -79,7 +79,8 @@ export const API_ENDPOINTS = {
 		},
 	},
 	kyc: {
-		getUploadUrls: (userId: string) => `/smile-id/upload-urls/${userId}`,
+		getUploadUrls: (userId: string, idType: string) =>
+			`/smile-id/upload-urls/${userId}?idType=${idType}`,
 		submitVerification: "/smile-id/document-verification",
 		getJobStatus: "/smile-id/get-job-status",
 		kycVerifyOtp: "/kyc/verify-otp",
@@ -112,7 +113,9 @@ export const API_ENDPOINTS = {
 		markNotificationsAsRead: "/push-notifications/mark-read"
 	},
 	complaints: {
-		submitComplaint: '/users/submit-complaint'
+		submitComplaint: '/users/submit-complaint',
+		getAttachmentUploadUrls: (count: number) =>
+			`/users/complaint-attachment-upload-urls/me?count=${count}`,
 	}
 } as const;
 

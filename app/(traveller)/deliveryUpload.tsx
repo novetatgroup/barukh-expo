@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import UploadPackageForm from "@/components/forms/traveller/UploadPackageForm";
 import { AuthContext } from "@/context/AuthContext";
 import { travellerService } from "@/services/travellerService";
+import { uploadService } from "@/services/uploadService";
 
 const DeliveryUploadScreen = () => {
     const router = useRouter();
@@ -70,7 +71,7 @@ const DeliveryUploadScreen = () => {
                 return;
             }
 
-            await travellerService.uploadImageToS3(
+            await uploadService.uploadToS3(
                 selectedImage,
                 uploadUrlResult.data.uploadUrl
             );

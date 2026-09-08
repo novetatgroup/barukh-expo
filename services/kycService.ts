@@ -1,16 +1,16 @@
 import { apiRequest, API_ENDPOINTS } from "./api";
 
+export type DocumentIdType = "PASSPORT" | "IDENTITY_CARD" | "DRIVING_LICENSE";
+
 export interface UploadUrlEntry {
   uploadUrl: string;
   key: string;
   fileUrl: string;
 }
 
-export interface UploadUrls {
-  selfie: UploadUrlEntry;
-  id_front: UploadUrlEntry;
-  id_back: UploadUrlEntry;
-}
+// Slot set depends on document type - a passport has no "id_back" slot since it has no
+// meaningful back page, unlike a national ID or driving license.
+export type UploadUrls = Record<string, UploadUrlEntry>;
 
 export interface GetUploadUrlsResponse {
   urls: UploadUrls;
@@ -26,7 +26,7 @@ export interface SubmitVerificationParams {
   userId: string;
   jobId: string;
   idInfo: {
-    idType: string;
+    idType: DocumentIdType;
     countryTypes: string;
   };
   images: VerificationImage[];
@@ -46,9 +46,9 @@ export interface JobStatusResponse {
 }
 
 export const kycService = {
-  async getUploadUrls(userId: string, accessToken: string) {
+  async getUploadUrls(userId: string, idType: DocumentIdType, accessToken: string) {
     return apiRequest<GetUploadUrlsResponse>(
-      API_ENDPOINTS.kyc.getUploadUrls(userId),
+      API_ENDPOINTS.kyc.getUploadUrls(userId, idType),
       {
         method: "GET",
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -73,18 +73,5 @@ export const kycService = {
       headers: { Authorization: `Bearer ${accessToken}` },
       body: { userId },
     });
-  },
-
-  async uploadImageToS3(imageUri: string, uploadUrl: string): Promise<void> {
-    const fileResponse = await fetch(imageUri);
-    const blob = await fileResponse.blob();
-    const uploadResponse = await fetch(uploadUrl, {
-      method: "PUT",
-      headers: { "Content-Type": "image/jpeg" },
-      body: blob,
-    });
-    if (!uploadResponse.ok) {
-      throw new Error(`S3 upload failed: HTTP ${uploadResponse.status}`);
-    }
   },
 };

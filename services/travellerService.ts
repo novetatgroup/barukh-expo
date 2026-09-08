@@ -240,18 +240,4 @@ export const travellerService = {
 			body: params,
 		});
 	},
-
-	async uploadImageToS3(imageUri: string, uploadUrl: string): Promise<void> {
-		const fileResponse = await fetch(imageUri);
-		const blob = await fileResponse.blob();
-		const uploadResponse = await fetch(uploadUrl, {
-			method: "PUT",
-			headers: { "Content-Type": "image/jpeg" },
-			body: blob,
-		});
-
-		if (!uploadResponse.ok) {
-			throw new Error(`S3 upload failed: HTTP ${uploadResponse.status}`);
-		}
-	},
 };

@@ -30,11 +30,22 @@ export interface SubmitComplaintParams {
 	shipmentReferenceNumber?: string;
 	travellerReferenceNumber?: string;
 	senderReferenceNumber?: string;
-	attachmentUrls: string[];
+	attachmentUrls?: string[];
 }
 
 export interface SubmitComplaintResponse {
 	message?: string;
+}
+
+export interface PresignedUrlInfo {
+	slot: string;
+	uploadUrl: string;
+	key: string;
+	fileUrl: string;
+}
+
+export interface GetComplaintAttachmentUploadUrlsResponse {
+	urls: PresignedUrlInfo[];
 }
 
 export interface FlwCustomerObject {
@@ -104,5 +115,17 @@ export const userService = {
 			},
 			body: params,
 		});
+	},
+
+	async getComplaintAttachmentUploadUrls(count: number, accessToken: string) {
+		return apiRequest<GetComplaintAttachmentUploadUrlsResponse>(
+			API_ENDPOINTS.complaints.getAttachmentUploadUrls(count),
+			{
+				method: "GET",
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			}
+		);
 	},
 };
